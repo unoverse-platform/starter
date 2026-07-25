@@ -1,0 +1,64 @@
+{
+  "unoverse": "1.0",
+  "kind": "atom",
+  "name": "Avatar",
+  "description": "A circular person avatar: the photo when there is one, initials on a sunken surface when there is not (the initials sit underneath and the photo overlays them). Owns its full style — references tokens only; resize via the Ref's style.",
+  "whenToUse": "Represent a person or account anywhere a face belongs (a review, an account row, an assignee). Compose via a Ref, mapping image/initials/name to host fields. For the voice-call assistant avatar with live rings, use agent-avatar instead.",
+  "props": {
+    "image": {
+      "type": "string",
+      "default": ""
+    },
+    "initials": {
+      "type": "string",
+      "default": "AB"
+    },
+    "name": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "root": {
+    "type": "Box",
+    "style": {
+      "position": "relative",
+      "flex": "0 0 auto",
+      "width": "10",
+      "height": "10",
+      "radius": "full",
+      "overflow": "hidden",
+      "background": "surface.sunken",
+      "direction": "row",
+      "align": "center",
+      "justify": "center"
+    },
+    "children": [
+      {
+        "type": "Text",
+        "bind": {
+          "value": "initials"
+        },
+        "style": {
+          "font": "label",
+          "weight": "semibold",
+          "color": "text.secondary"
+        }
+      },
+      {
+        "type": "Image",
+        "visibleWhen": "image",
+        "bind": {
+          "src": "image",
+          "alt": "name"
+        },
+        "style": {
+          "position": "absolute",
+          "inset": "0",
+          "width": "full",
+          "height": "full",
+          "fit": "cover"
+        }
+      }
+    ]
+  }
+}

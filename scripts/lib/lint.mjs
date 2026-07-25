@@ -66,11 +66,33 @@ const PARTIAL_DIRS = new Set(["layouts", "states", "components", "blocks"]);
 // ── find the rx root ──
 const arg = process.argv[2];
 const candidates = arg ? [resolve(arg)] : [resolve("apps/unoverse/rx"), resolve("rx")];
-const RX = candidates.find((p) => existsSync(join(p, "components")) || existsSync(join(p, "atoms")));
+const RX = candidates.find(
+  (p) => existsSync(join(p, "design-system")) || existsSync(join(p, "components")) || existsSync(join(p, "atoms")),
+);
 if (!RX) {
   console.error("unoverse lint: cannot find an rx/ folder (looked for: " + candidates.join(", ") + ")");
   process.exit(2);
 }
+
+// ── tree layout ──
+// New layout: rx/design-system/{atoms,components,styles} + one top-level folder per
+// org (rx/<org>/). Legacy layout: components/ + atoms/ at the root, orgs under rx/orgs/.
+// The DESIGN SYSTEM is the primary lint target; org folders get the SAME generic
+// checks — nothing here may key on a specific org's name.
+const DS = existsSync(join(RX, "design-system")) ? join(RX, "design-system") : RX;
+const legacyOrgsDir = join(RX, "orgs");
+const orgDirs = (() => {
+  if (existsSync(legacyOrgsDir))
+    return readdirSync(legacyOrgsDir)
+      .filter((e) => !e.startsWith("."))
+      .map((e) => join(legacyOrgsDir, e))
+      .filter((d) => statSync(d).isDirectory());
+  if (DS === RX) return [];
+  return readdirSync(RX)
+    .filter((e) => !e.startsWith(".") && e !== "design-system" && e !== "_schema")
+    .map((e) => join(RX, e))
+    .filter((d) => statSync(d).isDirectory());
+})();
 
 const problems = [];
 const seen = new Set();
@@ -112,9 +134,8 @@ const DIMENSION_KEYS = new Set([
 ]);
 const spaceSteps = new Set(["0", "full", "auto"]);
 {
-  const orgs = existsSync(join(RX, "orgs")) ? readdirSync(join(RX, "orgs")) : [];
-  for (const org of orgs) {
-    const f = join(RX, "orgs", org, "styles", "base", "spacing.json");
+  const styleRoots = [join(DS, "styles", "base", "spacing.json"), ...orgDirs.map((d) => join(d, "styles", "base", "spacing.json"))];
+  for (const f of styleRoots) {
     if (!existsSync(f)) continue;
     try {
       const space = JSON.parse(readFileSync(f, "utf8")).space ?? {};
@@ -135,37 +156,47 @@ const checkDimension = (file, where, key, v) => {
 };
 
 // atoms — case-insensitive by filename (the platform's lookup rule)
-const atomsDirExists = existsSync(join(RX, "atoms"));
+const atomsDirExists = existsSync(join(DS, "atoms"));
 const atomNames = new Set(
-  (atomsDirExists ? readdirSync(join(RX, "atoms")) : [])
+  (atomsDirExists ? readdirSync(join(DS, "atoms")) : [])
     .filter((f) => f.endsWith(".json"))
     .map((f) => f.replace(/\.json$/, "").toLowerCase()),
 );
 
+// A Ref resolves an atom OR a design-system component (shared flat chrome like
+// ComposerBar). Component folders are named by their id — collect them so a
+// Ref to a shared component isn't flagged as a missing atom.
+const dsComponentsDir = join(DS, "components");
+const dsComponentNames = new Set(
+  (existsSync(dsComponentsDir) ? readdirSync(dsComponentsDir, { withFileTypes: true }) : [])
+    .filter((e) => !e.name.startsWith("."))
+    .map((e) => (e.isDirectory() ? e.name : e.name.replace(/\.json$/, "")).toLowerCase()),
+);
+// A valid Ref target if there's ANY resolvable home (atoms OR DS components).
+const refResolves = (ref) => atomNames.has(ref.toLowerCase()) || dsComponentNames.has(ref.toLowerCase());
+
 // definition homes: design-system components/atoms + each org's templates AND
 // components (same law everywhere — an org component is a component, just org-private)
-const homes = [{ dir: join(RX, "components") }, { dir: join(RX, "atoms") }];
-const orgsDir = join(RX, "orgs");
-if (existsSync(orgsDir))
-  for (const org of readdirSync(orgsDir)) {
-    for (const sub of ["templates", "components"]) {
-      const d = join(orgsDir, org, sub);
-      if (existsSync(d) && statSync(d).isDirectory()) homes.push({ dir: d });
-    }
+const homes = [{ dir: join(DS, "components") }, { dir: join(DS, "atoms") }];
+for (const orgDir of orgDirs) {
+  for (const sub of ["templates", "components"]) {
+    const d = join(orgDir, sub);
+    if (existsSync(d) && statSync(d).isDirectory()) homes.push({ dir: d });
   }
+}
 
 // ── component-name uniqueness across tiers (the no-shadowing law) ──
 // Names are the addressing contract: a bare `unoverse://components/<name>` must be
 // unambiguous, so ONE name may exist in exactly one home (design system OR one org).
 {
   const seenNames = new Map(); // lower-name -> first home path
-  const componentHomes = [join(RX, "components")];
-  if (existsSync(orgsDir))
-    for (const org of readdirSync(orgsDir)) {
-      const d = join(orgsDir, org, "components");
-      if (existsSync(d) && statSync(d).isDirectory()) componentHomes.push(d);
-    }
+  const componentHomes = [join(DS, "components")];
+  for (const orgDir of orgDirs) {
+    const d = join(orgDir, "components");
+    if (existsSync(d) && statSync(d).isDirectory()) componentHomes.push(d);
+  }
   for (const home of componentHomes) {
+    if (!existsSync(home)) continue;
     for (const e of readdirSync(home)) {
       if (e.startsWith(".")) continue;
       const p = join(home, e);
@@ -182,9 +213,8 @@ if (existsSync(orgsDir))
 // ── one DEFAULT app per org (the /mcp/<org> front door) ──
 // Exactly one app is an org's home; a host opens the app whose manifest sets `default: true`
 // as the conversation's entry point. Two defaults = ambiguous front door → error.
-if (existsSync(orgsDir))
-  for (const org of readdirSync(orgsDir)) {
-    const tdir = join(orgsDir, org, "templates");
+for (const orgDir of orgDirs) {
+    const tdir = join(orgDir, "templates");
     if (!(existsSync(tdir) && statSync(tdir).isDirectory())) continue;
     const defaults = [];
     for (const e of readdirSync(tdir)) {
@@ -307,8 +337,8 @@ function walkNode(node, file, root, widthCap = null, isLayoutRoot = false) {
   if (t === "Ref") {
     if (typeof node.ref !== "string")
       report("error", file, `Ref needs "ref": "<atom name>" (docs/design/03)`);
-    else if (atomsDirExists && !atomNames.has(node.ref.toLowerCase()))
-      report("error", file, `Ref "${node.ref}" — no matching atom in rx/atoms/ (lookup is case-insensitive by filename)`);
+    else if (atomsDirExists && !refResolves(node.ref))
+      report("error", file, `Ref "${node.ref}" — no matching atom (rx/design-system/atoms) or shared component (rx/design-system/components); lookup is case-insensitive by name`);
   }
   if (t === "ComponentSlot") {
     if (!node.select || typeof node.select !== "object")

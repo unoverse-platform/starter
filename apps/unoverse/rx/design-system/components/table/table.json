@@ -1,0 +1,177 @@
+{
+  "unoverse": "1.0",
+  "kind": "component",
+  "name": "Table",
+  "category": "Charts",
+  "nodeSize": {
+    "width": 480,
+    "height": 320
+  },
+  "description": "A simple three-column data table: a quiet header row, then one row per item with a primary cell, a secondary cell, and a right-aligned detail cell. Composed from Box + Each; rows and headers are data.",
+  "whenToUse": "Lay out several records side by side so values can be compared line by line — orders, results, line items. Pick for short tabular facts; a single highlighted number wants a stat card, and proportions want a bar chart.",
+  "props": {
+    "colA": {
+      "type": "string",
+      "default": "Item",
+      "input": true
+    },
+    "colB": {
+      "type": "string",
+      "default": "Status",
+      "input": true
+    },
+    "colC": {
+      "type": "string",
+      "default": "Amount",
+      "input": true
+    },
+    "rows": {
+      "type": "array",
+      "default": [
+        {
+          "a": "Starter plan",
+          "b": "Active",
+          "c": "$19.00"
+        },
+        {
+          "a": "Extra seats",
+          "b": "Active",
+          "c": "$8.00"
+        },
+        {
+          "a": "Support pack",
+          "b": "Paused",
+          "c": "$0.00"
+        }
+      ],
+      "input": true
+    }
+  },
+  "root": {
+    "type": "Box",
+    "style": {
+      "width": "full",
+      "direction": "column",
+      "background": "surface.base",
+      "border": "subtle",
+      "radius": "lg",
+      "overflow": "hidden"
+    },
+    "children": [
+      {
+        "type": "Box",
+        "style": {
+          "direction": "row",
+          "align": "center",
+          "gap": "3",
+          "padding": [
+            "3",
+            "4"
+          ],
+          "borderBottom": "subtle",
+          "background": "surface.sunken"
+        },
+        "children": [
+          {
+            "type": "Text",
+            "bind": {
+              "value": "colA"
+            },
+            "style": {
+              "flex": "1 1 0",
+              "font": "label",
+              "weight": "medium",
+              "color": "text.tertiary"
+            }
+          },
+          {
+            "type": "Text",
+            "bind": {
+              "value": "colB"
+            },
+            "style": {
+              "flex": "1 1 0",
+              "font": "label",
+              "weight": "medium",
+              "color": "text.tertiary"
+            }
+          },
+          {
+            "type": "Text",
+            "bind": {
+              "value": "colC"
+            },
+            "style": {
+              "flex": "1 1 0",
+              "font": "label",
+              "weight": "medium",
+              "color": "text.tertiary",
+              "textAlign": "end"
+            }
+          }
+        ]
+      },
+      {
+        "type": "Each",
+        "bind": {
+          "items": "rows"
+        },
+        "style": {
+          "direction": "column",
+          "width": "full"
+        },
+        "template": {
+          "type": "Box",
+          "style": {
+            "direction": "row",
+            "align": "center",
+            "gap": "3",
+            "padding": [
+              "3",
+              "4"
+            ],
+            "borderBottom": "subtle"
+          },
+          "children": [
+            {
+              "type": "Text",
+              "bind": {
+                "value": "a"
+              },
+              "style": {
+                "flex": "1 1 0",
+                "font": "body.md",
+                "weight": "medium",
+                "color": "text.primary"
+              }
+            },
+            {
+              "type": "Text",
+              "bind": {
+                "value": "b"
+              },
+              "style": {
+                "flex": "1 1 0",
+                "font": "body.sm",
+                "color": "text.secondary"
+              }
+            },
+            {
+              "type": "Text",
+              "bind": {
+                "value": "c"
+              },
+              "style": {
+                "flex": "1 1 0",
+                "font": "body.sm",
+                "weight": "semibold",
+                "color": "text.primary",
+                "textAlign": "end"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

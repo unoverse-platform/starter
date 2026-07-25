@@ -1,0 +1,15 @@
+{
+  "type": "Box",
+  "style": {
+    "direction": "row",
+    "width": "full",
+    "height": "full",
+    "overflow": "hidden",
+    "background": "brand.gradient-dark"
+  },
+  "children": [
+    {
+      "$include": "components/core"
+    }
+  ]
+}

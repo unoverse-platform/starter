@@ -170,6 +170,35 @@ history: {
 // Result: Executed JavaScript result
 ```
 
+#### What a `return` expression may do (it is sandboxed)
+
+A `return ...` field is not full JavaScript. It is a **data-shaping expression**, evaluated in
+a sandbox that reshapes the data already in its context and nothing else. This is a security
+boundary: template config travels inside workflow definitions (which move by copy-paste, the
+marketplace, or a shared export), so it must not be a place to run arbitrary code.
+
+**Allowed** — everything you need to reshape data:
+
+- Read the context: `signal.<node>.<output>`, `input.<field>`, indexing (`images[0].data`)
+- Build values: object and array literals, spread, template strings
+- Operators and ternaries: `input.count > 0 ? 'has' : 'none'`
+- Safe methods: array/string transforms (`map`, `filter`, `join`, `slice`, `replace`, ...),
+  `JSON`, `Math`, `Object.keys/values/entries`, and arrow callbacks (`items.map(x => x.name)`)
+
+**Rejected** — anything that isn't pure data-shaping:
+
+- Globals: `process`, `require`, `fetch`, `globalThis`, `eval`, `Function`
+- `new`, assignment, and statement blocks (`() => { ... }`)
+- Reaching prototypes: `constructor`, `__proto__`
+
+A rejected expression is logged and never runs.
+
+> **Need real logic, an external call, or a credential?** That belongs in a custom **node**,
+> not a template expression. Nodes are trusted code you author and install; they get scoped
+> credentials (`getNodeCredentials`) and network access by design. Template expressions only
+> reshape data. See [Create Your First Node](../onboarding/03-create-your-first-node.md) and
+> [Credential Management](./04-credentials.md).
+
 ### Widgets
 
 #### Toggle Switch

@@ -1,0 +1,116 @@
+{
+  "type": "Box",
+  "visibleWhen": "isEmpty",
+  "style": {
+    "flex": 1,
+    "minHeight": "0",
+    "direction": "column",
+    "justify": "center",
+    "gap": "lg",
+    "padding": "xl",
+    "overflow": "auto",
+    "textAlign": "start"
+  },
+  "children": [
+    {
+      "type": "Box",
+      "style": {
+        "direction": "column",
+        "gap": "2",
+        "maxWidth": "160"
+      },
+      "children": [
+        {
+          "type": "Text",
+          "value": "One island, endless evenings.",
+          "style": {
+            "font": "headline.lg",
+            "weight": "bold",
+            "color": "white",
+            "lineHeight": "tight"
+          }
+        },
+        {
+          "type": "Text",
+          "value": "Tell me what kind of time you want to have — I'll show you what the island can be.",
+          "style": {
+            "font": "body.lg",
+            "color": "brand.white-dim"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Each",
+      "style": {
+        "direction": "row",
+        "wrap": "wrap",
+        "gap": "md",
+        "width": "full"
+      },
+      "template": {
+        "type": "Button",
+        "action": "sendMessage",
+        "style": {
+          "direction": "column",
+          "align": "start",
+          "gap": "1",
+          "flex": "1 1 0",
+          "minWidth": "50",
+          "padding": "md",
+          "background": "surface.base",
+          "border": "subtle",
+          "radius": "xl",
+          "shadow": "sm",
+          "cursor": "pointer",
+          "textAlign": "start",
+          "transition": "all 150ms ease",
+          "hover": {
+            "shadow": "md"
+          }
+        },
+        "children": [
+          {
+            "type": "Text",
+            "bind": {
+              "value": "title"
+            },
+            "style": {
+              "font": "title",
+              "weight": "semibold",
+              "color": "text.primary",
+              "lineHeight": "tight"
+            }
+          },
+          {
+            "type": "Text",
+            "bind": {
+              "value": "hint"
+            },
+            "style": {
+              "font": "body.sm",
+              "color": "text.secondary"
+            }
+          }
+        ]
+      },
+      "items": [
+        {
+          "title": "An evening for two",
+          "hint": "Terraces, waterfronts and sunset tables.",
+          "text": "Plan a romantic evening for two on Yas Island"
+        },
+        {
+          "title": "A big family day",
+          "hint": "Four parks, one day — paced for kids.",
+          "text": "Plan a full family day across the theme parks"
+        },
+        {
+          "title": "Tonight, spontaneously",
+          "hint": "Shows, dining and what's still open now.",
+          "text": "What can we still do on Yas Island tonight?"
+        }
+      ]
+    }
+  ]
+}

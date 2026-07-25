@@ -1,0 +1,137 @@
+{
+  "$description": "Yas Island type — Bebas Neue display (site h1) + Barlow Condensed body/headings (DIN-condensed brand voice) over the standard scale/weights/line-heights.",
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "sans": {
+        "$value": [
+          "Barlow Condensed",
+          "Open Sans",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ]
+      },
+      "display": {
+        "$value": [
+          "Bebas Neue",
+          "Poppins",
+          "system-ui",
+          "sans-serif"
+        ]
+      }
+    },
+    "size": {
+      "$type": "dimension",
+      "xs": {
+        "$value": "0.8125rem"
+      },
+      "sm": {
+        "$value": "0.9375rem"
+      },
+      "base": {
+        "$value": "1.0625rem"
+      },
+      "lg": {
+        "$value": "1.1875rem"
+      },
+      "xl": {
+        "$value": "1.375rem"
+      },
+      "2xl": {
+        "$value": "1.625rem"
+      },
+      "3xl": {
+        "$value": "2rem"
+      },
+      "4xl": {
+        "$value": "2.4375rem"
+      },
+      "5xl": {
+        "$value": "3.25rem"
+      },
+      "display": {
+        "lg": {
+          "$value": "clamp(2.5rem, 2.2rem + 1.1vw, 3.35rem)"
+        },
+        "md": {
+          "$value": "clamp(2.05rem, 1.8rem + 0.8vw, 2.75rem)"
+        },
+        "sm": {
+          "$value": "clamp(1.65rem, 1.5rem + 0.55vw, 2.2rem)"
+        }
+      },
+      "headline": {
+        "lg": {
+          "$value": "clamp(1.5rem, 1.35rem + 0.55vw, 1.9rem)"
+        },
+        "md": {
+          "$value": "clamp(1.35rem, 1.2rem + 0.4vw, 1.65rem)"
+        },
+        "sm": {
+          "$value": "clamp(1.2rem, 1.15rem + 0.27vw, 1.35rem)"
+        }
+      },
+      "title": {
+        "lg": {
+          "$value": "clamp(1.08rem, 1rem + 0.27vw, 1.22rem)"
+        },
+        "md": {
+          "$value": "clamp(1rem, 0.95rem + 0.27vw, 1.08rem)"
+        },
+        "sm": {
+          "$value": "clamp(0.94rem, 0.88rem + 0.14vw, 1rem)"
+        }
+      },
+      "bodyLg": {
+        "$value": "clamp(1.1875rem, 1.125rem + 0.27vw, 1.25rem)"
+      },
+      "bodyMd": {
+        "$value": "1.125rem"
+      },
+      "bodySm": {
+        "$value": "1rem"
+      },
+      "labelLg": {
+        "$value": "0.9375rem"
+      },
+      "labelMd": {
+        "$value": "0.8125rem"
+      },
+      "labelSm": {
+        "$value": "0.75rem"
+      },
+      "caption": {
+        "$value": "0.75rem"
+      }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "extrabold": {
+        "$value": 800
+      }
+    },
+    "lineHeight": {
+      "$type": "number",
+      "display": {
+        "$value": 1.02
+      },
+      "body": {
+        "$value": 1.333
+      }
+    },
+    "tracking": {
+      "$type": "dimension",
+      "display": {
+        "$value": "0.033em"
+      },
+      "body": {
+        "$value": "0"
+      }
+    }
+  }
+}

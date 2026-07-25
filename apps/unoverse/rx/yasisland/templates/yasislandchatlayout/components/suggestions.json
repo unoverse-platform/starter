@@ -1,0 +1,227 @@
+{
+  "type": "Box",
+  "visibleWhen": "hasMessages",
+  "style": {
+    "width": "full",
+    "position": "relative",
+    "direction": "column",
+    "background": "transparent"
+  },
+  "children": [
+    {
+      "type": "Box",
+      "visibleWhen": {
+        "field": "openPanel",
+        "eq": "faq"
+      },
+      "style": {
+        "width": "full",
+        "direction": "column",
+        "gap": "sm",
+        "background": "brand.glass",
+        "radius": "lg",
+        "padding": "4",
+        "shadow": "lg",
+        "margin": [
+          "0",
+          "0",
+          "sm",
+          "0"
+        ],
+        "animation": {
+          "name": "slideUp",
+          "duration": "0.3s",
+          "easing": "ease-out",
+          "iteration": "1"
+        }
+      },
+      "children": [
+        {
+          "type": "Box",
+          "style": {
+            "direction": "row",
+            "justify": "end"
+          },
+          "children": [
+            {
+              "type": "Button",
+              "action": {
+                "type": "setTemplateValue",
+                "values": [
+                  {
+                    "key": "openPanel",
+                    "value": null
+                  }
+                ]
+              },
+              "style": {
+                "flex": "0 0 auto",
+                "cursor": "pointer",
+                "width": "8",
+                "height": "8",
+                "radius": "full",
+                "background": "surface.base",
+                "border": "subtle",
+                "shadow": "sm",
+                "direction": "row",
+                "align": "center",
+                "justify": "center",
+                "transition": "all 150ms ease",
+                "hover": {
+                  "background": "surface.sunken"
+                }
+              },
+              "children": [
+                {
+                  "type": "Icon",
+                  "icon": "close",
+                  "style": {
+                    "width": "4",
+                    "height": "4",
+                    "color": "text.secondary"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Each",
+          "style": {
+            "direction": "row",
+            "wrap": "wrap",
+            "align": "start",
+            "gap": "sm",
+            "width": "full"
+          },
+          "template": {
+            "type": "Button",
+            "action": {
+              "type": "sendMessage",
+              "then": {
+                "type": "setTemplateValue",
+                "values": [
+                  {
+                    "key": "openPanel",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "style": {
+              "direction": "row",
+              "align": "center",
+              "flex": "0 0 auto",
+              "maxWidth": "full",
+              "padding": [
+                "sm",
+                "4"
+              ],
+              "background": "brand.glass",
+              "border": "brand.glass-line",
+              "outline": "none",
+              "radius": "full",
+              "shadow": "sm",
+              "cursor": "pointer",
+              "transition": "all 150ms ease",
+              "hover": {
+                "background": "gray.100"
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "bind": {
+                  "value": "text"
+                },
+                "style": {
+                  "font": "body.sm",
+                  "color": "brand.white-dim",
+                  "lineHeight": "tight"
+                }
+              }
+            ]
+          },
+          "items": [
+            {
+              "text": "What theme parks are on Yas Island?"
+            },
+            {
+              "text": "How do I get around the island?"
+            },
+            {
+              "text": "Which hotels are family-friendly?"
+            },
+            {
+              "text": "What events are on this week?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Box",
+      "style": {
+        "width": "full",
+        "direction": "row",
+        "justify": "center",
+        "padding": [
+          "xs",
+          "0"
+        ]
+      },
+      "children": [
+        {
+          "type": "Button",
+          "action": {
+            "type": "setTemplateValue",
+            "values": [
+              {
+                "key": "openPanel",
+                "value": "faq"
+              }
+            ]
+          },
+          "style": {
+            "direction": "row",
+            "align": "center",
+            "gap": "xs",
+            "padding": [
+              "xs",
+              "3"
+            ],
+            "background": "brand.glass",
+            "border": "brand.glass-line",
+            "outline": "none",
+            "radius": "full",
+            "cursor": "pointer",
+            "transition": "all 150ms ease",
+            "hover": {
+              "background": "gray.100"
+            }
+          },
+          "children": [
+            {
+              "type": "Icon",
+              "icon": "chat",
+              "style": {
+                "width": "4",
+                "height": "4",
+                "color": "brand.white-faint"
+              }
+            },
+            {
+              "type": "Text",
+              "style": {
+                "font": "body.sm",
+                "color": "brand.white-faint",
+                "weight": "medium"
+              },
+              "value": "FAQ"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

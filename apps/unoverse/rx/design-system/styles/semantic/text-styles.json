@@ -1,0 +1,31 @@
+{
+  "$description": "Composed text styles — named by purpose, matching the GLOBAL DESIGN SYSTEM token-for-token (size + line-height + letter-spacing + weight per role). Components reference these (e.g. \"font\": \"headline.md\"); each composes base/typography primitives.",
+  "text": {
+    "$type": "typography",
+    "display": {
+      "$value": { "fontFamily": "{font.family.display}", "fontSize": "{font.size.display.md}", "fontWeight": "{font.weight.bold}", "lineHeight": "{font.lineHeight.display}", "letterSpacing": "{font.tracking.display}" }
+    },
+    "headline": {
+      "lg": { "$value": { "fontFamily": "{font.family.display}", "fontSize": "{font.size.headline.lg}", "fontWeight": "{font.weight.semibold}", "lineHeight": "{font.lineHeight.headline}", "letterSpacing": "{font.tracking.headline}" } },
+      "md": { "$value": { "fontFamily": "{font.family.display}", "fontSize": "{font.size.headline.md}", "fontWeight": "{font.weight.semibold}", "lineHeight": "{font.lineHeight.headline}", "letterSpacing": "{font.tracking.headline}" } },
+      "sm": { "$value": { "fontFamily": "{font.family.display}", "fontSize": "{font.size.headline.sm}", "fontWeight": "{font.weight.semibold}", "lineHeight": "{font.lineHeight.headline}", "letterSpacing": "{font.tracking.headline}" } }
+    },
+    "title": {
+      "$value": { "fontFamily": "{font.family.display}", "fontSize": "{font.size.title.md}", "fontWeight": "{font.weight.semibold}", "lineHeight": "{font.lineHeight.title}", "letterSpacing": "{font.tracking.title}" }
+    },
+    "body": {
+      "lg": { "$value": { "fontFamily": "{font.family.sans}", "fontSize": "{font.size.bodyLg}", "fontWeight": "{font.weight.normal}", "lineHeight": "{font.lineHeight.body}", "letterSpacing": "{font.tracking.body}" } },
+      "md": { "$value": { "fontFamily": "{font.family.sans}", "fontSize": "{font.size.bodyMd}", "fontWeight": "{font.weight.normal}", "lineHeight": "{font.lineHeight.body}", "letterSpacing": "{font.tracking.body}" } },
+      "sm": { "$value": { "fontFamily": "{font.family.sans}", "fontSize": "{font.size.bodySm}", "fontWeight": "{font.weight.normal}", "lineHeight": "{font.lineHeight.body}", "letterSpacing": "{font.tracking.body}" } }
+    },
+    "label": {
+      "$value": { "fontFamily": "{font.family.sans}", "fontSize": "{font.size.labelMd}", "fontWeight": "{font.weight.medium}", "lineHeight": "{font.lineHeight.label}", "letterSpacing": "{font.tracking.label}" }
+    },
+    "caption": {
+      "$value": { "fontFamily": "{font.family.sans}", "fontSize": "{font.size.caption}", "fontWeight": "{font.weight.normal}", "lineHeight": "{font.lineHeight.label}", "letterSpacing": "{font.tracking.label}" }
+    },
+    "button": {
+      "$value": { "fontFamily": "{font.family.sans}", "fontSize": "{font.size.bodyMd}", "fontWeight": "{font.weight.semibold}", "lineHeight": "{font.lineHeight.body}", "letterSpacing": "{font.tracking.button}" }
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "type": "Button",
+  "action": {
+    "type": "setValue",
+    "values": [
+      {
+        "key": "defaultState",
+        "value": "course"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "width": "full",
+    "height": "full",
+    "padding": "0",
+    "background": "brand.ink",
+    "border": "thin brand.coal-soft",
+    "radius": "xl",
+    "shadow": "sm",
+    "overflow": "hidden",
+    "cursor": "pointer",
+    "textAlign": "start",
+    "transition": "all 200ms ease",
+    "hover": {
+      "shadow": "lg",
+      "border": "thin brand.cobalt-bright"
+    }
+  },
+  "children": [
+    {
+      "type": "Box",
+      "style": {
+        "flex": "0 0 auto",
+        "width": "full",
+        "height": "40",
+        "overflow": "hidden"
+      },
+      "children": [
+        {
+          "type": "Image",
+          "bind": {
+            "src": "primaryImage",
+            "alt": "title"
+          },
+          "style": {
+            "width": "full",
+            "height": "full",
+            "fit": "cover"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Box",
+      "style": {
+        "direction": "column",
+        "gap": "3",
+        "padding": "5",
+        "textAlign": "start"
+      },
+      "children": [
+        {
+          "type": "Text",
+          "bind": {
+            "value": "title"
+          },
+          "style": {
+            "font": "headline.sm",
+            "weight": "semibold",
+            "lineHeight": "tight",
+            "color": "brand.paper-tint"
+          }
+        },
+        {
+          "type": "Text",
+          "visibleWhen": "description",
+          "bind": {
+            "value": "description"
+          },
+          "style": {
+            "font": "body.sm",
+            "lineHeight": "snug",
+            "color": "brand.line"
+          }
+        },
+        {
+          "type": "Box",
+          "style": {
+            "direction": "row",
+            "align": "center",
+            "gap": "2",
+            "margin": [
+              "1",
+              "0",
+              "0",
+              "0"
+            ]
+          },
+          "children": [
+            {
+              "type": "Text",
+              "value": "View course",
+              "style": {
+                "font": "button",
+                "weight": "semibold",
+                "lineHeight": "tight",
+                "color": "brand.cobalt-bright"
+              }
+            },
+            {
+              "type": "Icon",
+              "icon": "arrowRight",
+              "style": {
+                "width": "4",
+                "height": "4",
+                "color": "brand.cobalt-bright"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

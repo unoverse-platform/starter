@@ -1,0 +1,23 @@
+{
+  "$description": "Markdown primitive element styling — DATA, served at theme.prose. The Markdown SDK primitive READS this and applies it; it authors nothing. Grounded in the legacy prose.css. Values reference tokens.",
+  "prose": {
+    "paragraph": {
+      "$value": {
+        "margin": "0 0 0.75em 0",
+        "lineHeight": "1.333"
+      }
+    },
+    "link": {
+      "$value": {
+        "color": "{color.brand.cobalt-bright}",
+        "fontWeight": "{font.weight.bold}",
+        "textDecoration": "none"
+      }
+    },
+    "linkIcon": {
+      "$value": {
+        "display": "none"
+      }
+    }
+  }
+}

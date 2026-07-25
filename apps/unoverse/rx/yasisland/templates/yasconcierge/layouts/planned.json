@@ -1,0 +1,53 @@
+{
+  "type": "Box",
+  "style": {
+    "direction": "row",
+    "width": "full",
+    "height": "full",
+    "overflow": "hidden",
+    "background": "brand.gradient"
+  },
+  "children": [
+    {
+      "$include": "components/core"
+    },
+    {
+      "type": "ComponentSlot",
+      "appWidth": "rail",
+      "select": {
+        "from": "all",
+        "where": {
+          "field": "defaultState",
+          "eq": "planned"
+        }
+      },
+      "frame": {
+        "type": "Box",
+        "style": {
+          "minWidth": 0,
+          "height": "full",
+          "direction": "column",
+          "gap": "sm",
+          "padding": "md",
+          "overflow": "auto",
+          "borderLeft": "subtle",
+          "background": "surface.base"
+        },
+        "children": [
+          {
+            "type": "Text",
+            "value": "Your plan",
+            "style": {
+              "font": "label",
+              "weight": "semibold",
+              "color": "text.tertiary"
+            }
+          },
+          {
+            "type": "ComponentSlot"
+          }
+        ]
+      }
+    }
+  ]
+}

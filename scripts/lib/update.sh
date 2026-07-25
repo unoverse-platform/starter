@@ -7,22 +7,22 @@ cmd_update() {
   echo ""
   timer_start
 
-  # ── SAFETY GATE: never destroy a developer's uncommitted or untracked work ──────
-  # This command FORCE-SYNCS the checkout to remote: `git reset --hard` (discards
-  # uncommitted edits AND local commits) and `git clean -fd` (DELETES untracked files —
-  # e.g. a brand-new node package you're writing). Fine on a pristine server; CATASTROPHIC
-  # on a dev machine with work in progress. Refuse unless the tree is clean. Automation
-  # that genuinely wants the hard reset opts in with UNOVERSE_UPDATE_FORCE=1.
-  if [ "${UNOVERSE_UPDATE_FORCE:-}" != "1" ] && [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then
-    fail "Refusing to update — you have local changes that this would DELETE."
+  # ── Developer work is SAFE, by design ──────────────────────────────────────────
+  # `update` refreshes the PLATFORM (its own tracked files) and NEVER touches a developer's
+  # own work. Custom nodes live as UNTRACKED files (apps/unoverse/nodes/<yours>) — `git reset
+  # --hard` ignores untracked files, and we no longer `git clean` them (see Step 1). So a
+  # developer can create as many nodes as they want and `update` leaves them completely alone —
+  # no stashing, no ceremony. The ONLY thing update overwrites is tracked PLATFORM files, so we
+  # guard just those (a dev who edited framework code shouldn't lose it silently).
+  # UNOVERSE_UPDATE_FORCE=1 overrides even that.
+  if [ "${UNOVERSE_UPDATE_FORCE:-}" != "1" ] && [ -n "$(git -C "$ROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+    fail "You have uncommitted edits to PLATFORM files that update would overwrite."
     echo ""
-    echo -e "  ${DIM}Would be discarded (git reset --hard + git clean -fd):${NC}"
-    git -C "$ROOT" status --short | sed 's/^/    /' | head -30
+    echo -e "  ${DIM}Tracked files with local edits (your own untracked nodes are NOT affected):${NC}"
+    git -C "$ROOT" status --short --untracked-files=no | sed 's/^/    /' | head -30
     echo ""
-    info "Commit them:    git add -A && git commit -m 'wip'"
-    info "Or stash them:  git stash -u"
-    info "Then re-run:    ./unoverse update"
-    info "Force-discard:  UNOVERSE_UPDATE_FORCE=1 ./unoverse update"
+    info "Commit them:           git add -A && git commit -m 'wip'"
+    info "Or overwrite on purpose: UNOVERSE_UPDATE_FORCE=1 ./unoverse update"
     echo ""
     exit 1
   fi
@@ -43,11 +43,12 @@ cmd_update() {
     git checkout -- . >/dev/null 2>&1 || true
     # Fetch latest from remote
     git fetch origin >/dev/null 2>&1 || true
-    # For customer deployments, always reset to match remote exactly
-    # (local commits in a deployment environment are usually mistakes)
+    # Reset the PLATFORM's own tracked files to match remote exactly. This ignores UNTRACKED
+    # files, so a developer's custom nodes (apps/unoverse/nodes/<yours>) are left alone.
     git reset --hard origin/$(git rev-parse --abbrev-ref HEAD) >/dev/null 2>&1 || true
-    # Clean any untracked files (e.g. old marketplace packages no longer in git)
-    git clean -fd >/dev/null 2>&1 || true
+    # NB: intentionally NO `git clean -fd` here. It DELETES untracked files, and a developer's
+    # nodes are untracked — cleaning them was the "update deleted my node" bug. Marketplace
+    # packages install into a gitignored dir, so clean never removed those anyway.
   ) || git_ok=false
   printf "\r\033[2K"
   if $git_ok; then
@@ -78,7 +79,7 @@ cmd_update() {
         git fetch origin >/dev/null 2>&1 || true
         local branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
         git reset --hard origin/$branch >/dev/null 2>&1 || true
-        git clean -fd >/dev/null 2>&1 || true
+        # No `git clean -fd` — never delete a developer's untracked nodes (see Step 1).
       )
       printf "\r\033[2K"
       ok "Forced sync completed"

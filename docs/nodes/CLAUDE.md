@@ -230,6 +230,8 @@ A config field marked `"ui:field": "template"` resolves at runtime against the n
 
 The naming convention `signal.<sourceId>.<outputHandle>.<field>` is the same everywhere: your node's input connector, the upstream node id, its output connector, the field. The real available references for a given node come from its actual edges, not from any per-node example.
 
+**The `return` expression is SANDBOXED — it is a data-shaping expression, not full JS.** Allowed: reading the context (`signal.*`, `input.*`, indexing), object/array literals, spread, template strings, operators, ternaries, and safe methods (array/string transforms, `JSON`, `Math`, `Object.keys/values/entries`, arrow callbacks like `items.map(x => x.name)`). Rejected (and logged, never run): globals (`process`, `require`, `fetch`, `eval`, `Function`), `new`, assignment, statement-block arrows, and `constructor`/`__proto__`. Real logic, external calls, or credentials belong in the node's own executor/service code — never a template field. (SECURITY.md §"Untrusted template expressions".)
+
 ## configSchema quick reference
 
 | Field type | Key options |

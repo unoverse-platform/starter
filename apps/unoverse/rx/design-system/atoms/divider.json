@@ -1,0 +1,18 @@
+{
+  "unoverse": "1.0",
+  "kind": "atom",
+  "name": "Divider",
+  "description": "A full-width hairline rule separating sections. Owns its full style — references tokens only.",
+  "whenToUse": "A quiet horizontal separation between groups of content. Compose via a Ref; adjust vertical spacing with a style override on the Ref if the default is too tight.",
+  "root": {
+    "type": "Box",
+    "style": {
+      "width": "full",
+      "borderBottom": "subtle",
+      "margin": [
+        "2",
+        "0"
+      ]
+    }
+  }
+}

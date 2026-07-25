@@ -1,0 +1,111 @@
+{
+  "$description": "Base color palettes — raw values, the ingredients. Named by what they ARE. Seeded from apps/design-system/storybook/styles/colors.css. Semantic meaning is assigned in themes/.",
+  "color": {
+    "$type": "color",
+    "brand": {
+      "$description": "BPP brand palette — extracted from bpp.com design tokens (ink/granite warm neutrals, cobalt interactive, brand accents). Referenced by this pack's themes/bpp.json; lives in the BPP pack so the core token language stays neutral.",
+      "ink": {
+        "$value": "#29241F"
+      },
+      "ink-emphasis": {
+        "$value": "#13110D"
+      },
+      "ink-subtle": {
+        "$value": "#56514B"
+      },
+      "ink-faint": {
+        "$value": "#6E6962"
+      },
+      "paper": {
+        "$value": "#ffffff"
+      },
+      "paper-warm": {
+        "$value": "#F8F7F5"
+      },
+      "paper-tint": {
+        "$value": "#F1EFEB"
+      },
+      "line": {
+        "$value": "#DDD8D1"
+      },
+      "navy": {
+        "$value": "#00264E"
+      },
+      "cobalt": {
+        "$value": "#2A65CE"
+      },
+      "cobalt-hover": {
+        "$value": "#003195"
+      },
+      "cobalt-subtle": {
+        "$value": "#E9F1FF"
+      },
+      "sky": {
+        "$value": "#23CEFD"
+      },
+      "yellow": {
+        "$value": "#FFDB46"
+      },
+      "green": {
+        "$value": "#007A46"
+      },
+      "green-subtle": {
+        "$value": "#DBFAED"
+      },
+      "green-text": {
+        "$value": "#005F2D"
+      },
+      "red": {
+        "$value": "#D30047"
+      },
+      "coal-soft": {
+        "$value": "#3E3A35"
+      },
+      "mist-faint": {
+        "$value": "#A59E93"
+      },
+      "yellow-bright": {
+        "$value": "#FFE53A"
+      },
+      "yellow-deep": {
+        "$value": "#563300"
+      },
+      "green-bright": {
+        "$value": "#4EB186"
+      },
+      "green-deep": {
+        "$value": "#002E12"
+      },
+      "red-bright": {
+        "$value": "#F37887"
+      },
+      "cobalt-bright": {
+        "$value": "#669DFD"
+      },
+      "gradient": {
+        "$value": "linear-gradient(165deg, #4481EC 0%, #669DFD 32%, #94BCFF 58%, #A592E5 80%, #FF69A2 112%)"
+      },
+      "gradient-dark": {
+        "$value": "linear-gradient(165deg, #221D17 0%, #13110D 58%, #13110D 100%)"
+      },
+      "glass": {
+        "$value": "rgba(255,255,255,0.14)"
+      },
+      "glass-line": {
+        "$value": "rgba(255,255,255,0.30)"
+      },
+      "white-dim": {
+        "$value": "rgba(255,255,255,0.78)"
+      },
+      "white-faint": {
+        "$value": "rgba(255,255,255,0.55)"
+      },
+      "line-faint": {
+        "$value": "#ECE8E1"
+      },
+      "card-scrim": {
+        "$value": "linear-gradient(to top, rgba(19,17,13,0.92) 0%, rgba(19,17,13,0.62) 28%, rgba(19,17,13,0.18) 52%, rgba(19,17,13,0.0) 72%)"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$description": "BPP type — ONLY the font families: Poppins for display/headings, Open Sans for body. Scale, weights, and line-heights inherit from the design-system foundation.",
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "sans": {
+        "$value": [
+          "Open Sans",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ]
+      },
+      "display": {
+        "$value": [
+          "Poppins",
+          "Open Sans",
+          "system-ui",
+          "sans-serif"
+        ]
+      }
+    }
+  }
+}

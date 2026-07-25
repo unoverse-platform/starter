@@ -1,0 +1,15 @@
+{
+  "$description": "Named keyframe animations as DATA. The SDK serializes these into CSS @keyframes (uno-<name>) once per render root; any definition animates by referencing one via `style.animation` — no SDK edit, no per-animation primitive. Stop keys are CSS keyframe selectors; decls use real CSS property names. `wave` is the thinking-dots bob, grounded in legacy ChatHistoryItem.module.css (waveFloat).",
+  "keyframes": {
+    "equalize": {
+      "$value": {
+        "0%,100%": {
+          "transform": "scaleY(0.35)"
+        },
+        "50%": {
+          "transform": "scaleY(1)"
+        }
+      }
+    }
+  }
+}

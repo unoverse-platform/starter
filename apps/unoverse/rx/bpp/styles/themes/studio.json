@@ -1,0 +1,87 @@
+{
+  "$description": "BPP studio theme — warm white, ink Poppins, highlighter yellow (the restrained alternate). Served at unoverse://theme/bpp/studio.",
+  "color": {
+    "$type": "color",
+    "text": {
+      "primary": {
+        "$value": "{color.brand.ink-emphasis}"
+      },
+      "secondary": {
+        "$value": "{color.brand.ink-subtle}"
+      },
+      "tertiary": {
+        "$value": "{color.brand.ink-faint}"
+      },
+      "inverse": {
+        "$value": "{color.white}"
+      }
+    },
+    "surface": {
+      "base": {
+        "$value": "{color.brand.paper}"
+      },
+      "raised": {
+        "$value": "{color.brand.paper-warm}"
+      },
+      "sunken": {
+        "$value": "{color.brand.paper-warm}"
+      },
+      "inverse": {
+        "$value": "{color.brand.ink-emphasis}"
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": "{color.brand.line-faint}"
+      },
+      "strong": {
+        "$value": "{color.brand.line}"
+      }
+    },
+    "action": {
+      "primary": {
+        "$value": "{color.brand.yellow}"
+      },
+      "primary-hover": {
+        "$value": "{color.brand.yellow-bright}"
+      },
+      "primary-active": {
+        "$value": "{color.brand.yellow-bright}"
+      },
+      "primary-text": {
+        "$value": "{color.brand.ink-emphasis}"
+      },
+      "subtle": {
+        "$value": "{color.brand.paper-tint}"
+      }
+    },
+    "status": {
+      "success": {
+        "$value": "{color.brand.green}"
+      },
+      "success-subtle": {
+        "$value": "{color.brand.green-subtle}"
+      },
+      "success-border": {
+        "$value": "{color.brand.green-subtle}"
+      },
+      "success-text": {
+        "$value": "{color.brand.green-text}"
+      },
+      "error": {
+        "$value": "{color.brand.red}"
+      },
+      "warning": {
+        "$value": "{color.brand.yellow}"
+      },
+      "info": {
+        "$value": "{color.brand.cobalt}"
+      }
+    },
+    "overlay": {
+      "scrim": {
+        "$value": "linear-gradient(to top, rgba(0,0,0,0.45), rgba(0,0,0,0.05), transparent)"
+      }
+    }
+  }
+}

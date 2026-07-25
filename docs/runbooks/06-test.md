@@ -207,7 +207,7 @@ echo ""
 
 # 5. Component bundles served
 echo "5. Component Bundles (unoverse → Canvas)"
-for comp in AIResponse.js Card.js ChatInput.js; do
+for comp in StreamingText.js Card.js ChatInput.js; do
   code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:4105/components/$comp" 2>/dev/null)
   if [ "$code" = "200" ]; then
     echo "   ✓ /components/$comp — 200"
@@ -253,7 +253,7 @@ echo "=== Done ==="
    Nodes registered: 45
 
 5. Component Bundles (unoverse → Canvas)
-   ✓ /components/AIResponse.js — 200
+   ✓ /components/StreamingText.js — 200
    ✓ /components/Card.js — 200
    ✓ /components/ChatInput.js — 200
 

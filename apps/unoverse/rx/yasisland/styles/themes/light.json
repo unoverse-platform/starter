@@ -1,0 +1,99 @@
+{
+  "$description": "Yas Island light theme — THE DEFAULT: paper-and-ink content surfaces with cobalt actions (the yasisland.com content language). The brand gradient + frosted glass live at brand.* and are referenced DIRECTLY by shell templates (chat canvas/chrome) — never mapped onto the content semantics, so components render as clean panels. Served at unoverse://theme/yasisland/light.",
+  "color": {
+    "$type": "color",
+    "text": {
+      "primary": {
+        "$value": "{color.brand.ink}"
+      },
+      "secondary": {
+        "$value": "{color.brand.ink-subtle}"
+      },
+      "tertiary": {
+        "$value": "{color.brand.ink-faint}"
+      },
+      "inverse": {
+        "$value": "{color.white}"
+      }
+    },
+    "surface": {
+      "base": {
+        "$value": "{color.brand.paper}"
+      },
+      "raised": {
+        "$value": "{color.brand.paper-warm}"
+      },
+      "sunken": {
+        "$value": "{color.brand.paper-tint}"
+      },
+      "inverse": {
+        "$value": "{color.brand.navy}"
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": "{color.brand.line}"
+      },
+      "strong": {
+        "$value": "{color.brand.line-strong}"
+      },
+      "accent": {
+        "$value": "{color.brand.yellow-bright}"
+      }
+    },
+    "action": {
+      "primary": {
+        "$value": "{color.brand.cobalt}"
+      },
+      "primary-hover": {
+        "$value": "{color.brand.cobalt-hover}"
+      },
+      "primary-active": {
+        "$value": "{color.brand.cobalt-active}"
+      },
+      "primary-text": {
+        "$value": "{color.white}"
+      },
+      "subtle": {
+        "$value": "{color.brand.cobalt-subtle}"
+      },
+      "cta": {
+        "$value": "{color.brand.yellow-bright}"
+      },
+      "cta-text": {
+        "$value": "{color.brand.ink-emphasis}"
+      },
+      "cta-hover": {
+        "$value": "{color.brand.yellow}"
+      }
+    },
+    "status": {
+      "success": {
+        "$value": "{color.brand.green}"
+      },
+      "success-subtle": {
+        "$value": "{color.brand.green-subtle}"
+      },
+      "success-border": {
+        "$value": "{color.brand.green-border}"
+      },
+      "success-text": {
+        "$value": "{color.brand.green-text}"
+      },
+      "error": {
+        "$value": "{color.brand.red}"
+      },
+      "warning": {
+        "$value": "{color.brand.yellow}"
+      },
+      "info": {
+        "$value": "{color.brand.cobalt}"
+      }
+    },
+    "overlay": {
+      "scrim": {
+        "$value": "linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.40) 45%, rgba(0,0,0,0.10) 75%, rgba(0,0,0,0))"
+      }
+    }
+  }
+}

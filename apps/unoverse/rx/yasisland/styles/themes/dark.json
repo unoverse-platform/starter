@@ -1,0 +1,99 @@
+{
+  "$description": "Yas Island dark theme — identical to light: the Yas Island brand IS dark-first (yasisland.com). Served at unoverse://theme/yasisland/dark.",
+  "color": {
+    "$type": "color",
+    "text": {
+      "primary": {
+        "$value": "{color.brand.paper-tint}"
+      },
+      "secondary": {
+        "$value": "{color.brand.line}"
+      },
+      "tertiary": {
+        "$value": "{color.brand.mist-faint}"
+      },
+      "inverse": {
+        "$value": "{color.brand.ink-emphasis}"
+      }
+    },
+    "surface": {
+      "base": {
+        "$value": "{color.brand.ink-emphasis}"
+      },
+      "raised": {
+        "$value": "{color.brand.ink}"
+      },
+      "sunken": {
+        "$value": "{color.brand.ink}"
+      },
+      "inverse": {
+        "$value": "{color.brand.paper-warm}"
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": "{color.brand.coal-soft}"
+      },
+      "strong": {
+        "$value": "{color.brand.ink-subtle}"
+      },
+      "accent": {
+        "$value": "{color.brand.yellow-bright}"
+      }
+    },
+    "action": {
+      "primary": {
+        "$value": "{color.brand.yellow}"
+      },
+      "primary-hover": {
+        "$value": "{color.brand.yellow-bright}"
+      },
+      "primary-active": {
+        "$value": "{color.brand.yellow-bright}"
+      },
+      "primary-text": {
+        "$value": "{color.brand.ink-emphasis}"
+      },
+      "subtle": {
+        "$value": "{color.brand.yellow-deep}"
+      },
+      "cta": {
+        "$value": "{color.brand.yellow-bright}"
+      },
+      "cta-text": {
+        "$value": "{color.brand.ink-emphasis}"
+      },
+      "cta-hover": {
+        "$value": "{color.brand.yellow}"
+      }
+    },
+    "status": {
+      "success": {
+        "$value": "{color.brand.green-bright}"
+      },
+      "success-subtle": {
+        "$value": "{color.brand.green-deep}"
+      },
+      "success-border": {
+        "$value": "{color.brand.green}"
+      },
+      "success-text": {
+        "$value": "{color.brand.green-subtle}"
+      },
+      "error": {
+        "$value": "{color.brand.red-bright}"
+      },
+      "warning": {
+        "$value": "{color.brand.yellow}"
+      },
+      "info": {
+        "$value": "{color.brand.cobalt-bright}"
+      }
+    },
+    "overlay": {
+      "scrim": {
+        "$value": "linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.40) 45%, rgba(0,0,0,0.10) 75%, rgba(0,0,0,0))"
+      }
+    }
+  }
+}

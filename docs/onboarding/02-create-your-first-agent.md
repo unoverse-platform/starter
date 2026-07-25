@@ -30,21 +30,21 @@ The workflow needs three nodes:
 
 1. <span className="node-chip">Input Trigger</span> receives the user's message.
 2. <span className="node-chip">OpenAI Stream</span> sends it to the model and streams the reply.
-3. <span className="node-chip">AI Response</span> displays the reply to the user.
+3. <span className="node-chip">Streaming Text</span> displays the reply to the user.
 
 Drag <span className="node-chip">Input Trigger</span> and <span className="node-chip">OpenAI Stream</span> from the node library onto the **Canvas**.
 
 ![An Input Trigger node on the canvas](../images/onboarding/inputTrigger.png)
 
-<span className="node-chip">AI Response</span> is a component, so it comes from **Studio**. Open **Components** in **Studio**, select **AIResponse**, and click **Copy for Canvas**. Then paste it into your **Canvas**.
+<span className="node-chip">Streaming Text</span> is a component, so it comes from **Studio**. Open **Components** in **Studio**, select **StreamingText**, and click **Copy for Canvas**. Then paste it into your **Canvas**.
 
-![The AIResponse component in Studio with Copy for Canvas](../images/onboarding/AIResponce.png)
+![The StreamingText component in Studio with Copy for Canvas](../images/onboarding/AIResponce.png)
 
-Now connect them left to right: <span className="node-chip">Input Trigger</span> → <span className="node-chip">OpenAI Stream</span> → <span className="node-chip">AI Response</span>.
+Now connect them left to right: <span className="node-chip">Input Trigger</span> → <span className="node-chip">OpenAI Stream</span> → <span className="node-chip">Streaming Text</span>.
 
-The dots on a node's edges are **connectors**. Each output connector carries one named signal. Hover over a connector to see its name and what it carries. The names matter: they are how downstream fields reference the data, as in `signal.openaistream1.chunk`.
+The dots on a node's edges are **connectors**. Each output connector carries one named signal. Hover over a connector to see its name and what it carries. The names matter: they are how downstream fields reference the data, as in `signal.openaistream1.stream`.
 
-<span className="node-chip">OpenAI Stream</span> has more than one output, so pick the right one: connect from its `chunk` connector. `chunk` streams, so the reply flows into <span className="node-chip">AI Response</span> as the model writes it.
+<span className="node-chip">OpenAI Stream</span> has more than one output, so pick the right one: connect from its `stream` connector. `stream` carries the live text, so the reply flows into <span className="node-chip">Streaming Text</span> as the model writes it.
 
 ![Hovering a connector shows its name and what it carries](../images/onboarding/connnector.png)
 
@@ -76,11 +76,11 @@ The double braces are a Handlebars reference: at run time it resolves to the mes
 </Step>
 <Step title="Configure the response">
 
-Double-click <span className="node-chip">AI Response</span>:
+Double-click <span className="node-chip">Streaming Text</span>:
 
-- **Main response text**: `return signal.openaistream1.chunk`
+- **Main response text**: `return signal.openaistream1.stream`
 
-This field takes JavaScript. `chunk` is the model's streaming output, so text appears live as the model writes. The complete reply is also available as `signal.openaistream1.text` once the node finishes.
+This field takes JavaScript. `stream` is the model's streaming output, so text appears live as the model writes. The complete reply is also available as `signal.openaistream1.text` once the node finishes.
 
 <Note>
 Config fields accept two syntaxes: Handlebars (`{{signal...}}`) for templating text, and JavaScript (`return signal...`) for computing a value. Use either; don't mix them in one field.
@@ -97,7 +97,7 @@ The moment a node runs, its output is ready to inspect. Double-click the node an
 
 ![The Debug tab showing OpenAI Stream's output](../images/onboarding/debug.png)
 
-Step through all three nodes and watch the reply stream into <span className="node-chip">AI Response</span>.
+Step through all three nodes and watch the reply stream into <span className="node-chip">Streaming Text</span>.
 
 </Step>
 </Steps>

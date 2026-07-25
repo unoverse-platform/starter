@@ -15,7 +15,7 @@ Everything a client sees is served by the **unoverse** engine; the other service
 
 [Open the interactive version](./runbooks/architecture-diagrams/10-platform-runtime.html)
 
-- **unoverse** is the engine. It runs your workflows, serves the platform's native MCP surface, and streams live results to clients. One public listener, JWT-gated. The internal runtime surface is never published outside the Docker network.
+- **unoverse** is the engine: where your Agents, your services, and the AI run. It executes your workflows, serves the platform's native MCP surface, and streams live results to clients. Only the MCP surface is public; the workflow engine runs behind it and cannot be reached from outside the server. One public listener, JWT-gated. 
 - **Canvas** is where you build, manage, and observe Agents.
 - **Studio** is where you design components, templates, and skills. It is a development tool and is not exposed in production.
 - **Spatial ML** maintains the 3D semantic map behind **Spatial**.
