@@ -1,8 +1,0 @@
-{
-  "$description": "Default webfonts — Inter (the declared font.family.sans), loaded from Google Fonts. Served as theme.fonts; the SDK injects a <link> per URL at document level.",
-  "fonts": {
-    "stylesheets": {
-      "$value": ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"]
-    }
-  }
-}

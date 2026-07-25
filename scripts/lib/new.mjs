@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 /**
- * unoverse new — scaffold a new org.
+ * unoverse new — scaffold a new project.
  *
  *   node new.mjs org <name> [rx-root]
  *
- * Creates rx/orgs/<name>/ with the full org structure:
- *   components/   the org's own components
- *   templates/    the org's apps
- *   styles/       a complete copy of the default token set (base + semantic +
- *                 themes) — self-contained and theme-contract-complete, ready
- *                 to be rebranded.
+ * Projects live FLAT at the rx root (rx/<name>/), NOT under rx/orgs/. A project is
+ * THEME-ONLY: it seeds just its brand themes (light/dark) from the design-system
+ * foundation; base + semantic tokens are INHERITED from the design system at resolve
+ * time (theme.ts cascade), never copied. Override a foundation token later by adding
+ * that file back under styles/ and editing it.
+ *
+ *   templates/      the project's apps
+ *   components/     the project's own components (optional)
+ *   styles/themes/  brand themes (light/dark) — everything else inherited
  *
  * Components and templates are authored (by hand, in Studio, or with the
  * unoverse-create skill) — there is no scaffold command for them.
@@ -33,45 +36,49 @@ if (!RX) { console.error("Cannot find an rx/ folder — run from the repo root."
 
 const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, "");
 if (!slug) usage();
-if (slug === "default") { console.error("'default' is the platform token set, not a client org."); process.exit(1); }
+const RESERVED = new Set(["default", "design-system", "_schema", "orgs"]);
+if (RESERVED.has(slug)) { console.error(`'${slug}' is reserved (the design system / schema), not a project.`); process.exit(1); }
 
-const dir = join(RX, "orgs", slug);
-if (existsSync(dir)) { console.error(`rx/orgs/${slug} already exists`); process.exit(1); }
+const dir = join(RX, slug); // FLAT at the rx root — no orgs/ nesting
+if (existsSync(dir)) { console.error(`rx/${slug} already exists`); process.exit(1); }
 
-const defaultStyles = join(RX, "orgs", "default", "styles");
-if (!existsSync(defaultStyles)) {
-  console.error("rx/orgs/default/styles not found — cannot seed the org's token set.");
+const foundationThemes = join(RX, "design-system", "styles", "themes");
+if (!existsSync(foundationThemes)) {
+  console.error("rx/design-system/styles/themes not found — cannot seed the project's brand themes.");
   process.exit(1);
 }
 
 const rel = (p) => relative(process.cwd(), p);
 
-mkdirSync(join(dir, "components"), { recursive: true });
 mkdirSync(join(dir, "templates"), { recursive: true });
-cpSync(defaultStyles, join(dir, "styles"), { recursive: true });
+mkdirSync(join(dir, "components"), { recursive: true });
+// THEME-ONLY seed: just the brand themes. base + semantic are inherited from the
+// design-system foundation via the cascade — the project defines only what it changes.
+cpSync(foundationThemes, join(dir, "styles", "themes"), { recursive: true });
 
 writeFileSync(
   join(dir, "README.md"),
   `# ${slug}
 
-This org's own world on the platform:
+A project on the platform — a theme over the shared design system:
 
 | Folder | What lives here |
 | --- | --- |
-| \`components/\` | The org's own components — one folder per component |
-| \`templates/\` | The org's apps — one folder per app (+ \`manifest.json\`) |
-| \`styles/\` | The org's complete token set: \`base/\` + \`semantic/\` + \`themes/\` |
+| \`components/\` | The project's own components — one folder per component (optional) |
+| \`templates/\` | The project's apps — one folder per app (+ \`manifest.json\`) |
+| \`styles/themes/\` | Brand themes (light/dark) — restyle freely |
 
-The styles are a full copy of the default token set, self-contained and ready to
-rebrand. Keep every token NAME the default set defines (the theme contract checks
-this); change the VALUES freely.
+Everything else — the base primitives, the semantic contract, the default theme, the
+shared atoms and components — is INHERITED from the design system. To override a
+foundation token, add that file under \`styles/base/\` or \`styles/semantic/\` and set the
+value; keep the token NAME (the theme contract checks this).
 `,
 );
 
-console.log(`Created org '${slug}':`);
-console.log("  " + rel(join(dir, "components")) + "/");
+console.log(`Created project '${slug}' (rx/${slug}/):`);
 console.log("  " + rel(join(dir, "templates")) + "/");
-console.log("  " + rel(join(dir, "styles")) + "/   (default token set, ready to rebrand)");
+console.log("  " + rel(join(dir, "components")) + "/");
+console.log("  " + rel(join(dir, "styles", "themes")) + "/   (brand themes — base+semantic inherited)");
 console.log("");
 console.log("Next: author components in Studio or with the unoverse-create skill,");
 console.log("then run 'unoverse lint' to check your definitions.");
