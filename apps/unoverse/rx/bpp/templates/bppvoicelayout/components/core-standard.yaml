@@ -1,0 +1,170 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  flex: 1
+  direction: column
+  minWidth: 0
+children:
+  - type: Box
+    style:
+      direction: row
+      align: center
+      padding: md
+      background: brand.gradient
+      borderBottom: subtle
+    children:
+      - type: Image
+        style:
+          height: "7"
+          fit: contain
+        src: https://www.datocms-assets.com/106045/1768981856-bpp_endorsed-logo_reversed_rgb.svg
+        alt: BPP Voice
+  - type: Box
+    style:
+      flex: 1
+      direction: column
+      align: center
+      justify: center
+      gap: xl
+      padding: xl
+    children:
+      - type: Box
+        style:
+          direction: column
+          align: center
+          gap: lg
+        children:
+          - type: Box
+            style:
+              direction: column
+              position: relative
+              align: center
+              justify: center
+              width: "28"
+              height: "28"
+            children:
+              - type: Box
+                visibleWhen:
+                  field: callState
+                  in: [ active, agentSpeaking, userSpeaking ]
+                style:
+                  position: absolute
+                  inset: "0"
+                  radius: full
+                  border: status.info
+                  animation:
+                    name: pulseRing
+                    duration: 3.2s
+                    easing: ease-out
+              - type: Box
+                visibleWhen:
+                  field: callState
+                  in: [ active, agentSpeaking, userSpeaking ]
+                style:
+                  position: absolute
+                  inset: "0"
+                  radius: full
+                  border: status.info
+                  animation:
+                    name: pulseRing
+                    duration: 3.2s
+                    easing: ease-out
+                  animationDelay: 1.6s
+              - type: Box
+                visibleWhen:
+                  field: callState
+                  eq: agentSpeaking
+                style:
+                  position: absolute
+                  inset: "0"
+                  radius: full
+                  border: status.info
+                  animation:
+                    name: pulseRing
+                    duration: 2.2s
+                    easing: ease-out
+              - type: Box
+                visibleWhen:
+                  field: callState
+                  eq: agentSpeaking
+                style:
+                  position: absolute
+                  inset: "0"
+                  radius: full
+                  border: status.info
+                  animation:
+                    name: pulseRing
+                    duration: 2.2s
+                    easing: ease-out
+                  animationDelay: 0.73s
+              - type: Box
+                visibleWhen:
+                  field: callState
+                  eq: agentSpeaking
+                style:
+                  position: absolute
+                  inset: "0"
+                  radius: full
+                  border: status.info
+                  animation:
+                    name: pulseRing
+                    duration: 2.2s
+                    easing: ease-out
+                  animationDelay: 1.46s
+              - type: Image
+                visibleWhen:
+                  field: callState
+                  ne: agentSpeaking
+                style:
+                  width: "28"
+                  height: "28"
+                  radius: full
+                  shadow: lg
+                  fit: cover
+                src: https://res.cloudinary.com/sonik/image/upload/w_1000,ar_1:1,c_fill,g_auto,e_art:hokusai/v1783842460/gravity/avatar2.avif
+                alt: BPP Assistant
+              - type: Image
+                visibleWhen:
+                  field: callState
+                  eq: agentSpeaking
+                style:
+                  width: "28"
+                  height: "28"
+                  radius: full
+                  shadow: lg
+                  fit: cover
+                  animation:
+                    name: breathe
+                    duration: 2.6s
+                    easing: ease-in-out
+                src: https://res.cloudinary.com/sonik/image/upload/w_1000,ar_1:1,c_fill,g_auto,e_art:hokusai/v1783842460/gravity/avatar2.avif
+                alt: BPP Assistant
+          - type: Box
+            style:
+              direction: column
+              align: center
+              gap: xs
+            children:
+              - type: Text
+                style:
+                  font: headline.lg
+                  color: text.primary
+                  align: center
+                value: BPP Assistant
+              - type: Text
+                style:
+                  font: body.md
+                  color: text.secondary
+                  align: center
+                value: Your AI Learning Assistant
+              - type: Text
+                style:
+                  font: body.sm
+                  color: text.tertiary
+                  align: center
+                value: Ready to call
+      - $include: states/idle
+      - $include: states/active
+      - $include: states/agent-speaking
+      - $include: states/user-speaking
+appWidth: chat

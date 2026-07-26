@@ -1,0 +1,159 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  direction: column
+  width: full
+children:
+  - type: Box
+    visibleWhen:
+      field: submitted
+      ne: true
+    style:
+      direction: column
+      align: center
+      justify: center
+      gap: "4"
+      width: full
+      minHeight: "100"
+      padding: [ "8", "6" ]
+      animation:
+        name: focusFadeIn
+        duration: 400ms
+        easing: ease-out
+        iteration: "1"
+    children:
+      - type: Box
+        style:
+          position: relative
+          width: "16"
+          height: "16"
+          direction: row
+          align: center
+          justify: center
+          margin: [ "0", "0", "2", "0" ]
+        children:
+          - type: Box
+            style:
+              position: absolute
+              inset: "0"
+              radius: full
+              background: action.primary
+              animation:
+                name: pulseRing
+                duration: 2.2s
+                easing: ease-out
+          - type: Box
+            style:
+              position: relative
+              width: "16"
+              height: "16"
+              radius: full
+              background: action.primary
+              direction: row
+              align: center
+              justify: center
+              shadow: md
+            children:
+              - type: Icon
+                icon: search
+                style:
+                  width: "7"
+                  height: "7"
+                  color: action.primary-text
+      - type: Text
+        style:
+          font: headline.sm
+          color: text.primary
+        value: Finding your journey…
+      - type: Text
+        visibleWhen: searchStatus
+        bind:
+          value: searchStatus
+        style:
+          font: body.md
+          color: text.secondary
+      - type: Box
+        style:
+          direction: row
+          gap: "1.5"
+          align: center
+          margin: [ "1", "0", "0", "0" ]
+        children:
+          - type: Box
+            style:
+              width: "1.5"
+              height: "1.5"
+              background: action.primary
+              radius: full
+              animation:
+                name: wave
+                duration: 1.6s
+                easing: ease-in-out
+          - type: Box
+            style:
+              width: "1.5"
+              height: "1.5"
+              background: action.primary
+              radius: full
+              animation:
+                name: wave
+                duration: 1.6s
+                easing: ease-in-out
+              animationDelay: 0.16s
+          - type: Box
+            style:
+              width: "1.5"
+              height: "1.5"
+              background: action.primary
+              radius: full
+              animation:
+                name: wave
+                duration: 1.6s
+                easing: ease-in-out
+              animationDelay: 0.32s
+  - type: Box
+    visibleWhen:
+      field: submitted
+      eq: true
+    style:
+      direction: column
+      align: center
+      justify: center
+      gap: "2"
+      width: full
+      minHeight: "40"
+      padding: [ "6", "6" ]
+      animation:
+        name: focusFadeIn
+        duration: 400ms
+        easing: ease-out
+        iteration: "1"
+    children:
+      - type: Box
+        style:
+          width: "12"
+          height: "12"
+          radius: full
+          background: action.primary
+          direction: row
+          align: center
+          justify: center
+          shadow: md
+          margin: [ "0", "0", "1", "0" ]
+        children:
+          - type: Icon
+            icon: check
+            style:
+              width: "6"
+              height: "6"
+              color: action.primary-text
+      - type: Text
+        style:
+          font: headline.sm
+          color: text.primary
+        value: Journey captured
+      - type: Text
+        style:
+          font: body.md
+          color: text.secondary
+        value: Your recommendations will appear in the conversation

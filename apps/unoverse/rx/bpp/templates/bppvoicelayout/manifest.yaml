@@ -1,0 +1,30 @@
+name: BPP Voice Assistant
+description: Hands-free voice conversation with the BPP assistant.
+whenToUse: Talk to BPP by voice — a live, hands-free audio call instead of typing. Use voice, talk hands-free, have a phone-style conversation about studying. Wanting a human or live agent is a different job, not this.
+category: Assistant
+version: 1.0.0
+defaultState: template
+inputSchema:
+  type: object
+  properties:
+    message:
+      type: string
+      description: The user's request
+binding:
+  workflow: wf-8koixv
+  trigger: inputtrigger6
+autoTrigger: false
+expose:
+  openaiApps: false
+service: voice
+layout: standard
+stateOrder:
+  - idle
+  - active
+  - agent-speaking
+  - user-speaking
+  - courses
+  - course
+preview:
+  courses: [ coursecard, coursecard, coursecard ]
+  course: [ coursecard ]

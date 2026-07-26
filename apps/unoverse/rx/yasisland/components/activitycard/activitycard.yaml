@@ -1,0 +1,61 @@
+$schema: ../../../_schema/unoverse.schema.json
+unoverse: "1.0"
+kind: component
+name: ActivityCard
+category: Travel
+nodeSize:
+  width: 480
+  height: 180
+props:
+  title:
+    type: string
+    default: Ferrari World Abu Dhabi
+    input: true
+  description:
+    type: string
+    default: The world's first Ferrari-branded theme park — home to Formula Rossa, the fastest roller coaster on earth.
+    input: true
+  bodyCopy:
+    type: string
+    default: |-
+      ### What to expect
+
+      A full day of rides, shows and experiences under one iconic red roof.
+
+      - Formula Rossa — 0 to 240 km/h in 4.9 seconds
+      - Family zone with junior rides
+      - Indoor and air-conditioned all day
+    input: true
+  tagline:
+    type: string
+    default: Theme park
+    input: true
+  primaryImage:
+    type: string
+    default: https://res.cloudinary.com/sonik/image/upload/v1784299725/yasIsland/multipark2.jpg.jpg
+    input: true
+  link:
+    type: string
+    default: "[View this attraction](https://www.yasisland.ae/en/experiences)"
+    input: true
+state:
+  guestName: ""
+  date: ""
+  adults: ""
+  children: ""
+  step: detail
+root:
+  type: Box
+  style:
+    width: full
+    container: inline-size
+  children:
+    - type: Switch
+      on: defaultState
+      cases:
+        focus:
+          $include: layouts/focus
+        planned:
+          $include: layouts/planned
+        list:
+          $include: layouts/list

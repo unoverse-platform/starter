@@ -46,7 +46,7 @@ cmd_check() {
     [ -f "$pkg/package.json" ] || continue
     local name
     name=$(basename "$pkg")
-    case "$name" in design-system|gravity-client|plugin-base|skills|prompt-blocks) continue;; esac
+    case "$name" in marketplace|gravity-client|plugin-base|skills|prompt-blocks) continue;; esac
     pkg_total=$((pkg_total + 1))
     if [ -f "$pkg/dist/index.js" ]; then
       built=$((built + 1))

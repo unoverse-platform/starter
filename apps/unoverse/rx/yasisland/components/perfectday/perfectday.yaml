@@ -1,0 +1,101 @@
+$schema: ../../../_schema/unoverse.schema.json
+unoverse: "1.0"
+kind: component
+name: PerfectDay
+category: Travel
+nodeSize:
+  width: 600
+  height: 800
+props:
+  headline:
+    type: string
+    input: true
+    preview: Your perfect evening on Yas Island
+  intro:
+    type: string
+    input: true
+    preview: An evening built for the two of you — a waterside table, a sail at sunset, and the circuit lights to walk home under.
+  heroImage:
+    type: string
+    input: true
+    preview: https://picsum.photos/seed/yas-marina-dusk/1200/700
+  heroPlace:
+    type: string
+    input: true
+    preview: Yas Island, Abu Dhabi
+  statement:
+    type: string
+    input: true
+    preview: An island built for a single unforgettable evening.
+  statementDetail:
+    type: string
+    input: true
+    preview: Waterfront dining at **Yas Marina**, a sunset sail and the circuit lights — one evening along a single stretch of water.
+  pitch:
+    type: string
+    input: true
+    preview: |-
+      Picture it: the heat easing off, a table by the water, boats knocking gently against the pontoon while the first courses arrive. Nothing to book twice, nothing to drive to — the whole evening unfolds within a ten-minute walk.
+
+      That is what one island does for you: every experience next to the last, so the night keeps its momentum. Scroll on — each chapter below is ready to slot into your evening.
+  stats:
+    type: array
+    input: true
+    preview:
+      - value: "3"
+        label: Experiences chosen
+      - value: 2 hrs
+        label: On the water
+      - value: 10 min
+        label: Between stops
+  collections:
+    type: array
+    input: true
+    preview:
+      - label: // THE EVENING
+        title: From golden hour to fireworks
+        intro: Three stops, one waterfront — dinner, a sail, and the lights to finish.
+        image: https://picsum.photos/seed/yas-c1/900/600
+        items:
+          - image: https://picsum.photos/seed/yas-i1/600/400
+            place: Yas Marina
+            title: Dinner on the pontoon
+            body: A waterside table as the marina lights come on — long, unhurried, and close enough to watch the boats come home.
+          - image: https://picsum.photos/seed/yas-i2/600/400
+            place: Yas Bay
+            title: Sunset sail
+            body: Two hours on the water with the island turning gold behind you — the quietest seat on Yas.
+      - label: // AFTER DARK
+        title: The night keeps going
+        intro: When the plates are cleared, the island is only getting started.
+        image: https://picsum.photos/seed/yas-c2/900/600
+        items:
+          - image: https://picsum.photos/seed/yas-i3/600/400
+            place: Yas Marina Circuit
+            title: Walk the circuit lights
+            body: The grandstand glow and the track under floodlight — a night walk you can't have anywhere else.
+          - image: https://picsum.photos/seed/yas-i4/600/400
+            place: Yas Bay Waterfront
+            title: Late gelato by the water
+            body: The waterfront stays warm and lit past midnight — end the night with a slow walk and something sweet.
+  gallery:
+    type: array
+    input: true
+    preview:
+      - image: https://picsum.photos/seed/yas-g1/600/600
+        title: The marina at dusk
+      - image: https://picsum.photos/seed/yas-g2/600/600
+        title: Golden hour on the water
+      - image: https://picsum.photos/seed/yas-g3/600/600
+        title: Circuit lights
+root:
+  type: Box
+  style:
+    width: full
+    container: inline-size
+  children:
+    - type: Switch
+      on: defaultState
+      cases:
+        page:
+          $include: layouts/page

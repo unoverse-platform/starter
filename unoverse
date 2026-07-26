@@ -84,7 +84,8 @@ case "${1:-}" in
     else echo "publish is a platform-owner command — not available in the starter kit"; exit 1; fi
     ;;
   build)     cmd_build "${2:-}" ;;
-  lint)      cmd_lint "${2:-}" ;;
+  lint)      cmd_lint "${2:-}" "${3:-}" ;;
+  node)      cmd_node "${2:-}" "${3:-}" "${4:-}" ;;
   new)       shift; cmd_new "$@" ;;
   open)      cmd_open "${2:-}" ;;
   help|--help|-h) cmd_help ;;

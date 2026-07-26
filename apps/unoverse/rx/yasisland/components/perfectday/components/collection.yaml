@@ -1,0 +1,82 @@
+$schema: ../../../../_schema/unoverse.schema.json
+brief: One chapter of the Perfect Day — a group of real experiences that genuinely belong together in the day.
+type: Box
+style:
+  direction: column
+  gap: "6"
+  width: full
+children:
+  - type: Box
+    style:
+      direction: column
+      gap: "2"
+      width: full
+      maxWidth: "160"
+    children:
+      - type: Text
+        brief:
+          description: A two-or-three word chapter label in CAPITALS, prefixed with '// ' — like '// THE EVENING' or '// AFTER DARK' — in the guest's language, never a category code.
+          maxLength: 24
+        visibleWhen: label
+        bind:
+          value: label
+        style:
+          font: label
+          weight: bold
+          color: action.primary
+      - type: Text
+        brief:
+          description: The chapter named as a promise — what this part of the day gives the guest, not a category heading. Plain text only — never markdown.
+          maxLength: 60
+        bind:
+          value: title
+        style:
+          font: headline.lg
+          weight: bold
+          color: text.primary
+          lineHeight: tight
+      - type: Text
+        brief:
+          description: ONE sentence tying this chapter's experiences together, grounded in what they actually are. Plain text only — never markdown.
+          maxLength: 140
+        visibleWhen: intro
+        bind:
+          value: intro
+        style:
+          font: body.lg
+          color: text.secondary
+  - type: Box
+    visibleWhen: image
+    style:
+      position: relative
+      height: "75"
+      width: full
+      radius: 2xl
+      overflow: hidden
+    children:
+      - type: Image
+        brief:
+          description: The most striking image among THIS chapter's experiences — the one that sets the chapter's mood.
+          hydrate: image
+        bind:
+          src: image
+          alt: title
+        style:
+          position: absolute
+          inset: "0"
+          width: full
+          height: full
+          fit: cover
+  - type: Each
+    brief:
+      description: The experiences of this chapter — each is exactly ONE real content item from the search results, never invented, each appearing in only one chapter across the whole day.
+      minItems: 2
+      maxItems: 6
+    bind:
+      items: items
+    style:
+      columns: "2"
+      gap: "7"
+      width: full
+    template:
+      $include: components/content-card

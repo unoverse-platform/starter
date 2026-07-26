@@ -1,0 +1,103 @@
+$schema: ../../../_schema/unoverse.schema.json
+unoverse: "1.0"
+kind: component
+name: RestaurantCard
+category: Travel
+nodeSize:
+  width: 480
+  height: 180
+props:
+  title:
+    type: string
+    default: Fouquet's Abu Dhabi
+    input: true
+  description:
+    type: string
+    default: Parisian glamour on the marina — classic brasserie dishes with waterfront views.
+    input: true
+  bodyCopy:
+    type: string
+    default: |-
+      ### Why you'll love it
+
+      A menu of timeless French classics, a terrace over the marina, and service that makes an evening of it.
+
+      - Waterfront terrace seating
+      - Signature tasting menu
+      - Family-friendly until 8pm
+    input: true
+  tagline:
+    type: string
+    default: French brasserie
+    input: true
+  primaryImage:
+    type: string
+    default: https://res.cloudinary.com/sonik/image/upload/v1784371455/yasIsland/restaurant.webp
+    input: true
+  link:
+    type: string
+    default: "[View this restaurant](https://www.yasisland.ae/en/dine)"
+    input: true
+  rating:
+    type: number
+    default: 4.6
+    input: true
+  reviews:
+    type: number
+    default: 1085
+    input: true
+  openState:
+    type: string
+    default: Open
+    input: true
+  hours:
+    type: string
+    default: Closes 11 PM
+    input: true
+  address:
+    type: string
+    default: Saadiyat - 1 street - Al Saadiyat Island - Cultural District - Abu Dhabi - United Arab Emirates
+    input: true
+  contactPhone:
+    type: string
+    default: +971 2 205 4200
+    input: true
+  website:
+    type: string
+    default: https://www.fouquetsabudhabi.com/
+    input: true
+  highlights:
+    type: array
+    input: true
+    default:
+      - label: Outdoor seating
+      - label: Rooftop seating
+      - label: Live music
+  images:
+    type: array
+    input: true
+    default: []
+state:
+  guestName: ""
+  phone: ""
+  date: ""
+  time: ""
+  partySize: ""
+  email: ""
+  requests: ""
+  step: detail
+root:
+  type: Box
+  style:
+    width: full
+    container: inline-size
+  children:
+    - type: Switch
+      on: defaultState
+      cases:
+        focus:
+          $include: layouts/focus
+        planned:
+          $include: layouts/planned
+        list:
+          $include: layouts/list

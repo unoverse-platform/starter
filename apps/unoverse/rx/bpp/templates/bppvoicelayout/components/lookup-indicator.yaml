@@ -1,0 +1,42 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+visibleWhen:
+  field: isLookingUp
+  eq: true
+style:
+  direction: row
+  align: center
+  gap: md
+  padding: [ "3", "5" ]
+  radius: full
+  background: surface.base
+  border: subtle
+  shadow: sm
+children:
+  - type: Each
+    style:
+      direction: row
+      align: center
+      gap: xs
+    template:
+      type: Box
+      style:
+        width: "1.5"
+        height: "1.5"
+        radius: full
+        background: action.primary
+        animation:
+          name: wave
+          duration: 1.2s
+          easing: ease-in-out
+        animationDelay: "{{delay}}"
+    items:
+      - delay: 0s
+      - delay: 0.15s
+      - delay: 0.3s
+  - type: Text
+    style:
+      font: body.sm
+      weight: medium
+      color: text.secondary
+    value: Searching BPP’s knowledge base…

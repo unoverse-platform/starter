@@ -1,0 +1,55 @@
+$description: Dark theme — STARTER. Same semantic token NAMES as light.json (so components are unchanged), remapped to dark base values. Refine against a canonical dark palette when one exists — values here are reasonable inversions, not brand-official.
+color:
+  $type: color
+  text:
+    primary:
+      $value: "{color.gray.50}"
+    secondary:
+      $value: "{color.gray.300}"
+    tertiary:
+      $value: "{color.gray.400}"
+    inverse:
+      $value: "{color.gray.900}"
+  surface:
+    base:
+      $value: "{color.gray.900}"
+    raised:
+      $value: "{color.gray.800}"
+    sunken:
+      $value: "{color.gray.950}"
+    inverse:
+      $value: "{color.gray.100}"
+  border:
+    subtle:
+      $value: "{color.gray.800}"
+    strong:
+      $value: "{color.gray.700}"
+  action:
+    primary:
+      $value: "{color.primary.500}"
+    primary-hover:
+      $value: "{color.primary.400}"
+    primary-active:
+      $value: "{color.primary.300}"
+    primary-text:
+      $value: "{color.gray.950}"
+    subtle:
+      $value: "{color.primary.900}"
+  status:
+    success:
+      $value: "{color.success.400}"
+    success-subtle:
+      $value: "{color.success.900}"
+    success-border:
+      $value: "{color.success.900}"
+    success-text:
+      $value: "{color.success.400}"
+    error:
+      $value: "{color.error.500}"
+    warning:
+      $value: "{color.warning.500}"
+    info:
+      $value: "{color.info.500}"
+  overlay:
+    scrim:
+      $value: linear-gradient(to top, rgba(0,0,0,0.45), rgba(0,0,0,0.05), transparent)

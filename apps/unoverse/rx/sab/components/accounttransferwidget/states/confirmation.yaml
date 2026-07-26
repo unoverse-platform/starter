@@ -1,0 +1,207 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  direction: column
+  gap: "4"
+  align: center
+  width: full
+  padding: [ "6", "0" ]
+children:
+  - type: Box
+    style:
+      flex: 0 0 auto
+      width: "16"
+      height: "16"
+      radius: full
+      background: status.success-subtle
+      direction: row
+      align: center
+      justify: center
+    children:
+      - type: Icon
+        icon: success
+        style:
+          width: "8"
+          height: "8"
+          color: status.success
+  - type: Box
+    style:
+      direction: column
+      gap: "1"
+      align: center
+      width: full
+    children:
+      - type: Text
+        style:
+          font: headline.lg
+          weight: bold
+          color: text.primary
+        value: Transfer successful
+      - type: Text
+        style:
+          font: body.md
+          color: text.secondary
+        value: Your transfer has been initiated and is on its way.
+  - type: Box
+    style:
+      direction: column
+      align: center
+      gap: "1"
+      background: surface.sunken
+      radius: lg
+      padding: [ "3", "5" ]
+    children:
+      - type: Text
+        style:
+          font: caption
+          weight: semibold
+          color: text.tertiary
+        value: Confirmation
+      - type: Text
+        style:
+          font: body.md
+          weight: bold
+          color: text.primary
+        value: TRF-9X7K2M4P
+  - type: Box
+    style:
+      direction: column
+      gap: "0"
+      width: full
+      background: surface.base
+      border: subtle
+      radius: lg
+      overflow: hidden
+    children:
+      - type: Box
+        style:
+          direction: row
+          align: center
+          justify: space-between
+          gap: "3"
+          width: full
+          padding: "3"
+          borderBottom: subtle
+        children:
+          - type: Text
+            style:
+              font: body.sm
+              color: text.tertiary
+            value: Amount sent
+          - type: Box
+            style:
+              direction: row
+              align: center
+              gap: "1"
+            children:
+              - type: Text
+                style:
+                  font: body.md
+                  weight: semibold
+                  color: text.primary
+                value: SAR
+              - type: Text
+                style:
+                  font: body.md
+                  weight: semibold
+                  color: text.primary
+                value: 1,500.00
+      - type: Box
+        style:
+          direction: row
+          align: center
+          justify: space-between
+          gap: "3"
+          width: full
+          padding: "3"
+          borderBottom: subtle
+        children:
+          - type: Text
+            bind:
+              value: toLabel
+            style:
+              font: body.sm
+              color: text.tertiary
+          - type: Box
+            style:
+              direction: column
+              align: end
+              gap: "0"
+            children:
+              - type: Text
+                bind:
+                  value: recipientLabel
+                style:
+                  font: body.md
+                  weight: semibold
+                  color: text.primary
+              - type: Text
+                visibleWhen: sub
+                bind:
+                  value: sub
+                style:
+                  font: caption
+                  color: text.tertiary
+      - type: Box
+        style:
+          direction: row
+          align: center
+          justify: space-between
+          gap: "3"
+          width: full
+          padding: "3"
+          borderBottom: none
+        children:
+          - type: Text
+            bind:
+              value: arrivalLabel
+            style:
+              font: body.sm
+              color: text.tertiary
+          - type: Box
+            style:
+              direction: column
+              align: end
+              gap: "0"
+            children:
+              - type: Text
+                bind:
+                  value: estimatedArrival
+                style:
+                  font: body.md
+                  weight: semibold
+                  color: text.primary
+              - type: Text
+                visibleWhen: sub
+                bind:
+                  value: sub
+                style:
+                  font: caption
+                  color: text.tertiary
+  - type: Button
+    action:
+      type: setValue
+      values:
+        - key: step
+          value: source
+        - key: progressPct
+          value: 25%
+        - key: stepLabel
+          value: Step 1 of 4
+        - key: memo
+          value: ""
+        - key: inlinePrimary
+          value: Send money securely
+    style:
+      width: full
+      cursor: pointer
+      font: button
+      background: transparent
+      color: action.primary
+      border: subtle
+      padding: [ "4", "6" ]
+      radius: lg
+      direction: row
+      align: center
+      justify: center
+    label: Make another transfer

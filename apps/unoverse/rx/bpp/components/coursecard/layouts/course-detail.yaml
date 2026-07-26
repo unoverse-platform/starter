@@ -1,0 +1,146 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  position: relative
+  direction: column
+  width: full
+  minHeight: full
+  background: surface.base
+  textAlign: start
+children:
+  - type: Box
+    style:
+      position: sticky
+      top: "0"
+      zIndex: 10
+      flex: 0 0 auto
+      height: "20"
+      direction: row
+      align: center
+      gap: "3"
+      width: full
+      padding: [ "0", lg ]
+      background: brand.ink-emphasis
+    children:
+      - type: Text
+        bind:
+          value: title
+        style:
+          font: headline.sm
+          weight: semibold
+          color: text.inverse
+          lineHeight: tight
+          flex: 1
+          minWidth: 0
+      - type: Ref
+        ref: close-button
+        action:
+          type: setValue
+          values:
+            - key: defaultState
+              value: courses
+  - type: Box
+    style:
+      flex: 0 0 auto
+      height: "50"
+      width: full
+      overflow: hidden
+    children:
+      - type: Image
+        bind:
+          src: primaryImage
+          alt: title
+        style:
+          width: full
+          height: full
+          fit: cover
+  - type: Box
+    style:
+      direction: column
+      gap: "5"
+      padding: [ xl, "8" ]
+      width: full
+      maxWidth: "160"
+      margin: [ "0", auto ]
+    children:
+      - type: Box
+        style:
+          direction: row
+          align: center
+          justify: space-between
+          gap: md
+          width: full
+        children:
+          - type: Box
+            style:
+              direction: column
+              gap: "2"
+              flex: 1
+              minWidth: 0
+            children:
+              - type: Text
+                visibleWhen: tagline
+                bind:
+                  value: tagline
+                style:
+                  font: label
+                  weight: semibold
+                  color: action.primary
+              - type: Text
+                bind:
+                  value: title
+                style:
+                  font: headline.md
+                  weight: bold
+                  color: text.primary
+                  lineHeight: tight
+      - type: Text
+        visibleWhen: description
+        bind:
+          value: description
+        style:
+          font: body.md
+          color: text.secondary
+      - type: Box
+        style:
+          direction: row
+          align: center
+          gap: "6"
+          width: full
+          padding: [ "5", "6" ]
+          background: surface.base
+          border: thin subtle
+          radius: lg
+        children:
+          - type: Text
+            value: Transform your business, or your career, with industry-leading training from BPP.
+            style:
+              font: body.md
+              weight: medium
+              color: text.primary
+              flex: 1
+              minWidth: 0
+          - type: Ref
+            ref: outline-button
+            with:
+              icon: phone
+              label: Request callback
+            action:
+              type: setValue
+              values:
+                - key: step
+                  value: apply
+            style:
+              flex: 0 0 auto
+      - type: Markdown
+        visibleWhen: bodyCopy
+        bind:
+          value: bodyCopy
+        style:
+          font: body.md
+      - type: Markdown
+        visibleWhen: link
+        bind:
+          value: link
+        style:
+          font: body.md

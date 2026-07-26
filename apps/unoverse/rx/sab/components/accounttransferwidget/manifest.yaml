@@ -1,0 +1,6 @@
+title: Bank Transfer
+description: "An interactive bank-transfer widget: step through choosing a source account, picking a beneficiary, entering…"
+whenToUse: Send money or pay a beneficiary — move funds between your accounts or transfer to someone else, through a guided choose-review-confirm flow. Not for checking a balance or past transactions.
+category: Input
+version: 1.0.0
+defaultState: focused

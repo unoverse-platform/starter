@@ -1,0 +1,11 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+service: voice
+style:
+  direction: row
+  width: full
+  height: full
+  overflow: hidden
+  background: surface.sunken
+children:
+  - $include: components/core-standard

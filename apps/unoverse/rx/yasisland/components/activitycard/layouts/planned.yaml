@@ -1,0 +1,97 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  direction: row
+  align: center
+  gap: "2"
+  width: full
+  background: surface.sunken
+  border: subtle
+  radius: xl
+  padding: [ "2", "3" ]
+  textAlign: start
+children:
+  - type: Icon
+    icon: check
+    style:
+      width: "4"
+      height: "4"
+      color: status.success
+  - type: Box
+    style:
+      flex: 0 0 auto
+      width: "12"
+      height: "12"
+      radius: lg
+      overflow: hidden
+    children:
+      - type: Image
+        bind:
+          src: primaryImage
+          alt: title
+        style:
+          width: full
+          height: full
+          fit: cover
+  - type: Button
+    action:
+      type: setValue
+      values:
+        - key: defaultState
+          value: focus
+    style:
+      flex: 1
+      minWidth: 0
+      direction: column
+      align: start
+      gap: "0"
+      padding: "0"
+      border: none
+      background: transparent
+      cursor: pointer
+      textAlign: start
+    children:
+      - type: Text
+        bind:
+          value: title
+        style:
+          font: body.sm
+          weight: medium
+          color: text.primary
+          lineHeight: tight
+      - type: Text
+        visibleWhen: tagline
+        bind:
+          value: tagline
+        style:
+          font: caption
+          color: text.tertiary
+          lineHeight: tight
+  - type: Button
+    action:
+      type: setValue
+      values:
+        - key: defaultState
+          value: list
+    style:
+      flex: 0 0 auto
+      cursor: pointer
+      width: "8"
+      height: "8"
+      radius: full
+      background: surface.base
+      border: subtle
+      shadow: sm
+      direction: row
+      align: center
+      justify: center
+      transition: all 150ms ease
+      hover:
+        background: surface.sunken
+    children:
+      - type: Icon
+        icon: close
+        style:
+          width: "4"
+          height: "4"
+          color: text.secondary

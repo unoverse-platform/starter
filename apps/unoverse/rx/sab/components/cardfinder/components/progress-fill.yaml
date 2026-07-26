@@ -1,0 +1,45 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  height: full
+  width: "0"
+  background: status.success
+  radius: full
+  transition: all 300ms ease
+  when:
+    - field: step
+      eq: income
+      apply:
+        width: 11%
+    - field: step
+      eq: salary
+      apply:
+        width: 22%
+    - field: step
+      eq: residency
+      apply:
+        width: 33%
+    - field: step
+      eq: summary
+      apply:
+        width: 44%
+    - field: step
+      eq: goal
+      apply:
+        width: 56%
+    - field: step
+      eq: airline
+      apply:
+        width: 67%
+    - field: step
+      eq: travelfreq
+      apply:
+        width: 78%
+    - field: step
+      eq: feetolerance
+      apply:
+        width: 89%
+    - field: step
+      eq: result
+      apply:
+        width: 100%

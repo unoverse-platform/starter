@@ -1,0 +1,7 @@
+$description: Border radius scale. Seeded from tokens.css --radius-*.
+radius:
+  $type: dimension
+  lg:
+    $value: 1rem
+  xl:
+    $value: 1.25rem

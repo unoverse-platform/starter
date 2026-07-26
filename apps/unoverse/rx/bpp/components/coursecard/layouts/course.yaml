@@ -1,0 +1,10 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Switch
+on: step
+cases:
+  detail:
+    $include: layouts/course-detail
+  apply:
+    $include: layouts/course-apply
+  default:
+    $include: layouts/course-detail

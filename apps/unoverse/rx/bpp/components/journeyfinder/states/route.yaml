@@ -1,0 +1,114 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  direction: column
+  gap: "4"
+  width: full
+children:
+  - type: Box
+    style:
+      direction: column
+      gap: "1"
+      align: center
+      width: full
+    children:
+      - type: Text
+        bind:
+          value: routeTitle
+        style:
+          font: headline.md
+          weight: semibold
+          color: text.primary
+      - type: Text
+        visibleWhen: routeSubtitle
+        bind:
+          value: routeSubtitle
+        style:
+          font: body.md
+          color: text.secondary
+  - type: Each
+    style:
+      direction: column
+      gap: "2"
+      width: full
+    template:
+      type: Button
+      action:
+        type: setValue
+        values:
+          - key: route
+            value: "{{value}}"
+          - key: step
+            value: studymode
+          - key: phase
+            value: study
+          - key: progressPct
+            value: 83%
+          - key: questionLabel
+            value: Question 5 of 6
+      style:
+        width: full
+        direction: row
+        align: center
+        gap: "3"
+        padding: "3"
+        textAlign: start
+        background: surface.base
+        border: subtle
+        radius: lg
+        cursor: pointer
+        transition: all 150ms ease
+        hover:
+          background: surface.sunken
+      children:
+        - type: Icon
+          visibleWhen: icon
+          bind:
+            name: icon
+          style:
+            width: "6"
+            height: "6"
+            color: text.secondary
+        - type: Box
+          style:
+            direction: column
+            flex: "1"
+            minWidth: "0"
+            gap: "1"
+            align: start
+          children:
+            - type: Text
+              bind:
+                value: label
+              style:
+                font: body.md
+                weight: semibold
+                color: text.primary
+            - type: Text
+              visibleWhen: description
+              bind:
+                value: description
+              style:
+                font: body.sm
+                color: text.secondary
+    items:
+      - value: professional-qualification
+        label: Professional qualification
+        description: An industry-recognised qualification
+        icon: qualifications
+      - value: apprenticeship
+        label: Apprenticeship
+        description: Earn while you learn, employer funded
+        icon: apprenticeships
+      - value: degree
+        label: University degree
+        description: Undergraduate or postgraduate study
+        icon: courses
+      - value: short-courses
+        label: Short courses & CPD
+        description: Sharpen specific skills, fast
+        icon: layers
+      - value: unsure
+        label: Not sure yet
+        description: Recommend the best route for me
+        icon: search

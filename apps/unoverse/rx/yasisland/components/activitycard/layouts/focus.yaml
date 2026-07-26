@@ -1,0 +1,10 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Switch
+on: step
+cases:
+  detail:
+    $include: layouts/focus-detail
+  book:
+    $include: layouts/focus-book
+  default:
+    $include: layouts/focus-detail

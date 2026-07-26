@@ -1,0 +1,23 @@
+name: SAB Smart Assistant
+description: The SAB customer-support chat, with a route to live support.
+whenToUse: "Ask SAB a banking question or get general help from customer support — including reaching a live support agent. The conversational home and fallback: specific jobs like moving money or choosing a product have their own focused apps; everything else starts here."
+category: Assistant
+version: 1.0.0
+defaultState: template
+stateOrder: [ welcome, conversation, focus ]
+preview:
+  conversation: [ markdownrenderer ]
+  focus: [ cardfinder ]
+inputSchema:
+  type: object
+  properties:
+    message:
+      type: string
+      description: The user's request
+binding:
+  workflow: wf-r4jzo7
+  trigger: inputtrigger1
+autoTrigger: false
+expose:
+  openaiApps: false
+layout: main

@@ -29,10 +29,10 @@ cmd_build() {
 build_component_nodes() {
   banner "Component Nodes (definition-backed)"
 
-  echo "  Building the universal design-system node package locally (bundle-defs + tsc → dist)..."
-  if (cd "$ROOT/apps/unoverse/nodes/design-system" && node scripts/bundle-defs.mjs && npx tsc 2>/dev/null); then
-    ok "Design-system node package built → apps/unoverse/nodes/design-system/dist"
-  elif [ -d "$ROOT/apps/unoverse/nodes/design-system/dist" ]; then
+  echo "  Building the marketplace package locally (bundle-defs + tsc → dist)..."
+  if (cd "$ROOT/apps/unoverse/nodes/marketplace" && node scripts/bundle-defs.mjs && npx tsc 2>/dev/null); then
+    ok "Marketplace package built → apps/unoverse/nodes/marketplace/dist"
+  elif [ -d "$ROOT/apps/unoverse/nodes/marketplace/dist" ]; then
     # Starters can't build it (no workspace plugin-base) — the dist SHIPS with the
     # platform sync/deploy; use the shipped artifact.
     ok "Using shipped component-node dist (local build unavailable — expected on starters)"

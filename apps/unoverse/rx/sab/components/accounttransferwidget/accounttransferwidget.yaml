@@ -1,0 +1,107 @@
+$schema: ../../../_schema/unoverse.schema.json
+unoverse: "1.0"
+kind: component
+name: AccountTransferWidget
+category: Input
+nodeSize:
+  width: 1040
+  height: 720
+props:
+  transferData:
+    type: object
+    input: true
+    default:
+      sourceAccount:
+        accountName: Salary Account
+        accountNumber: SA0380000000600100010001
+        bankName: Saudi Awwal Bank
+        balance: SAR 24,500.00
+        currency: SAR
+      recipientAccount:
+        accountName: Ahmed Al-Rashid
+        accountNumber: SA1234567890123210
+        bankName: Saudi Awwal Bank
+        currency: SAR
+      amount: 1,500.00
+      currency: SAR
+      reference: ""
+      transferType: domestic
+      fee: SAR 2.50
+      status: draft
+  availableAccounts:
+    type: array
+    input: true
+    default:
+      - accountName: Salary Account
+        accountNumber: SA0380000000600100010001
+        bankName: Saudi Awwal Bank
+        balance: SAR 24,500.00
+        currency: SAR
+      - accountName: Everyday Account
+        accountNumber: SA0380000000600100010042
+        bankName: Saudi Awwal Bank
+        balance: SAR 8,300.50
+        currency: SAR
+      - accountName: Savings Account
+        accountNumber: SA0380000000600100010098
+        bankName: Saudi Awwal Bank
+        balance: SAR 51,200.00
+        currency: SAR
+  beneficiaries:
+    type: array
+    input: true
+    default:
+      - id: ben-ahmed
+        name: Ahmed Al-Rashid
+        accountNumber: SA1234567890123210
+        bankName: Saudi Awwal Bank
+        type: domestic
+        currency: SAR
+      - id: ben-sara
+        name: Sara Khan
+        accountNumber: SA9876543210008899
+        bankName: Al Rajhi Bank
+        type: domestic
+        currency: SAR
+      - id: ben-omar
+        name: Omar Hassan
+        accountNumber: SA5566778899004455
+        bankName: Riyad Bank
+        type: domestic
+        currency: SAR
+  heroImage:
+    type: string
+    input: true
+    default: https://res.cloudinary.com/sonik/image/upload/v1767543207/SAB/travel.jpg
+state:
+  inlinePrimary: Send money securely
+  step: source
+  stepLabel: Step 1 of 4
+  progressPct: 25%
+  memo: ""
+  sourceLabel: Salary Account
+  sourceMeta: SAB · ····0001
+  recipientLabel: Ahmed Al-Rashid
+  recipientBank: SAB · ····3210
+stateOrder:
+  - source
+  - recipient
+  - amount
+  - review
+  - confirmation
+root:
+  type: Box
+  style:
+    width: full
+    height: full
+    container: inline-size
+  children:
+    - type: Switch
+      on: defaultState
+      cases:
+        focused:
+          $include: layouts/focused
+        inline:
+          $include: layouts/inline
+        default:
+          $include: layouts/inline

@@ -1,0 +1,410 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  position: relative
+  direction: column
+  width: full
+  minHeight: full
+  background: surface.base
+  textAlign: start
+children:
+  - type: Button
+    action:
+      type: setValue
+      values:
+        - key: defaultState
+          value: list
+        - key: step
+          value: detail
+    style:
+      flex: 0 0 auto
+      cursor: pointer
+      width: "8"
+      height: "8"
+      radius: full
+      background: surface.base
+      border: subtle
+      shadow: sm
+      direction: row
+      align: center
+      justify: center
+      transition: all 150ms ease
+      hover:
+        background: surface.sunken
+      position: absolute
+      inset: 0 0 auto auto
+      zIndex: 2
+      margin: "4"
+    children:
+      - type: Icon
+        icon: close
+        style:
+          width: "4"
+          height: "4"
+          color: text.secondary
+  - type: Box
+    style:
+      flex: 0 0 auto
+      height: "50"
+      width: full
+      overflow: hidden
+    children:
+      - type: Image
+        bind:
+          src: primaryImage
+          alt: title
+        style:
+          width: full
+          height: full
+          fit: cover
+  - type: Box
+    style:
+      direction: column
+      gap: "5"
+      padding: [ xl, "8" ]
+      width: full
+      maxWidth: "160"
+      margin: [ "0", auto ]
+    children:
+      - type: Button
+        action:
+          type: setValue
+          values:
+            - key: step
+              value: detail
+        style:
+          direction: row
+          align: center
+          gap: xs
+          background: transparent
+          border: none
+          padding: "0"
+          cursor: pointer
+        children:
+          - type: Icon
+            icon: arrowLeft
+            style:
+              width: "4"
+              height: "4"
+              color: action.primary
+          - type: Text
+            value: Back to restaurant
+            style:
+              font: body.sm
+              weight: medium
+              color: action.primary
+      - type: Box
+        style:
+          direction: column
+          gap: "2"
+        children:
+          - type: Text
+            value: Book a table at
+            style:
+              font: label
+              weight: semibold
+              color: action.primary
+          - type: Text
+            bind:
+              value: title
+            style:
+              font: headline.md
+              weight: bold
+              color: text.primary
+              lineHeight: tight
+      - type: Box
+        style:
+          direction: row
+          gap: md
+          width: full
+        children:
+          - type: Box
+            style:
+              direction: column
+              gap: "2"
+              flex: 1
+              minWidth: 0
+            children:
+              - type: Box
+                style:
+                  direction: row
+                  align: center
+                  gap: "1"
+                children:
+                  - type: Text
+                    value: Date
+                    style:
+                      font: body.sm
+                      weight: semibold
+                      color: text.primary
+                  - type: Text
+                    value: "*"
+                    style:
+                      font: body.sm
+                      weight: semibold
+                      color: status.error
+              - type: Input
+                placeholder: e.g. Friday 24th
+                bind:
+                  value: date
+                style:
+                  width: full
+                  font: body.md
+                  color: text.primary
+                  background: surface.base
+                  border: strong
+                  radius: lg
+                  padding: [ "3", "4" ]
+                  outline: none
+          - type: Box
+            style:
+              direction: column
+              gap: "2"
+              flex: 1
+              minWidth: 0
+            children:
+              - type: Box
+                style:
+                  direction: row
+                  align: center
+                  gap: "1"
+                children:
+                  - type: Text
+                    value: Time
+                    style:
+                      font: body.sm
+                      weight: semibold
+                      color: text.primary
+                  - type: Text
+                    value: "*"
+                    style:
+                      font: body.sm
+                      weight: semibold
+                      color: status.error
+              - type: Input
+                placeholder: e.g. 7:30pm
+                bind:
+                  value: time
+                style:
+                  width: full
+                  font: body.md
+                  color: text.primary
+                  background: surface.base
+                  border: strong
+                  radius: lg
+                  padding: [ "3", "4" ]
+                  outline: none
+          - type: Box
+            style:
+              direction: column
+              gap: "2"
+              flex: 1
+              minWidth: 0
+            children:
+              - type: Box
+                style:
+                  direction: row
+                  align: center
+                  gap: "1"
+                children:
+                  - type: Text
+                    value: Guests
+                    style:
+                      font: body.sm
+                      weight: semibold
+                      color: text.primary
+                  - type: Text
+                    value: "*"
+                    style:
+                      font: body.sm
+                      weight: semibold
+                      color: status.error
+              - type: Input
+                placeholder: e.g. 4
+                bind:
+                  value: partySize
+                style:
+                  width: full
+                  font: body.md
+                  color: text.primary
+                  background: surface.base
+                  border: strong
+                  radius: lg
+                  padding: [ "3", "4" ]
+                  outline: none
+      - type: Box
+        style:
+          direction: column
+          gap: "2"
+          width: full
+        children:
+          - type: Box
+            style:
+              direction: row
+              align: center
+              gap: "1"
+            children:
+              - type: Text
+                value: Name
+                style:
+                  font: body.sm
+                  weight: semibold
+                  color: text.primary
+              - type: Text
+                value: "*"
+                style:
+                  font: body.sm
+                  weight: semibold
+                  color: status.error
+          - type: Input
+            placeholder: Name for the booking
+            bind:
+              value: guestName
+            style:
+              width: full
+              font: body.md
+              color: text.primary
+              background: surface.base
+              border: strong
+              radius: lg
+              padding: [ "3", "4" ]
+              outline: none
+      - type: Box
+        style:
+          direction: column
+          gap: "2"
+          width: full
+        children:
+          - type: Box
+            style:
+              direction: row
+              align: center
+              gap: "1"
+            children:
+              - type: Text
+                value: Phone number
+                style:
+                  font: body.sm
+                  weight: semibold
+                  color: text.primary
+              - type: Text
+                value: "*"
+                style:
+                  font: body.sm
+                  weight: semibold
+                  color: status.error
+          - type: Input
+            placeholder: e.g. +971 50 123 4567
+            bind:
+              value: phone
+            style:
+              width: full
+              font: body.md
+              color: text.primary
+              background: surface.base
+              border: strong
+              radius: lg
+              padding: [ "3", "4" ]
+              outline: none
+      - type: Box
+        style:
+          direction: column
+          gap: "2"
+          width: full
+        children:
+          - type: Box
+            style:
+              direction: row
+              align: center
+              gap: "1"
+            children:
+              - type: Text
+                value: Email
+                style:
+                  font: body.sm
+                  weight: semibold
+                  color: text.primary
+              - type: Text
+                value: "*"
+                style:
+                  font: body.sm
+                  weight: semibold
+                  color: status.error
+          - type: Input
+            placeholder: For your booking confirmation
+            bind:
+              value: email
+            style:
+              width: full
+              font: body.md
+              color: text.primary
+              background: surface.base
+              border: strong
+              radius: lg
+              padding: [ "3", "4" ]
+              outline: none
+      - type: Box
+        style:
+          direction: column
+          gap: "2"
+          width: full
+        children:
+          - type: Text
+            value: Special requests
+            style:
+              font: body.sm
+              weight: semibold
+              color: text.primary
+          - type: Input
+            placeholder: Allergies, occasion, seating preference (optional)
+            bind:
+              value: requests
+            style:
+              width: full
+              font: body.md
+              color: text.primary
+              background: surface.base
+              border: strong
+              radius: lg
+              padding: [ "3", "4" ]
+              outline: none
+      - type: Button
+        action:
+          type: book
+          send:
+            - guestName
+            - phone
+            - email
+            - date
+            - time
+            - partySize
+            - requests
+            - title
+        style:
+          direction: row
+          align: center
+          justify: center
+          gap: xs
+          width: full
+          background: action.cta
+          border: none
+          radius: full
+          padding: [ "3", "4" ]
+          shadow: sm
+          cursor: pointer
+          transition: all 150ms ease
+          hover:
+            background: action.cta-hover
+            shadow: md
+        children:
+          - type: Text
+            value: Request this table
+            style:
+              font: button
+              color: action.cta-text
+      - type: Text
+        value: We'll confirm your table by phone or email — no charge until you're seated.
+        style:
+          font: caption
+          color: text.tertiary
+          textAlign: center

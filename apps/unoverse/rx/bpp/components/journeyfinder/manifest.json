@@ -1,8 +1,0 @@
-{
-  "title": "Journey Finder",
-  "description": "Personalised course and qualification recommendations matched to your career goals, schedule and budget.",
-  "whenToUse": "Find the right course or learning journey for me — what should I study, which qualification or apprenticeship fits my career goals, schedule and budget? A few quick questions, then a live search returns matched courses with the reasons they fit.",
-  "category": "Input",
-  "version": "1.0.0",
-  "defaultState": "focused"
-}

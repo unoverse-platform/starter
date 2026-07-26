@@ -1,0 +1,10 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  direction: row
+  width: full
+  height: full
+  overflow: hidden
+  background: brand.gradient
+children:
+  - $include: components/core

@@ -1,0 +1,231 @@
+$schema: ../../../_schema/unoverse.schema.json
+unoverse: "1.0"
+kind: component
+name: PlaceDetail
+category: Travel
+nodeSize:
+  width: 440
+  height: 420
+description: Detail card for a single place fetched live from Maps — photos, open-now status, star rating with review count, highlights, hours, address, phone, website and a reservation link.
+whenToUse: Show the live details of one specific place or venue — its photos, rating, opening hours, highlights and how to book — when the user asks about a named restaurant, shop or location. Not for comparing several places or listing search results.
+props:
+  title:
+    type: string
+    default: Fouquet's Abu Dhabi
+    input: true
+  type:
+    type: string
+    default: French restaurant
+    input: true
+  rating:
+    type: number
+    default: 4.6
+    input: true
+  reviews:
+    type: number
+    default: 1085
+    input: true
+  openState:
+    type: string
+    default: Open
+    input: true
+  hours:
+    type: string
+    default: Closes 11 PM
+    input: true
+  address:
+    type: string
+    default: Saadiyat - 1 street - Al Saadiyat Island - Cultural District - Abu Dhabi - United Arab Emirates
+    input: true
+  phone:
+    type: string
+    default: +971 2 205 4200
+    input: true
+  website:
+    type: string
+    default: https://www.fouquetsabudhabi.com/
+    input: true
+  images:
+    type: array
+    input: true
+    default:
+      - url: https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmvbJLdOHyyK4AN-09dI2Lfn_vj5AuhhpXF4XM4sLpIaS-nX630Xn6QnLkz1_MB-iIXUqsWVu9VVL5mYYpHT_QRFfte6V6CSWVrX9dk1NScF9WZRieJOGQs4IVrrTCxIw3gaZHSiMw--Qrc=w529-h298-k-no
+      - url: https://lh3.googleusercontent.com/gps-cs-s/AHRPTWl3ZK7TLx3c8ZSwG20IQ8AuPoHmnwASGOlDHl5JkZwzVpL6ju_3oUJeYsLYbS_nBucN9a7FBE8rn0nUGVkUyDf09Z9ytj1Ent3yua3hXZXGPbtIsO6OhxK8Qkww-9xpyOV6jXUhxrbSKCw=w224-h298-k-no
+      - url: https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlLQH2KyVgY35mvbd6fi28Cf3A8zoi6VuE8OR0zOnMBnIO_dB7RC1DWMHG2QcE6QxlhAfpHD9sq9pNcMnAU3G7RrssND_eXAwATM8bMZRiyEURqUbKFL9SujKagt7ZsbxFoKXkH=w224-h398-k-no
+      - url: https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmL1FgeugYkHltEDSGgvYRjQvx5hSKcXlDcLgC0cuZmVFE8e5Sx6TuuZdFWcs3EFXVAuk6WmsnoPlHyaxXp-gejsSPr7GXVq31rtm6bCtEvQGxkTgoVyQbLJSk2fdWtw17HGN3mp7k0HOQT=w224-h298-k-no
+  highlights:
+    type: array
+    input: true
+    default:
+      - label: Outdoor seating
+      - label: Rooftop seating
+      - label: Live music
+root:
+  type: Box
+  style:
+    width: full
+    direction: column
+    gap: "4"
+    padding: "6"
+    background: surface.base
+    border: subtle
+    radius: lg
+    shadow: sm
+  children:
+    - type: Each
+      bind:
+        items: images
+      style:
+        direction: row
+        gap: "2"
+        width: full
+        overflow: hidden
+      template:
+        type: Image
+        bind:
+          src: url
+        style:
+          width: "28"
+          height: "24"
+          fit: cover
+          radius: md
+          flex: 0 0 auto
+    - type: Box
+      style:
+        direction: column
+        gap: "2"
+        width: full
+      children:
+        - type: Text
+          visibleWhen: type
+          bind:
+            value: type
+          style:
+            font: body.sm
+            weight: semibold
+            color: action.primary
+        - type: Text
+          bind:
+            value: title
+          style:
+            font: headline.md
+            weight: bold
+            color: text.primary
+        - type: Box
+          style:
+            direction: row
+            align: center
+            gap: "2"
+            wrap: wrap
+          children:
+            - type: Box
+              visibleWhen: openState
+              style:
+                direction: row
+                align: center
+                gap: "1"
+                padding: [ "1", "2" ]
+                background: status.success-subtle
+                radius: full
+              children:
+                - type: Text
+                  bind:
+                    value: openState
+                  style:
+                    font: body.sm
+                    weight: semibold
+                    color: status.success-text
+            - type: Text
+              visibleWhen: hours
+              bind:
+                value: hours
+              style:
+                font: body.sm
+                color: text.secondary
+            - type: Box
+              visibleWhen: rating
+              style:
+                direction: row
+                align: baseline
+                gap: "1"
+              children:
+                - type: Text
+                  value: ★
+                  style:
+                    font: body.md
+                    color: action.primary
+                - type: Text
+                  bind:
+                    value: rating
+                  style:
+                    font: body.md
+                    weight: semibold
+                    color: text.primary
+                - type: Text
+                  value: ·
+                  style:
+                    font: body.sm
+                    color: text.secondary
+                - type: Text
+                  bind:
+                    value: reviews
+                  style:
+                    font: body.sm
+                    color: text.secondary
+                - type: Text
+                  value: reviews
+                  style:
+                    font: body.sm
+                    color: text.secondary
+    - type: Each
+      bind:
+        items: highlights
+      style:
+        direction: row
+        wrap: wrap
+        align: start
+        gap: "2"
+        width: full
+      template:
+        type: Box
+        style:
+          direction: row
+          align: center
+          flex: 0 0 auto
+          padding: [ "1", "3" ]
+          background: surface.sunken
+          radius: full
+        children:
+          - type: Text
+            bind:
+              value: label
+            style:
+              font: body.sm
+              color: text.secondary
+    - type: Box
+      style:
+        direction: column
+        gap: "1"
+        width: full
+      children:
+        - type: Text
+          visibleWhen: address
+          bind:
+            value: address
+          style:
+            font: body.sm
+            color: text.secondary
+        - type: Text
+          visibleWhen: phone
+          bind:
+            value: phone
+          style:
+            font: body.sm
+            color: text.secondary
+        - type: Text
+          visibleWhen: website
+          bind:
+            value: website
+          style:
+            font: body.sm
+            color: action.primary

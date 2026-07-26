@@ -1,0 +1,65 @@
+$schema: ../../../_schema/unoverse.schema.json
+unoverse: "1.0"
+kind: component
+name: CourseCard
+category: Education
+nodeSize:
+  width: 480
+  height: 180
+props:
+  title:
+    type: string
+    default: AAT Level 2 Accounting - BPP
+    input: true
+  tagline:
+    type: string
+    default: Start your AAT journey
+    input: true
+  description:
+    type: string
+    default: Build a foundation in accounting and financial administration skills to begin your accountancy career.
+    input: true
+  introParagraph:
+    type: string
+    default: Start your AAT journey and gain the accounting fundamentals and business acumen to begin your accountancy career.
+    input: true
+  bodyCopy:
+    type: string
+    default: |-
+      ### Course overview
+
+      You will master day-to-day financial skills, sharpen your accounting skills, and learn double-entry bookkeeping, all while building confidence in using accounting software.
+
+      BPP supports your studies with:
+
+      - Pass rates up to 20% higher than the global average
+      - Experience training 2/3rds of all accountants in England and Wales
+      - Partnerships with 28 of the Top 30 Accountancy firms in the UK
+    input: true
+  primaryImage:
+    type: string
+    default: https://www.datocms-assets.com/106045/1727947826-woman-on-computer-edited.png?auto=format&fit=crop&w=520&h=760
+    input: true
+  link:
+    type: string
+    default: "[View this course](https://www.bpp.com/courses/accountancy-and-tax)"
+    input: true
+state:
+  step: detail
+  firstName: ""
+  lastName: ""
+  email: ""
+  phone: ""
+root:
+  type: Box
+  style:
+    width: full
+    container: inline-size
+  children:
+    - type: Switch
+      on: defaultState
+      cases:
+        courses:
+          $include: layouts/courses
+        course:
+          $include: layouts/course

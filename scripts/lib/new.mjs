@@ -5,8 +5,8 @@
  *   node new.mjs org <name> [rx-root]
  *
  * Projects live FLAT at the rx root (rx/<name>/), NOT under rx/orgs/. A project is
- * THEME-ONLY: it seeds just its brand themes (light/dark) from the design-system
- * foundation; base + semantic tokens are INHERITED from the design system at resolve
+ * THEME-ONLY: it seeds just its brand themes (light/dark) from the marketplace
+ * foundation; base + semantic tokens are INHERITED from the marketplace at resolve
  * time (theme.ts cascade), never copied. Override a foundation token later by adding
  * that file back under styles/ and editing it.
  *
@@ -36,15 +36,15 @@ if (!RX) { console.error("Cannot find an rx/ folder — run from the repo root."
 
 const slug = name.toLowerCase().replace(/[^a-z0-9-]/g, "");
 if (!slug) usage();
-const RESERVED = new Set(["default", "design-system", "_schema", "orgs"]);
-if (RESERVED.has(slug)) { console.error(`'${slug}' is reserved (the design system / schema), not a project.`); process.exit(1); }
+const RESERVED = new Set(["default", "marketplace", "_schema", "orgs"]);
+if (RESERVED.has(slug)) { console.error(`'${slug}' is reserved (the marketplace / schema), not a project.`); process.exit(1); }
 
 const dir = join(RX, slug); // FLAT at the rx root — no orgs/ nesting
 if (existsSync(dir)) { console.error(`rx/${slug} already exists`); process.exit(1); }
 
-const foundationThemes = join(RX, "design-system", "styles", "themes");
+const foundationThemes = join(RX, "marketplace", "styles", "themes");
 if (!existsSync(foundationThemes)) {
-  console.error("rx/design-system/styles/themes not found — cannot seed the project's brand themes.");
+  console.error("rx/marketplace/styles/themes not found — cannot seed the project's brand themes.");
   process.exit(1);
 }
 
@@ -53,14 +53,14 @@ const rel = (p) => relative(process.cwd(), p);
 mkdirSync(join(dir, "templates"), { recursive: true });
 mkdirSync(join(dir, "components"), { recursive: true });
 // THEME-ONLY seed: just the brand themes. base + semantic are inherited from the
-// design-system foundation via the cascade — the project defines only what it changes.
+// marketplace foundation via the cascade — the project defines only what it changes.
 cpSync(foundationThemes, join(dir, "styles", "themes"), { recursive: true });
 
 writeFileSync(
   join(dir, "README.md"),
   `# ${slug}
 
-A project on the platform — a theme over the shared design system:
+A project on the platform — a theme over the shared marketplace:
 
 | Folder | What lives here |
 | --- | --- |
@@ -69,7 +69,7 @@ A project on the platform — a theme over the shared design system:
 | \`styles/themes/\` | Brand themes (light/dark) — restyle freely |
 
 Everything else — the base primitives, the semantic contract, the default theme, the
-shared atoms and components — is INHERITED from the design system. To override a
+shared atoms and components — is INHERITED from the marketplace. To override a
 foundation token, add that file under \`styles/base/\` or \`styles/semantic/\` and set the
 value; keep the token NAME (the theme contract checks this).
 `,

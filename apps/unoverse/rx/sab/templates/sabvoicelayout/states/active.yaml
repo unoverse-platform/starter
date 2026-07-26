@@ -1,0 +1,30 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+visibleWhen:
+  field: callState
+  eq: active
+style:
+  direction: column
+  align: center
+  gap: "4"
+  width: full
+children:
+  - type: Box
+    style:
+      minHeight: "12"
+      direction: row
+      align: center
+      justify: center
+    children:
+      - $include: components/lookup-indicator
+  - type: Box
+    style:
+      minHeight: "20"
+      direction: row
+      align: center
+      justify: center
+    children:
+      - $include: components/call-controls
+  - type: Box
+    style:
+      minHeight: "16"

@@ -38,6 +38,24 @@ Your PostgreSQL connection string, your Redis credentials, and your auth provide
 Apple Silicon Macs run everything natively. The platform images are multi-arch (amd64 + arm64); no Rosetta needed.
 </Note>
 
+## Set up your editor
+
+Everything you author is validated against a schema **as you type**. A typo, a missing field, or an unknown primitive is underlined in the editor rather than surfacing later as a build error or a component that renders wrong.
+
+This works out of the box for `.json` files. YAML files need one extension:
+
+| Extension | ID | Gives you |
+| --- | --- | --- |
+| **YAML** | `redhat.vscode-yaml` | Schema validation for node manifests and design definitions |
+
+The repo ships a `.vscode/extensions.json`, so VS Code, Cursor and Windsurf all prompt you to install it the first time you open the folder. Accept the prompt. The schema wiring in `.vscode/settings.json` is already there and needs no changes.
+
+<Warning>
+Without the extension, YAML files get **no validation at all**. Nothing warns you: they simply stop being checked, and mistakes surface later instead. If you skipped the prompt, install it from your editor's extensions panel by searching for `redhat.vscode-yaml`.
+</Warning>
+
+To confirm it's working, open any `.yaml` file under `apps/unoverse/nodes/` and delete a required field such as `type`. You should see a red underline within a second. Undo, and it clears.
+
 ## Set up the platform
 
 <Steps>

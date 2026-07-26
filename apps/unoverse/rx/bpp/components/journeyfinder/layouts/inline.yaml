@@ -1,0 +1,282 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Button
+action:
+  type: setValue
+  values:
+    - key: defaultState
+      value: focused
+style:
+  position: relative
+  cursor: pointer
+  padding: "0"
+  direction: row
+  align: stretch
+  width: full
+  maxWidth: "140"
+  minHeight: "40"
+  background: surface.base
+  border: subtle
+  radius: xl
+  shadow: sm
+  overflow: hidden
+  transition: all 150ms ease
+  hover:
+    shadow: md
+children:
+  - type: Box
+    style:
+      flex: 0 0 auto
+      width: "16"
+      background: surface.inverse
+      radiusTopLeft: xl
+      radiusBottomLeft: xl
+      direction: row
+      align: center
+      justify: center
+    children:
+      - type: Icon
+        icon: journey
+        style:
+          width: "6"
+          height: "6"
+          color: text.inverse
+  - type: Box
+    style:
+      flex: "1"
+      minWidth: "0"
+      direction: column
+      gap: "1"
+      padding: "4"
+    children:
+      - type: Box
+        style:
+          direction: row
+          justify: center
+          width: full
+        children:
+          - type: Text
+            bind:
+              value: headerTitle
+            style:
+              font: body.sm
+              weight: semibold
+              color: text.secondary
+      - type: Text
+        bind:
+          value: inlinePrimary
+        style:
+          font: title
+          weight: semibold
+          lineHeight: tight
+          color: text.primary
+      - type: Switch
+        on: step
+        cases:
+          careerstage:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: Your career goal
+          situation:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: Where you're starting from
+          subject:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: Your subject area
+          route:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: Your learning route
+          studymode:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: How you like to study
+          commitment:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: Time you can commit
+          searching:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: Finding your journey…
+          results:
+            type: Text
+            style:
+              font: body.sm
+              weight: medium
+              color: status.success
+            value: Your matched courses are ready
+          default:
+            type: Text
+            style:
+              font: body.sm
+              color: text.secondary
+            value: Answer a few quick questions
+      - type: Box
+        style:
+          width: full
+          height: "1"
+          background: surface.sunken
+          radius: full
+          overflow: hidden
+          margin: [ "2", "0", "0", "0" ]
+        children:
+          - type: Box
+            style:
+              height: full
+              width: 16%
+              background: action.primary
+              radius: full
+              transition: all 300ms ease
+              when:
+                - field: step
+                  eq: careerstage
+                  apply:
+                    width: 16%
+                - field: step
+                  eq: situation
+                  apply:
+                    width: 33%
+                - field: step
+                  eq: subject
+                  apply:
+                    width: 50%
+                - field: step
+                  eq: route
+                  apply:
+                    width: 66%
+                - field: step
+                  eq: studymode
+                  apply:
+                    width: 83%
+                - field: step
+                  eq: commitment
+                  apply:
+                    width: 100%
+                - field: step
+                  eq: searching
+                  apply:
+                    width: 100%
+                - field: step
+                  eq: results
+                  apply:
+                    width: 100%
+      - type: Box
+        visibleWhen:
+          field: step
+          ne: searching
+        style:
+          direction: row
+          justify: center
+          margin: [ "2", "0", "0", "0" ]
+        children:
+          - type: Box
+            visibleWhen:
+              field: step
+              ne: results
+            style:
+              background: surface.sunken
+              radius: full
+              padding: [ "1", "2" ]
+            children:
+              - type: Switch
+                on: step
+                cases:
+                  careerstage:
+                    type: Text
+                    style:
+                      font: caption
+                      weight: medium
+                      color: text.tertiary
+                    value: Question 1 of 6
+                  situation:
+                    type: Text
+                    style:
+                      font: caption
+                      weight: medium
+                      color: text.tertiary
+                    value: Question 2 of 6
+                  subject:
+                    type: Text
+                    style:
+                      font: caption
+                      weight: medium
+                      color: text.tertiary
+                    value: Question 3 of 6
+                  route:
+                    type: Text
+                    style:
+                      font: caption
+                      weight: medium
+                      color: text.tertiary
+                    value: Question 4 of 6
+                  studymode:
+                    type: Text
+                    style:
+                      font: caption
+                      weight: medium
+                      color: text.tertiary
+                    value: Question 5 of 6
+                  commitment:
+                    type: Text
+                    style:
+                      font: caption
+                      weight: medium
+                      color: text.tertiary
+                    value: Question 6 of 6
+  - type: Box
+    style:
+      flex: 0 0 auto
+      width: "40"
+      overflow: hidden
+      hideBelow: "120"
+      position: relative
+      radiusTopRight: xl
+      radiusBottomRight: xl
+    children:
+      - type: Image
+        bind:
+          alt: headerTitle
+        style:
+          position: absolute
+          inset: "0"
+          width: full
+          height: full
+          fit: cover
+        src: https://res.cloudinary.com/sonik/image/upload/w_1000,ar_2:3,c_fill,g_face,e_art:hokusai/v1782963908/BPP/images/1738752132-woman-conversation-laptop.jpg
+  - type: Box
+    style:
+      position: absolute
+      inset: 0 0 auto auto
+      margin: "3"
+      width: "7"
+      height: "7"
+      radius: full
+      background: surface.base
+      border: subtle
+      shadow: sm
+      direction: row
+      align: center
+      justify: center
+    children:
+      - type: Icon
+        icon: expand
+        style:
+          width: "4"
+          height: "4"
+          color: text.secondary

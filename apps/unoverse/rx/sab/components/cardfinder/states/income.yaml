@@ -1,0 +1,102 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  direction: column
+  gap: "4"
+  width: full
+children:
+  - type: Box
+    style:
+      direction: column
+      gap: "1"
+      align: center
+      width: full
+    children:
+      - type: Text
+        bind:
+          value: incomeTitle
+        style:
+          font: headline.md
+          weight: semibold
+          color: text.primary
+      - type: Text
+        visibleWhen: incomeSubtitle
+        bind:
+          value: incomeSubtitle
+        style:
+          font: body.md
+          color: text.secondary
+  - type: Each
+    style:
+      direction: column
+      gap: "2"
+      width: full
+    template:
+      type: Button
+      action:
+        type: setValue
+        values:
+          - key: income
+            value: "{{value}}"
+          - key: step
+            value: salary
+          - key: phase
+            value: eligibility
+          - key: progressPct
+            value: 22%
+          - key: questionLabel
+            value: Question 2 of 7
+      style:
+        width: full
+        direction: row
+        align: center
+        gap: "3"
+        padding: "3"
+        textAlign: start
+        background: surface.base
+        border: subtle
+        radius: lg
+        cursor: pointer
+        transition: all 150ms ease
+        hover:
+          background: surface.sunken
+      children:
+        - type: Icon
+          visibleWhen: icon
+          bind:
+            name: icon
+          style:
+            width: "6"
+            height: "6"
+            color: text.secondary
+        - type: Box
+          style:
+            direction: column
+            flex: "1"
+            minWidth: "0"
+            gap: "1"
+            align: start
+          children:
+            - type: Text
+              bind:
+                value: label
+              style:
+                font: body.md
+                weight: semibold
+                color: text.primary
+            - type: Text
+              visibleWhen: description
+              bind:
+                value: description
+              style:
+                font: body.sm
+                color: text.secondary
+    items:
+      - value: <7000
+        label: Less than 7,000 SAR
+      - value: 7000-12000
+        label: 7,000 – 12,000 SAR
+      - value: 12000-20000
+        label: 12,000 – 20,000 SAR
+      - value: 20000+
+        label: 20,000+ SAR

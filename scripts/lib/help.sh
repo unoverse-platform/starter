@@ -27,6 +27,8 @@ cmd_help() {
   echo -e "  ${BOLD}Design (rx/)${NC}"
   echo -e "    ${GREEN}new${NC}         Create an org ${DIM}(./unoverse new org <name> — folder structure + default token set)${NC}"
   echo -e "    ${GREEN}lint${NC}        Lint rx/ definitions ${DIM}(schema + guard rules)${NC}"
+  echo -e "    ${GREEN}lint nodes${NC}  Lint node manifests ${DIM}(nodes/*/nodes/*/*.yaml · 'lint all' runs both)${NC}"
+  echo -e "    ${GREEN}node test${NC}   Run a node against its own testData ${DIM}(real API, keys from .env)${NC}"
   echo ""
   echo -e "  ${BOLD}Deployment${NC}"
   echo -e "    ${GREEN}deploy${NC}                  Deploy your platform: images + your work → your server"

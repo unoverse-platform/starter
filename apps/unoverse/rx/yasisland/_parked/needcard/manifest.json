@@ -1,8 +1,0 @@
-{
-  "title": "Need Card",
-  "description": "One thing a guest could do — a need, with the place that meets it and why it fits.",
-  "whenToUse": "Show one thing I could do here — a need like 'dinner with fountain views' with the place that meets it and why it fits me. Stream one card per idea so a landscape of options builds up; each expands to full detail and can join a plan. Not a list container (one idea per card), and not for asking the guest questions.",
-  "category": "Travel",
-  "version": "1.0.0",
-  "defaultState": "horizon"
-}

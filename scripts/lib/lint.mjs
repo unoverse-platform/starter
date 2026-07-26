@@ -35,6 +35,40 @@
  */
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { join, relative, dirname, basename, resolve, sep } from "node:path";
+import { createRequire } from "node:module";
+
+// ── definition file formats (mirrors server/src/fsCache.ts) ──
+// A LOCAL copy, not an import: this script ships standalone to the starter and cannot
+// reach the server's TypeScript. `.yaml` first, matching the loader's resolution order.
+// If these ever disagree with fsCache.ts, lint checks a different set of files than the
+// server serves — which is exactly the silent gap this block exists to close.
+const DEF_EXTS = [".yaml", ".json"];
+const isDefFile = (f) => DEF_EXTS.some((e) => f.endsWith(e));
+const defName = (f) => f.replace(/\.(yaml|json)$/, "");
+const defPath = (dir, name) => {
+  for (const e of DEF_EXTS) {
+    const p = join(dir, name + e);
+    if (existsSync(p)) return p;
+  }
+  return undefined;
+};
+
+// YAML is required LAZILY, only when a .yaml definition is actually read, so a JSON-only
+// project (and a fresh starter clone that has not installed devDependencies) never needs
+// the package — the "no deps" property above holds for everyone not authoring YAML.
+let _yamlParse = null;
+function parseDef(text, file) {
+  if (!file.endsWith(".yaml")) return JSON.parse(text);
+  if (!_yamlParse) {
+    try {
+      _yamlParse = createRequire(import.meta.url)("yaml").parse;
+    } catch {
+      throw new Error('YAML definitions need the "yaml" package — run: npm i -D yaml');
+    }
+  }
+  return _yamlParse(text);
+}
+const readDef = (file) => parseDef(readFileSync(file, "utf8"), file);
 
 // ── ground truth (mirrors rx/_schema/unoverse.schema.json + server guards) ──
 const PRIMITIVES = new Set([
@@ -67,7 +101,7 @@ const PARTIAL_DIRS = new Set(["layouts", "states", "components", "blocks"]);
 const arg = process.argv[2];
 const candidates = arg ? [resolve(arg)] : [resolve("apps/unoverse/rx"), resolve("rx")];
 const RX = candidates.find(
-  (p) => existsSync(join(p, "design-system")) || existsSync(join(p, "components")) || existsSync(join(p, "atoms")),
+  (p) => existsSync(join(p, "marketplace")) || existsSync(join(p, "components")) || existsSync(join(p, "atoms")),
 );
 if (!RX) {
   console.error("unoverse lint: cannot find an rx/ folder (looked for: " + candidates.join(", ") + ")");
@@ -75,11 +109,11 @@ if (!RX) {
 }
 
 // ── tree layout ──
-// New layout: rx/design-system/{atoms,components,styles} + one top-level folder per
+// New layout: rx/marketplace/{atoms,components,styles} + one top-level folder per
 // org (rx/<org>/). Legacy layout: components/ + atoms/ at the root, orgs under rx/orgs/.
 // The DESIGN SYSTEM is the primary lint target; org folders get the SAME generic
 // checks — nothing here may key on a specific org's name.
-const DS = existsSync(join(RX, "design-system")) ? join(RX, "design-system") : RX;
+const DS = existsSync(join(RX, "marketplace")) ? join(RX, "marketplace") : RX;
 const legacyOrgsDir = join(RX, "orgs");
 const orgDirs = (() => {
   if (existsSync(legacyOrgsDir))
@@ -89,7 +123,7 @@ const orgDirs = (() => {
       .filter((d) => statSync(d).isDirectory());
   if (DS === RX) return [];
   return readdirSync(RX)
-    .filter((e) => !e.startsWith(".") && e !== "design-system" && e !== "_schema")
+    .filter((e) => !e.startsWith(".") && e !== "marketplace" && e !== "_schema")
     .map((e) => join(RX, e))
     .filter((d) => statSync(d).isDirectory());
 })();
@@ -112,12 +146,12 @@ function jsonFiles(dir) {
     if (f.startsWith(".")) continue;
     const p = join(dir, f);
     if (statSync(p).isDirectory()) out = out.concat(jsonFiles(p));
-    else if (f.endsWith(".json")) out.push(p);
+    else if (isDefFile(f)) out.push(p);
   }
   return out;
 }
-const isFixture = (f) => f.endsWith(".states.json");
-const isManifest = (f) => basename(f) === "manifest.json";
+const isFixture = (f) => /\.states\.(json|yaml)$/.test(f);
+const isManifest = (f) => /^manifest\.(json|yaml)$/.test(basename(f));
 const isTemplatePath = (f) => f.includes(`${sep}templates${sep}`);
 // The DEFINITION ROOT folder for a file: a bare partial lives one level under it
 // (layouts/ states/ components/ blocks/); every `$include` resolves against it.
@@ -134,11 +168,11 @@ const DIMENSION_KEYS = new Set([
 ]);
 const spaceSteps = new Set(["0", "full", "auto"]);
 {
-  const styleRoots = [join(DS, "styles", "base", "spacing.json"), ...orgDirs.map((d) => join(d, "styles", "base", "spacing.json"))];
+  const styleRoots = [defPath(join(DS, "styles", "base"), "spacing"), ...orgDirs.map((d) => defPath(join(d, "styles", "base"), "spacing"))].filter(Boolean);
   for (const f of styleRoots) {
     if (!existsSync(f)) continue;
     try {
-      const space = JSON.parse(readFileSync(f, "utf8")).space ?? {};
+      const space = readDef(f).space ?? {};
       for (const k of Object.keys(space)) if (!k.startsWith("$")) spaceSteps.add(k);
     } catch { /* linted on its own */ }
   }
@@ -159,23 +193,23 @@ const checkDimension = (file, where, key, v) => {
 const atomsDirExists = existsSync(join(DS, "atoms"));
 const atomNames = new Set(
   (atomsDirExists ? readdirSync(join(DS, "atoms")) : [])
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => f.replace(/\.json$/, "").toLowerCase()),
+    .filter(isDefFile)
+    .map((f) => defName(f).toLowerCase()),
 );
 
-// A Ref resolves an atom OR a design-system component (shared flat chrome like
+// A Ref resolves an atom OR a marketplace component (shared flat chrome like
 // ComposerBar). Component folders are named by their id — collect them so a
 // Ref to a shared component isn't flagged as a missing atom.
 const dsComponentsDir = join(DS, "components");
 const dsComponentNames = new Set(
   (existsSync(dsComponentsDir) ? readdirSync(dsComponentsDir, { withFileTypes: true }) : [])
     .filter((e) => !e.name.startsWith("."))
-    .map((e) => (e.isDirectory() ? e.name : e.name.replace(/\.json$/, "")).toLowerCase()),
+    .map((e) => (e.isDirectory() ? e.name : defName(e.name)).toLowerCase()),
 );
 // A valid Ref target if there's ANY resolvable home (atoms OR DS components).
 const refResolves = (ref) => atomNames.has(ref.toLowerCase()) || dsComponentNames.has(ref.toLowerCase());
 
-// definition homes: design-system components/atoms + each org's templates AND
+// definition homes: marketplace components/atoms + each org's templates AND
 // components (same law everywhere — an org component is a component, just org-private)
 const homes = [{ dir: join(DS, "components") }, { dir: join(DS, "atoms") }];
 for (const orgDir of orgDirs) {
@@ -187,7 +221,7 @@ for (const orgDir of orgDirs) {
 
 // ── component-name uniqueness across tiers (the no-shadowing law) ──
 // Names are the addressing contract: a bare `unoverse://components/<name>` must be
-// unambiguous, so ONE name may exist in exactly one home (design system OR one org).
+// unambiguous, so ONE name may exist in exactly one home (marketplace OR one org).
 {
   const seenNames = new Map(); // lower-name -> first home path
   const componentHomes = [join(DS, "components")];
@@ -200,11 +234,11 @@ for (const orgDir of orgDirs) {
     for (const e of readdirSync(home)) {
       if (e.startsWith(".")) continue;
       const p = join(home, e);
-      const name = (statSync(p).isDirectory() ? e : e.endsWith(".json") ? e.replace(/\.json$/, "") : null)?.toLowerCase();
+      const name = (statSync(p).isDirectory() ? e : isDefFile(e) ? defName(e) : null)?.toLowerCase();
       if (!name) continue;
       const first = seenNames.get(name);
       if (first)
-        report("error", p, `component name "${name}" already exists at ${relative(RX, first)} — names are UNIQUE across the design system and every org (no shadowing); rename one`);
+        report("error", p, `component name "${name}" already exists at ${relative(RX, first)} — names are UNIQUE across the marketplace and every org (no shadowing); rename one`);
       else seenNames.set(name, p);
     }
   }
@@ -218,10 +252,10 @@ for (const orgDir of orgDirs) {
     if (!(existsSync(tdir) && statSync(tdir).isDirectory())) continue;
     const defaults = [];
     for (const e of readdirSync(tdir)) {
-      const mf = join(tdir, e, "manifest.json");
+      const mf = defPath(join(tdir, e), "manifest");
       if (!existsSync(mf)) continue;
       try {
-        if (JSON.parse(readFileSync(mf, "utf8")).default === true) defaults.push(mf);
+        if (readDef(mf).default === true) defaults.push(mf);
       } catch {
         /* malformed manifest is reported elsewhere */
       }
@@ -260,11 +294,11 @@ function appSizesForFile(file) {
   if (!m) return null;
   const org = m[1];
   if (!appSizesCache.has(org)) {
-    const p = join(dirname(file).split(`${sep}orgs${sep}`)[0], "orgs", org, "styles", "semantic", "app-sizes.json");
+    const p = defPath(join(dirname(file).split(`${sep}orgs${sep}`)[0], "orgs", org, "styles", "semantic"), "app-sizes");
     let sizes = {};
     try {
       if (existsSync(p)) {
-        const j = JSON.parse(readFileSync(p, "utf8"));
+        const j = readDef(p);
         for (const [k, v] of Object.entries(j.appSize ?? {})) sizes[k] = typeof v === "string" ? v : v?.$value;
       }
     } catch {
@@ -278,7 +312,7 @@ function appSizesForFile(file) {
 // The universal component names (rx/components/*, case-insensitive) — for validating a
 // template manifest's `preview` map. null = the file is not under an rx tree.
 const componentNamesCache = new Map();
-// Components an ORG's template may reference: the design-system tier + that org's OWN
+// Components an ORG's template may reference: the marketplace tier + that org's OWN
 // components — never another org's (org-privacy). Cached per org.
 function componentNamesForFile(file) {
   const m = file.split(`${sep}orgs${sep}`);
@@ -291,7 +325,7 @@ function componentNamesForFile(file) {
   for (const dir of dirs) {
     if (!existsSync(dir)) continue;
     names ??= new Set();
-    for (const e of readdirSync(dir)) names.add(e.replace(/\.json$/, "").toLowerCase());
+    for (const e of readdirSync(dir)) names.add(defName(e).toLowerCase());
   }
   componentNamesCache.set(org, names);
   return names;
@@ -303,9 +337,9 @@ function walkNode(node, file, root, widthCap = null, isLayoutRoot = false) {
 
   // $include — resolves against the DEFINITION ROOT (layouts/ states/ components/…)
   if (typeof node.$include === "string") {
-    const a = join(root, node.$include + ".json");
+    const a = defPath(root, node.$include);
     const b = join(root, node.$include);
-    if (!existsSync(a) && !existsSync(b))
+    if (!a && !existsSync(b))
       report("error", file, `$include "${node.$include}" does not resolve under ${relative(process.cwd(), root)}/ (docs/design/03)`);
     return; // the included file is linted on its own
   }
@@ -338,7 +372,7 @@ function walkNode(node, file, root, widthCap = null, isLayoutRoot = false) {
     if (typeof node.ref !== "string")
       report("error", file, `Ref needs "ref": "<atom name>" (docs/design/03)`);
     else if (atomsDirExists && !refResolves(node.ref))
-      report("error", file, `Ref "${node.ref}" — no matching atom (rx/design-system/atoms) or shared component (rx/design-system/components); lookup is case-insensitive by name`);
+      report("error", file, `Ref "${node.ref}" — no matching atom (rx/marketplace/atoms) or shared component (rx/marketplace/components); lookup is case-insensitive by name`);
   }
   if (t === "ComponentSlot") {
     if (!node.select || typeof node.select !== "object")
@@ -490,7 +524,7 @@ function checkStateOrder(order, rootFolder, file, includeLayouts = false) {
   const dirNames = (sub) => {
     const d = join(rootFolder, sub);
     return existsSync(d)
-      ? readdirSync(d).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, ""))
+      ? readdirSync(d).filter(isDefFile).map(defName)
       : [];
   };
   // TEMPLATES: stateOrder lists LOCAL states + LAYOUTS in picker order (docs/design/05) —
@@ -499,7 +533,7 @@ function checkStateOrder(order, rootFolder, file, includeLayouts = false) {
   const onDisk = new Set([...stateNames, ...(includeLayouts ? dirNames("layouts") : [])]);
   for (const name of order)
     if (typeof name === "string" && !onDisk.has(name))
-      report("error", file, `stateOrder lists "${name}" but no states/${name}.json${includeLayouts ? ` or layouts/${name}.json` : ""} exists (docs/design/${includeLayouts ? "05" : "03"})`);
+      report("error", file, `stateOrder lists "${name}" but no states/${name}${includeLayouts ? ` or layouts/${name}` : ""} definition exists (docs/design/${includeLayouts ? "05" : "03"})`);
   // Only STATES must appear in stateOrder to lock the picker order; the default layout is
   // legitimately omitted, so never warn on layouts.
   for (const name of stateNames)
@@ -517,15 +551,15 @@ function lintFile(file) {
   // never a style the SDK resolves — token law governs the inside, not the envelope.
   if (!isFixture(file) && !isManifest(file))
     src.split("\n").forEach((line, i) => {
-      if (RAW_VALUE.test(line) && !/^\s*"appWidth"\s*:/.test(line))
+      if (RAW_VALUE.test(line) && !/^\s*"?appWidth"?\s*:/.test(line))
         report("error", file, `raw value — token names only; add/scale a token in the org styles instead (LAW 1, docs/design/06): ${line.trim()}`, i + 1);
     });
 
   let json;
   try {
-    json = JSON.parse(src);
+    json = parseDef(src, file);
   } catch (e) {
-    report("error", file, `invalid JSON: ${e.message}`);
+    report("error", file, `invalid ${file.endsWith(".yaml") ? "YAML" : "JSON"}: ${e.message}`);
     return;
   }
 
@@ -540,13 +574,13 @@ function lintFile(file) {
       if (!(json.binding && json.binding.workflow))
         report("warn", file, `template manifest has no binding.workflow — the app owns its workflow binding (docs/design/05)`);
       // Two valid roots (definitions.ts:229): the STANDARD manifest-only form (root =
-      // layouts/<layout>), OR a `<name>.json` envelope OVERRIDE (its own root). Only the
+      // layouts/<layout>), OR a `<name>` envelope OVERRIDE (its own root). Only the
       // manifest-only form must resolve a layout; an envelope-form template supplies its own.
-      const hasEnvelope = existsSync(join(root, basename(root) + ".json"));
+      const hasEnvelope = !!defPath(root, basename(root));
       if (!hasEnvelope) {
         const layoutName = json.layout ?? "main";
-        if (!existsSync(join(root, "layouts", layoutName + ".json")))
-          report("error", file, `manifest.layout "${layoutName}" → layouts/${layoutName}.json does not exist (and no <name>.json envelope) (docs/design/05)`);
+        if (!defPath(join(root, "layouts"), layoutName))
+          report("error", file, `manifest.layout "${layoutName}" → layouts/${layoutName} does not exist (and no <name> envelope) (docs/design/05)`);
       }
       checkStateOrder(json.stateOrder, root, file, /* includeLayouts */ true);
       // ONE STATE AT A TIME (docs/design/04): the active state is derived from the
@@ -568,9 +602,9 @@ function lintFile(file) {
         for (const sub of ["layouts", "states", "components"]) {
           const d = join(root, sub);
           if (!existsSync(d)) continue;
-          for (const f of readdirSync(d).filter((f) => f.endsWith(".json"))) {
+          for (const f of readdirSync(d).filter(isDefFile)) {
             try {
-              collectClaims(JSON.parse(readFileSync(join(d, f), "utf8")), `${sub}/${f}`);
+              collectClaims(readDef(join(d, f)), `${sub}/${f}`);
             } catch {
               /* that file lints separately */
             }
@@ -591,7 +625,7 @@ function lintFile(file) {
           const viewsIn = (sub) => {
             const d = join(root, sub);
             return existsSync(d)
-              ? readdirSync(d).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, ""))
+              ? readdirSync(d).filter(isDefFile).map(defName)
               : [];
           };
           const states = new Set([...viewsIn("states"), ...viewsIn("layouts")]);
@@ -658,12 +692,12 @@ function lintFile(file) {
       const hasLayouts = existsSync(join(root, "layouts"));
       const statesDir = join(root, "states");
       const stateFiles = existsSync(statesDir)
-        ? readdirSync(statesDir).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, "")).sort()
+        ? readdirSync(statesDir).filter(isDefFile).map(defName).sort()
         : [];
       const hasStateBlock = json.state && typeof json.state === "object";
 
       // the discovery manifest is the single home for description/whenToUse — no dup
-      if (existsSync(join(root, "manifest.json")))
+      if (defPath(root, "manifest"))
         for (const k of ["description", "whenToUse"])
           if (json[k] !== undefined)
             report("error", file, `envelope duplicates manifest meta "${k}" — the discovery manifest is the single home (docs/design/03a)`);
@@ -720,8 +754,8 @@ function lintFile(file) {
             if (!caseNames.includes("inline") && cases.default === undefined) {
               let arrival;
               try {
-                const mp = join(root, "manifest.json");
-                if (existsSync(mp)) arrival = JSON.parse(readFileSync(mp, "utf8")).defaultState;
+                const mp = defPath(root, "manifest");
+                if (mp) arrival = readDef(mp).defaultState;
               } catch { /* linted separately */ }
               const surfaceOnly = typeof arrival === "string" && arrival !== "inline" && caseNames.includes(arrival);
               if (!surfaceOnly)
@@ -742,8 +776,8 @@ function lintFile(file) {
             // face toggle and the renderer only know the Switch's cases.
             const layoutsDir = join(root, "layouts");
             if (existsSync(layoutsDir))
-              for (const lf of readdirSync(layoutsDir).filter((f) => f.endsWith(".json"))) {
-                const lname = lf.replace(/\.json$/, "");
+              for (const lf of readdirSync(layoutsDir).filter(isDefFile)) {
+                const lname = defName(lf);
                 if (!usedLayouts.has(lname))
                   report("warn", file, `layouts/${lf} is not referenced by any Switch case — an orphan face is unreachable (add a case "${lname}" or delete the file) (docs/design/03)`);
               }
@@ -752,8 +786,8 @@ function lintFile(file) {
           // state block is the legacy fallback.
           let mDefault;
           try {
-            const mp = join(root, "manifest.json");
-            if (existsSync(mp)) mDefault = JSON.parse(readFileSync(mp, "utf8")).defaultState;
+            const mp = defPath(root, "manifest");
+            if (mp) mDefault = readDef(mp).defaultState;
           } catch { /* linted separately */ }
           const arrival = mDefault ?? (hasStateBlock ? json.state.defaultState : undefined);
           if (typeof arrival !== "string")
@@ -774,7 +808,7 @@ function lintFile(file) {
     // bare partial (layouts/ states/ components/ blocks/, or an atom). A template
     // layout's TOP-LEVEL node is the app's layout root — the one non-slot home for
     // `appWidth` (state-owned sizing, docs/design/05).
-    walkNode(json, file, root, null, /[\\/]layouts[\\/][^\\/]+\.json$/.test(file) && isTemplatePath(file));
+    walkNode(json, file, root, null, /[\\/]layouts[\\/][^\\/]+\.(json|yaml)$/.test(file) && isTemplatePath(file));
   }
 }
 

@@ -1,8 +1,0 @@
-{
-  "$description": "STANDARD APP SIZES — the named width blocks `appWidth` can reference (docs/design/05). DATA, served on the theme (theme.appSize) and resolved by the SDK like any token; values are raw host-facing CSS (the one token home where that is the point). Every size carries a viewport ceiling — min(100vw, …) — so no panel ever exceeds the screen, and the app never takes over the host page (sizes are bounded, never fill). chat = the core conversational surface (a panel that is always open) · chat-slim = the narrow chat used when a voice panel/focus surface is open beside it · rail = a narrow stacked-cards slide-out · panel = a full detail/form slide-out. · flex = fill the space remaining beside the core chat (100% of the host container minus chat) — the full-page state's width; the one size that intentionally completes the viewport.",
-  "appSize": {
-    "flex": {
-      "$value": "calc(100% - min(100vw, 680px))"
-    }
-  }
-}

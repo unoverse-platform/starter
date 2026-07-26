@@ -1,0 +1,6 @@
+$description: Border widths. Border COLOR is semantic (see themes/*.json color.border.*).
+border:
+  width:
+    $type: dimension
+    heavy:
+      $value: 4px

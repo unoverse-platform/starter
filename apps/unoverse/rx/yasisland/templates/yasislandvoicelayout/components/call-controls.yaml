@@ -1,0 +1,32 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Box
+style:
+  direction: row
+  align: center
+  justify: center
+  gap: lg
+children:
+  - type: Button
+    action: endCall
+    style:
+      direction: row
+      align: center
+      justify: center
+      width: "20"
+      height: "20"
+      radius: full
+      background: action.cta
+      border: subtle
+      color: action.cta-text
+      cursor: pointer
+      outline: none
+      shadow: md
+      transition: all 150ms ease
+      hover:
+        background: action.cta-hover
+    children:
+      - type: Icon
+        style:
+          width: "7"
+          height: "7"
+        icon: phoneOff

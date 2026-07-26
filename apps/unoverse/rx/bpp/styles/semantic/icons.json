@@ -1,8 +1,0 @@
-{
-  "$description": "BPP icon additions — education-domain semantic names → lucide glyphs, merged over the core icon set when the bpp theme resolves.",
-  "icons": {
-    "send": {
-      "$value": "SendHorizontal"
-    }
-  }
-}

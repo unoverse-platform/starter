@@ -1,0 +1,4 @@
+$description: BPP webfonts — Poppins (display/headings) + Open Sans (body), loaded from Google Fonts. Served as theme.fonts; the SDK injects a <link> per URL at document level.
+fonts:
+  stylesheets:
+    $value: [ https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap ]

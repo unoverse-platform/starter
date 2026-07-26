@@ -1,8 +1,0 @@
-{
-  "title": "Course Card",
-  "description": "A compact course card — image, title and short description, expandable to full details.",
-  "whenToUse": "Show one course, qualification or service record as a compact conversational card. Stream one card per item so a list builds as the conversation continues. Expandable to full details with a link to the source page. Not for questions or guided flows (use a finder), and not a list container — one item per card.",
-  "category": "Education",
-  "version": "1.0.0",
-  "defaultState": "courses"
-}

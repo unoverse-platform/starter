@@ -37,7 +37,7 @@ cmd_update() {
     # Abort any stuck rebase/merge from a previous failed pull
     git rebase --abort >/dev/null 2>&1 || true
     git merge --abort >/dev/null 2>&1 || true
-    # Reset generated files (e.g. design-system templates from deploy.sh rebuild)
+    # Reset generated files (e.g. marketplace templates from deploy.sh rebuild)
     # This is safe: .env, production.yml, node_modules, package-lock.json are gitignored
     git reset HEAD -- . >/dev/null 2>&1 || true
     git checkout -- . >/dev/null 2>&1 || true

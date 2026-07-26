@@ -1,0 +1,95 @@
+$schema: ../../../../_schema/unoverse.schema.json
+type: Button
+action:
+  type: setValue
+  values:
+    - key: defaultState
+      value: focus
+style:
+  direction: column
+  width: full
+  padding: "0"
+  background: surface.base
+  border: subtle
+  radius: xl
+  shadow: sm
+  overflow: hidden
+  cursor: pointer
+  textAlign: start
+  transition: all 150ms ease
+  hover:
+    shadow: md
+children:
+  - type: Box
+    style:
+      flex: 0 0 auto
+      width: full
+      height: "40"
+      overflow: hidden
+    children:
+      - type: Image
+        bind:
+          src: primaryImage
+          alt: title
+        style:
+          width: full
+          height: full
+          fit: cover
+  - type: Box
+    style:
+      direction: column
+      gap: "1"
+      padding: "3"
+      textAlign: start
+    children:
+      - type: Text
+        bind:
+          value: title
+        style:
+          font: title
+          weight: semibold
+          lineHeight: tight
+          color: text.primary
+      - type: Text
+        visibleWhen: tagline
+        bind:
+          value: tagline
+        style:
+          font: label
+          weight: semibold
+          color: action.primary
+      - type: Text
+        visibleWhen: description
+        bind:
+          value: description
+        style:
+          font: body.sm
+          color: text.secondary
+      - type: Box
+        style:
+          direction: row
+          justify: start
+          margin: [ "2", "0", "0", "0" ]
+        children:
+          - type: Box
+            style:
+              direction: row
+              align: center
+              gap: xs
+              padding: [ "2", "4" ]
+              background: action.cta
+              radius: full
+              transition: all 150ms ease
+            children:
+              - type: Text
+                value: See details & get tickets
+                style:
+                  font: button
+                  color: action.cta-text
+                  lineHeight: tight
+              - type: Icon
+                icon: arrowRight
+                style:
+                  width: "3"
+                  height: "3"
+                  color: action.cta-text

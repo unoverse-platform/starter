@@ -1,9 +1,0 @@
-{
-  "type": "Box",
-  "style": { "direction": "row", "gap": "xs", "align": "center" },
-  "children": [
-    { "type": "Box", "style": { "width": "1.5", "height": "1.5", "background": "action.primary", "radius": "full", "animation": { "name": "wave", "duration": "1.6s", "easing": "ease-in-out" } } },
-    { "type": "Box", "style": { "width": "1.5", "height": "1.5", "background": "action.primary", "radius": "full", "animation": { "name": "wave", "duration": "1.6s", "easing": "ease-in-out" }, "animationDelay": "0.16s" } },
-    { "type": "Box", "style": { "width": "1.5", "height": "1.5", "background": "action.primary", "radius": "full", "animation": { "name": "wave", "duration": "1.6s", "easing": "ease-in-out" }, "animationDelay": "0.32s" } }
-  ]
-}

@@ -1,0 +1,6 @@
+title: Card Finder
+description: A personalised best-fit card recommendation matched to your eligibility, spending and preferences.
+whenToUse: Find the right card for me — which card should I get, what card is best for travel or rewards, am I eligible? A few quick questions end in one personalised best-fit recommendation with the reasons why it fits.
+category: Input
+version: 1.0.0
+defaultState: focused
