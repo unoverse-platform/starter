@@ -380,7 +380,7 @@ protected async executeNode(inputs, config, context) {
 | Package                      | Pattern                             |
 | ---------------------------- | ----------------------------------- |
 | `@unoverse-platform/aws-bedrock` | Complete PromiseNode implementation |
-| `@unoverse-platform/openai`      | API integration pattern             |
+| `@unoverse-platform/aws-bedrock` | API integration pattern             |
 | `@unoverse-platform/aws-s3`      | AWS service pattern                 |
 
 ### CallbackNode Patterns
@@ -389,7 +389,7 @@ protected async executeNode(inputs, config, context) {
 | ----------------------- | ---------------------------------------- |
 | `@unoverse-platform/ingest` | ApifyResults executor (state management) |
 | `@unoverse-platform/flow`   | Loop executor (iteration pattern)        |
-| `@unoverse-platform/openai` | OpenAIStream (streaming pattern)         |
+| `@unoverse-platform/ingest` | ApifyResults (streaming pattern)         |
 
 ---
 

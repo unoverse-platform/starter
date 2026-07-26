@@ -381,8 +381,11 @@ Every package must include a rich `gravity` field in `package.json` for the mark
 
 Study these published packages when a pattern is unclear:
 
-- **PromiseNode:** `@unoverse-platform/aws-bedrock`, `@unoverse-platform/openai`, `@unoverse-platform/aws-s3`
-- **CallbackNode:** `@unoverse-platform/ingest` (ApifyResults), `@unoverse-platform/flow` (Loop), `@unoverse-platform/openai` (OpenAIStream)
+- **PromiseNode:** `@unoverse-platform/aws-bedrock`, `@unoverse-platform/aws-s3`
+- **CallbackNode:** `@unoverse-platform/ingest` (ApifyResults), `@unoverse-platform/flow` (Loop)
+- **MANIFEST (no code):** `openai` — all five nodes. It was this guide's canonical code
+  example until it was migrated, so any older reference to `openai/src/**` is stale. See
+  [00-manifest-nodes.md](./00-manifest-nodes.md).
 - **MCP provider:** SpatialSearch (hybrid workflow + MCP search tools), MCPgetNeeds (workflow-triggering MCP)
 - **MCP consumer:** Nova
 

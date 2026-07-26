@@ -372,7 +372,7 @@ protected async executeNode(inputs, config, context) {
 **PromiseNode Issues:**
 
 - Compare with `@unoverse-platform/aws-bedrock`
-- Check `@unoverse-platform/openai` implementation
+- Check `@unoverse-platform/aws-bedrock` implementation
 
 **CallbackNode Issues:**
 

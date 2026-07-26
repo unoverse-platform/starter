@@ -85,19 +85,35 @@ function readYaml(file) {
 }
 
 /**
- * Resolve `{ $ref: "../../shared/models.yaml#/enum" }` in place.
+ * Resolve a `$ref` against the package's `shared/` folder.
  *
- * Only a lone $ref is a reference — an object that merely HAS a $ref alongside
- * other keys is data, and silently replacing it would lose those keys.
+ * SHORT FORM, and the one to write:
+ *     url:  { $ref: endpoints#responses }
+ *     enum: { $ref: models#enum }
+ *     toolExchange:
+ *       $ref: tools          # whole file
+ *       maxTurns: 5          # local keys layer on top and win
+ *
+ * No path, because there was never a real path: shared fragments are package-scoped and
+ * the directory part was always thrown away. `../../shared/endpoints.yaml#/responses`
+ * still works, but it is arithmetic that buys nothing.
+ *
+ * A LONE $ref REPLACES. A $ref WITH SIBLINGS MERGES, local winning, which is what lets a
+ * node import a whole shared block and adjust one field.
  */
 function resolveRefs(value, baseDir, file, seen = new Set()) {
   if (Array.isArray(value)) return value.map((v) => resolveRefs(v, baseDir, file, seen));
   if (!value || typeof value !== "object") return value;
 
   const keys = Object.keys(value);
-  if (keys.length === 1 && typeof value.$ref === "string") {
+  if (typeof value.$ref === "string") {
     const [target, frag = ""] = value.$ref.split("#");
-    const abs = resolve(baseDir, target);
+    // `endpoints`, `endpoints.yaml`, or a full relative path — all the same file.
+    const stem = (target.split("/").pop() ?? "").replace(/\.ya?ml$/, "");
+    const abs = target.includes("/")
+      ? resolve(baseDir, target)
+      : [join(sharedDirFor(baseDir), `${stem}.yaml`), join(sharedDirFor(baseDir), `${stem}.yml`)].find(existsSync) ??
+        join(sharedDirFor(baseDir), `${stem}.yaml`);
     if (seen.has(value.$ref)) {
       report("error", file, `$ref cycle at "${value.$ref}"`);
       return null;
@@ -121,9 +137,22 @@ function resolveRefs(value, baseDir, file, seen = new Set()) {
     // fragment twice (enum + enumNames) is still a single consumer.
     if (!refCounts.has(abs)) refCounts.set(abs, new Set());
     refCounts.get(abs).add(file);
-    return resolveRefs(hit, dirname(abs), file, new Set([...seen, value.$ref]));
+    const imported = resolveRefs(hit, dirname(abs), file, new Set([...seen, value.$ref]));
+    if (keys.length === 1) return imported;
+    const local = Object.fromEntries(
+      keys.filter((k) => k !== "$ref").map((k) => [k, resolveRefs(value[k], baseDir, file, seen)]),
+    );
+    if (imported === null || typeof imported !== "object" || Array.isArray(imported)) {
+      report("error", file, `$ref "${value.$ref}" is not an object, so it cannot be merged with sibling keys`);
+      return local;
+    }
+    return { ...imported, ...local };
   }
   return Object.fromEntries(keys.map((k) => [k, resolveRefs(value[k], baseDir, file, seen)]));
+}
+/** A node dir is <pkg>/nodes/<Node>, so shared/ is two levels up. */
+function sharedDirFor(nodeDir) {
+  return join(nodeDir, "..", "..", "shared");
 }
 const refCounts = new Map();
 
@@ -167,13 +196,43 @@ function lintNode(dir, pkg) {
   const parts = {};
   for (const s of SECTIONS) {
     const file = join(dir, `${s}.yaml`);
+    const folder = join(dir, s);
+    const hasFolder = existsSync(folder) && statSync(folder).isDirectory();
     const onDisk = existsSync(file);
     const inline = node[s] !== undefined;
-    if (onDisk && inline) {
-      report("error", rel(file), `"${s}" is defined BOTH in ${s}.yaml and inline in node.yaml — pick one; this is never a merge (DECLARATIVE_NODES.md §5)`);
+
+    const ways = [hasFolder ? `${s}/` : null, onDisk ? `${s}.yaml` : null, inline ? "node.yaml" : null].filter(Boolean);
+    if (ways.length > 1) {
+      report("error", rel(hasFolder ? folder : file), `"${s}" is defined in ${ways.join(" and ")} — pick one; this is never a merge (DECLARATIVE_NODES.md §5)`);
       continue;
     }
-    if (onDisk) parts[s] = { doc: readYaml(file), file: rel(file) };
+
+    // `api` is always the folder form, so every node reads the same way.
+    if (s === "api" && (onDisk || inline)) {
+      report("error", onDisk ? rel(file) : rel(nodePath), `api must be a FOLDER: api/request.yaml, api/events.yaml, and one file per further call (api/toolExchange.yaml, api/narrate.yaml, api/provides.yaml). Every node has the same shape (DECLARATIVE_NODES.md §5)`);
+      continue;
+    }
+
+    if (hasFolder) {
+      // One file per top-level key, named for the key it holds. Assembled here so
+      // every rule below reads the same shape whichever layout the author chose.
+      const files = readdirSync(folder).filter((f) => /\.ya?ml$/.test(f)).sort();
+      if (!files.length) {
+        report("error", rel(folder), `is an empty ${s}/ folder — delete it, or add one file per top-level key (DECLARATIVE_NODES.md §5)`);
+        continue;
+      }
+      const doc = {};
+      for (const f of files) {
+        const key = f.replace(/\.ya?ml$/, "");
+        const part = readYaml(join(folder, f));
+        if (part === undefined || part === null) continue;
+        // The filename IS the key, so a file that repeats it nests the block twice.
+        if (typeof part === "object" && !Array.isArray(part) && Object.keys(part).length === 1 && key in part)
+          report("error", rel(join(folder, f)), `starts with "${key}:" again — the FILENAME is the key, so this file holds the CONTENTS of ${key} (DECLARATIVE_NODES.md §5)`);
+        doc[key] = part;
+      }
+      parts[s] = { doc, file: rel(folder) };
+    } else if (onDisk) parts[s] = { doc: readYaml(file), file: rel(file) };
     else if (inline) parts[s] = { doc: node[s], file: rel(nodePath) };
   }
   for (const s of SECTIONS) if (parts[s]) delete node[s];
@@ -233,13 +292,13 @@ function lintNode(dir, pkg) {
       );
   }
 
-  if (api?.response) {
-    const streaming = ["sse", "ndjson", "awsEventStream"].includes(api.response.transport);
+  if (api?.request) {
+    const streaming = ["sse", "ndjson", "awsEventStream"].includes(api.request.transport);
     const continuePort = (iface.inputs ?? []).some((i) => ["CONTINUE", "SPAWN"].includes(i.signal));
     const derived = streaming || continuePort || api.toolExchange ? "CallbackNode" : "PromiseNode";
     if (node.kind && node.kind !== derived) {
       const why = streaming
-        ? `transport "${api.response.transport}" streams`
+        ? `transport "${api.request.transport}" streams`
         : api.toolExchange
           ? `it declares a toolExchange, which is a multi-turn loop`
           : `an input declares a ${continuePort ? "CONTINUE/SPAWN" : ""} signal`;
@@ -247,35 +306,77 @@ function lintNode(dir, pkg) {
     }
     derivedKinds.set(label, derived);
 
-    // Transport and response shape have to agree.
-    if (streaming && !(api.response.events ?? []).length)
-      report("error", F.api, `transport "${api.response.transport}" streams but declares no response.events — nothing would ever be emitted`);
-    if (!streaming && api.response.events)
-      report("error", F.api, `transport "${api.response.transport}" settles once, so response.events is meaningless — use response.map`);
-    if (!streaming && !api.response.map && api.response.transport !== "binary")
-      report("warn", F.api, `transport "${api.response.transport}" has no response.map — nothing maps onto this node's outputs`);
-    if (!streaming && api.response.finalize)
-      report("error", F.api, `response.finalize belongs to a streaming transport; a settling one has only response.map`);
+    // The events table is compulsory for a node the graph can trigger: it is the only
+    // way anything leaves the node, so without it the node is a call into the void.
+    if (!(api.events ?? []).length)
+      report("error", F.api, `has a request but no api/events.yaml — the events table is compulsory, it is the only way anything leaves a node (DECLARATIVE_NODES.md §5)`);
   } else if (existsSync(join(dir, "src")) === false && !parts.api) {
     report("warn", F.node, `has no api.yaml — a manifest node with no upstream call does nothing`);
   }
 
-  // Every emit target must be a declared output, or it goes nowhere silently.
-  for (const e of api?.response?.events ?? [])
-    if (!outputs.has(e.emit))
-      report("error", F.api, `event "${e.match}" emits to "${e.emit}", which is not a declared output (interface.yaml)`);
-  if (api?.response?.finalize && !outputs.has(api.response.finalize.emit))
-    report("error", F.api, `response.finalize emits to "${api.response.finalize.emit}", which is not a declared output (interface.yaml)`);
-  for (const k of Object.keys(api?.response?.map ?? {}))
-    if (!outputs.has(k)) report("error", F.api, `response.map targets "${k}", which is not a declared output (interface.yaml)`);
+  // ── the events table: one row per output connector, in connector order ──
+  //
+  // This is the whole DX bet. A reader should learn a node's outward behaviour from ONE
+  // ordered list rather than from four scattered keys, so the order is enforced, not
+  // merely suggested. Enforcing it is also the only way it stays true after edits.
+  const rows = api?.events ?? [];
+  const streams = ["sse", "ndjson", "awsEventStream"].includes(api?.request?.transport);
+  const outputOrder = (iface.outputs ?? []).map((o) => o.name);
+  const SOURCES = ["response", "narrator", "tool", "complete"];
 
-  // An output nothing emits to is dead: downstream nodes can wire to it and get nothing.
-  const emitted = new Set([
-    ...(api?.response?.events ?? []).map((e) => e.emit),
-    ...Object.keys(api?.response?.map ?? {}),
-    api?.response?.finalize?.emit,
-  ].filter(Boolean));
-  if (api) for (const o of outputs) if (!emitted.has(o)) report("warn", F.iface ?? F.node, `output "${o}" is declared but nothing emits to it`);
+  for (const [i, r] of rows.entries()) {
+    const from = r.from ?? "response";
+    if (!SOURCES.includes(from))
+      report("error", F.api, `events[${i}] has from: "${from}" — must be one of ${SOURCES.join(", ")} (DECLARATIVE_NODES.md §5)`);
+    if (!outputs.has(r.emit))
+      report("error", F.api, `events[${i}] emits to "${r.emit}", which is not a declared output (interface.yaml)`);
+    // `match` names a streamed event type, so it means nothing on the other sources.
+    if (r.match && from !== "response")
+      report("error", F.api, `events[${i}] (${r.emit}) has a match but from: ${from} — only a "response" row matches an event type`);
+    if (streams && from === "response" && !r.match)
+      report("error", F.api, `events[${i}] (${r.emit}) is a streaming response row with no match — it would fire on every event`);
+    if (r.throttleMs && r.throttleChars)
+      report("error", F.api, `events[${i}] (${r.emit}) sets both throttleMs and throttleChars — pick the one that suits the output`);
+    if (r.accumulate && from === "tool")
+      report("warn", F.api, `events[${i}] (${r.emit}) accumulates a tool result into a string — tool results are usually objects`);
+  }
+
+  // Coverage: an output nothing emits to is dead, and downstream nodes can wire to it.
+  if (api) {
+    const emitted = new Set(rows.map((r) => r.emit));
+    for (const o of outputs)
+      if (!emitted.has(o)) report("warn", F.iface ?? F.node, `output "${o}" is declared but no events row emits to it`);
+  }
+
+  // Order: the rows a reader sees must be the connectors they see, in the same order.
+  // Compared over the outputs that ARE covered, so a missing row reports once (above)
+  // rather than also reading as a reorder.
+  if (rows.length) {
+    const rowOrder = [...new Set(rows.map((r) => r.emit))].filter((n) => outputs.has(n));
+    const want = outputOrder.filter((n) => rowOrder.includes(n));
+    if (rowOrder.join(",") !== want.join(","))
+      report(
+        "error",
+        F.api,
+        `events rows are ordered ${rowOrder.join(", ")} but the output connectors are ${want.join(", ")} — keep the table in connector order so the node reads top to bottom (DECLARATIVE_NODES.md §5)`,
+      );
+  }
+
+  const fixture = parts.test?.doc?.testData?.config ?? {};
+  const known = Object.keys(config?.configSchema?.properties ?? {});
+  if (config) for (const k of Object.keys(fixture))
+    if (!known.includes(k))
+      report("error", F.test, `testData.config sets "${k}", which config.yaml does not declare — the value is silently ignored, so the fixture drifts from the node`);
+
+  // Retired keys. Left in place they would silently do nothing, which is worse than a
+  // hard error, so each one names its replacement.
+  if (api?.response !== undefined)
+    report("error", F.api, `api.response is retired: transport/terminator/error moved INTO the call (request), and what leaves the node is the events table (DECLARATIVE_NODES.md §5)`);
+  if (api?.narrate?.output !== undefined)
+    report("error", F.api, `narrate.output is retired — the narrator's line lands via an \`events\` row with from: narrator (DECLARATIVE_NODES.md §5)`);
+  for (const [name, m] of Object.entries(api?.provides ?? {}))
+    if (m.response !== undefined)
+      report("error", F.api, `provides.${name}.response is retired: transport/error moved into its request, and the value it hands back is provides.${name}.returns (DECLARATIVE_NODES.md §5)`);
 
   // Credentials must resolve to a declared type, or the run fails at execute time.
   for (const c of iface.credentials ?? []) {
@@ -383,10 +484,10 @@ function lintNode(dir, pkg) {
   // declared host list is its boundary. Deny by default, and catch it statically here
   // as well as at run time.
   if (api?.request?.url) {
-    const literal = String(api.request.url).replace(/\{\{[^}]*\}\}/g, " ");
+    const literal = String(api.request.url).replace(/\{\{[^}]*\}\}/g, "\u0000");
     let host = null;
     try {
-      host = new URL(literal.replace(/ /g, "x")).host.toLowerCase();
+      host = new URL(literal.replace(/\u0000/g, "x")).host.toLowerCase();
     } catch {
       report("error", F.api, `request.url is not a valid URL: ${api.request.url}`);
     }
@@ -394,7 +495,7 @@ function lintNode(dir, pkg) {
       if (!/^https:/i.test(literal))
         report("error", F.api, `request.url is not https — a credential must not travel in clear text`);
       const egress = pkg.egress ?? [];
-      const templated = literal.includes(" ");
+      const templated = literal.includes("\u0000");
       const ok = egress.some((p) =>
         p.startsWith("*.")
           ? host.endsWith(p.slice(1)) && !host.slice(0, -(p.length - 1)).includes(".")

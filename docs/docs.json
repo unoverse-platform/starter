@@ -122,9 +122,8 @@
             "group": "Getting Started",
             "pages": [
               "nodes/overview",
-              "nodes/01-quick-start",
-              "nodes/02-node-types",
-              "nodes/03-patterns"
+              "nodes/00-manifest-nodes",
+              "nodes/02-node-types"
             ]
           },
           {

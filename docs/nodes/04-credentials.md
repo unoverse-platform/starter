@@ -64,7 +64,9 @@ export async function myService(config: any, credentialContext: any, api?: any) 
 ## Real Example — OpenAI
 
 ```typescript
-// apps/unoverse/nodes/openai/src/shared/openaiStream/client/openaiClient.ts
+// _legacy/nodes/openai/src/shared/openaiStream/client/openaiClient.ts
+// (the openai package is a YAML manifest now, where the same rule is `credentials:` in
+//  interface.yaml; this stays as the reference pattern for a CODE node)
 export async function initializeOpenAIClient(context: any, logger: any, api?: any) {
   const availableCredentials = context.credentials || {};
 
@@ -167,7 +169,10 @@ export async function myService(config: any, credentialContext: any, api?: any) 
 
 ## 🔗 Study Real Implementations
 
-- `@unoverse-platform/openai` — `openaiClient.ts` — canonical pattern for reading from `context.credentials`
+- `_legacy/nodes/openai/src/shared/openaiStream/client/openaiClient.ts` — the canonical
+  name-first pattern for reading `context.credentials`. Kept as a reference only: the
+  `openai` package is a manifest now, where a credential is declared in `interface.yaml`
+  and interpolated as `{{ credentials.<name>.<field> }}` with no code at all.
 - `@unoverse-platform/miro-bridge` — `mcpHandlers.ts` — same pattern for bearer token auth
 
 ---

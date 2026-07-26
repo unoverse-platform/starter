@@ -51,7 +51,7 @@ protected async executeNode(
 ### Real Examples
 
 - **`@unoverse-platform/aws-bedrock`** - BedrockClaude executor
-- **`@unoverse-platform/openai`** - OpenAI completion
+- **`@unoverse-platform/aws-bedrock`** - BedrockClaude completion
 - **`@unoverse-platform/aws-s3`** - S3 file operations
 
 ## 🔄 CallbackNode - Multiple Outputs
@@ -241,7 +241,7 @@ class OpenAIStreamExecutor extends CallbackNode<Config, State> {
 
 ### Real Examples
 
-- **`@unoverse-platform/openai`** - OpenAIStream executor (streaming with emit + return)
+- **`@unoverse-platform/ingest`** - ApifyResults executor (streaming with emit + return)
 - **`@unoverse-platform/ingest`** - ApifyResults executor (processes items one by one)
 - **`@unoverse-platform/flow`** - Loop executor (iterates through collections)
 
@@ -424,10 +424,10 @@ See [Signal Routing](./09-signal-routing.md) for complete details.
 | Type         | Package                      | File                             |
 | ------------ | ---------------------------- | -------------------------------- |
 | PromiseNode  | `@unoverse-platform/aws-bedrock` | `BedrockClaude/node/executor.ts` |
-| PromiseNode  | `@unoverse-platform/openai`      | `OpenAI/node/executor.ts`        |
+| PromiseNode  | `@unoverse-platform/aws-s3`      | `S3Files/node/executor.ts`       |
 | CallbackNode | `@unoverse-platform/ingest`      | `ApifyResults/node/executor.ts`  |
 | CallbackNode | `@unoverse-platform/flow`        | `Loop/node/executor.ts`          |
-| CallbackNode | `@unoverse-platform/openai`      | `OpenAIStream/node/executor.ts`  |
+| CallbackNode | `@unoverse-platform/flow`        | `Loop/node/executor.ts`          |
 
 ---
 

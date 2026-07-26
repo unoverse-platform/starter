@@ -100,8 +100,22 @@ console.log(`\n${node.definition.name}  (${node.packageName}/${node.type}, ${nod
 console.log(
   call
     ? `${spec.request.method} ${spec.request.url}   service call: ${call.method}\n`
-    : `${spec.request.method} ${spec.request.url}   transport: ${spec.response.transport}\n`,
+    : `${spec.request.method} ${spec.request.url}   transport: ${spec.request.transport}\n`,
 );
+
+// SHOW the sample data. A bench that silently uses a fixture leaves you guessing what
+// it actually ran with, which is the same as having no fixture at all.
+console.log("── sample data (test.yaml) ──");
+for (const [k, v] of Object.entries(ctx.config)) {
+  const s = typeof v === "string" ? v : JSON.stringify(v);
+  console.log(`  ${k.padEnd(18)} ${s.length > 68 ? s.slice(0, 67) + "…" : s}`);
+}
+for (const [k, v] of Object.entries(testData.inputs ?? {}))
+  console.log(`  ${("in:" + k).padEnd(18)} ${JSON.stringify(v).slice(0, 68)}`);
+if (call) console.log(`  ${"call".padEnd(18)} ${call.method}(${JSON.stringify(call.params ?? {}).slice(0, 50)})`);
+for (const decl of node.definition.credentials ?? [])
+  console.log(`  ${("cred:" + decl.name).padEnd(18)} ${Object.keys(credentials[decl.name] ?? {}).join(", ") || "(none found)"}`);
+console.log("");
 
 const counts = {};
 const started = Date.now();
@@ -132,7 +146,10 @@ for (const [k, v] of Object.entries(result.outputs)) {
   console.log(`  ${k.padEnd(12)} ${(s ?? "").slice(0, 90)}${(s?.length ?? 0) > 90 ? "…" : ""}`);
   declared.delete(k);
 }
-for (const d of declared) console.log(`  ${d.padEnd(12)} (nothing emitted)`);
+// An output can be live without being an output VALUE: a streamed one is delivered
+// event by event and never settles. Say which, rather than calling it empty.
+for (const d of declared)
+  console.log(`  ${d.padEnd(12)} ${counts[d] ? `(streamed only, ${counts[d]} event(s))` : "(nothing emitted)"}`);
 
 // testData.expect: assertions over what actually came back.
 let failed = 0;

@@ -466,7 +466,7 @@ For complete details on all config schema options including:
 | Type         | Package                      | Description            |
 | ------------ | ---------------------------- | ---------------------- |
 | PromiseNode  | `@unoverse-platform/aws-bedrock` | BedrockClaude executor |
-| PromiseNode  | `@unoverse-platform/openai`      | OpenAI completion      |
+| PromiseNode  | `@unoverse-platform/aws-bedrock` | BedrockClaude completion |
 | CallbackNode | `@unoverse-platform/ingest`      | ApifyResults executor  |
 | CallbackNode | `@unoverse-platform/flow`        | Loop executor          |
 

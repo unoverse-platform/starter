@@ -1,174 +1,92 @@
 ---
 sidebarTitle: "Overview"
-title: "Node Development Guide"
+title: "Nodes"
 ---
 
-**Create powerful AI workflow nodes with GravityAI's plugin system**
+A node is one step an Agent can take. It calls a service, shapes the answer, and passes it to
+the next node in your workflow.
 
-## 📚 Documentation
+The node library in **Canvas** covers the common ground on day one. This section is for the
+nodes only you can build: your own APIs, your own systems, the work that makes an Agent
+yours.
 
-### Getting Started
+A node is a folder of YAML. You describe the service you want to call, and the platform
+performs it. There is nothing to compile and nothing to publish.
 
-1. **[Quick Start](./01-quick-start.md)** - Templates, setup, and your first node
-2. **[Node Types](./02-node-types.md)** - PromiseNode vs CallbackNode decision guide
+[Anatomy of a Node](./00-manifest-nodes.md) is the place to start.
 
-### Core Concepts
+## Documentation
 
-3. **[Implementation Patterns](./03-patterns.md)** - Critical patterns and architecture
-4. **[Credential Management](./04-credentials.md)** - Security and authentication
-5. **[Config Schema Reference](./06-config-schema.md)** - UI configuration and field types
+### Getting started
 
-### Advanced Topics
+| Page | Covers |
+|---|---|
+| [Anatomy of a Node](./00-manifest-nodes.md) | The folder, the five files, and how a call is described |
+| [Node Types](./02-node-types.md) | Settling once or emitting many times, and how the platform tells |
 
-6. **[Service Connectors](./07-service-connectors.md)** - Inter-node communication
-7. **[MCP Services](./08-mcp-services.md)** - AI tool discovery and integration
-8. **[Signal Routing](./09-signal-routing.md)** - Workflow execution flow
-9. **[Discoverability](./14-node-discoverability.md)** - ⭐ **Critical** - writing `name`/`description`/`whenToUse` so the AI actually selects your artifact (how `getNodeCatalog` ranks it; outcome-first rule). **Applies to nodes, templates (MCP apps), AND agent skills** — templates/skills rank against the user's own intent
+### Building blocks
 
-### Reference
+| Page | Covers |
+|---|---|
+| [Credentials](./04-credentials.md) | Authenticating against a real service |
+| [Config Schema](./06-config-schema.md) | The settings form: every field type and how it renders |
+| [Service Connectors](./07-service-connectors.md) | Handing a capability to another node |
+| [MCP Services](./08-mcp-services.md) | Giving an Agent tools it can choose to call |
+| [Signal Routing](./09-signal-routing.md) | Streaming, iteration, and waiting for the next signal |
 
-9. **[Troubleshooting](./05-troubleshooting.md)** - Common issues and solutions
+### Ship it
 
----
-
-## 🏗️ Architecture Overview
-
-GravityAI uses a **plugin-based architecture** where nodes are distributed as npm packages:
-
-```
-@unoverse-platform/your-node/
-├── src/
-│   ├── index.ts              # Plugin definition
-│   ├── YourNode/
-│   │   ├── node/
-│   │   │   ├── index.ts      # Node definition
-│   │   │   └── executor.ts   # Execution logic
-│   │   ├── service/          # Business logic & API calls
-│   │   └── util/             # Types & utilities
-│   ├── shared/
-│   │   └── platform.ts       # Platform dependencies
-│   └── credentials/          # Credential definitions
-└── package.json
-```
-
-## 🎯 Key Principles
-
-| Principle                  | Description                                                     |
-| -------------------------- | --------------------------------------------------------------- |
-| **Plugin Pattern**         | Nodes are npm packages that register themselves                 |
-| **Separation of Concerns** | Executors handle workflow logic, services handle business logic |
-| **Credential Security**    | Services fetch credentials internally, never exposed to nodes   |
-| **Signal-Based Routing**   | Edges represent both data flow and control signals              |
-| **Service Connectivity**   | Nodes provide and consume services through connectors           |
-| **MCP Integration**        | AI nodes discover tools from connected MCP services             |
-
-## � Quick Decision Guide
-
-### Choose Your Node Type
-
-| Use Case                   | Node Type        |
-| -------------------------- | ---------------- |
-| API call that returns once | **PromiseNode**  |
-| Data transformation        | **PromiseNode**  |
-| Streaming responses        | **CallbackNode** |
-| Processing collections     | **CallbackNode** |
-| Long-running tasks         | **CallbackNode** |
-
-### Critical Pattern (Must Follow)
-
-```typescript
-// ✅ CORRECT: Dependency injection pattern
-import { PromiseNode, type NodeExecutionContext } from "@unoverse-platform/plugin-base";
-
-export default class MyNodeExecutor extends PromiseNode {
-  constructor() {
-    super("MyNode");
-  }
-
-  protected async executeNode(
-    inputs: Record<string, any>,
-    config: MyConfig,
-    context: NodeExecutionContext
-  ): Promise<MyOutput> {
-    // Use injected API - never global state
-    const credentialContext = this.buildCredentialContext(context);
-    const result = await myService(config, credentialContext, context.api);
-    return { __outputs: result };
-  }
-}
-```
-
-## � Real Examples
-
-Reference these published packages for complete implementations:
-
-### PromiseNode Examples
-
-| Package                      | Description            |
-| ---------------------------- | ---------------------- |
-| `@unoverse-platform/aws-bedrock` | BedrockClaude executor |
-| `@unoverse-platform/openai`      | OpenAI completion      |
-| `@unoverse-platform/aws-s3`      | S3 file operations     |
-
-### CallbackNode Examples
-
-| Package                 | Description           |
-| ----------------------- | --------------------- |
-| `@unoverse-platform/ingest` | ApifyResults executor |
-| `@unoverse-platform/flow`   | Loop executor         |
-| `@unoverse-platform/openai` | OpenAIStream executor |
-
-### Service Connector Examples
-
-| Pattern           | Example                             |
-| ----------------- | ----------------------------------- |
-| MCP Provider      | PostgresFetch - vector search tools |
-| MCP Consumer      | Nova - discovers and uses tools     |
-| Embedding Service | OpenAI - text embedding             |
-
-## 🚨 Critical Rules
-
-### Never Override `execute()`
-
-```typescript
-// ❌ WRONG
-async execute(inputs, context) { ... }
-
-// ✅ CORRECT - implement executeNode() or handleEvent()
-protected async executeNode(inputs, config, context) { ... }
-```
-
-### Always Wrap Outputs
-
-```typescript
-// ❌ WRONG
-return { text: "result" };
-
-// ✅ CORRECT
-return { __outputs: { text: "result" } };
-```
-
-### CallbackNode Completion
-
-```typescript
-// ❌ WRONG - outputs are LOST
-return { __outputs: {...}, isComplete: true };
-
-// ✅ CORRECT - emit THEN mark complete
-emit({ __outputs: { finalResult: data } });
-return { isComplete: true };
-```
-
-## 🛠️ Development Workflow
-
-1. **Create** your node package with the template structure
-2. **Define** your node in `node/index.ts`
-3. **Implement** execution logic in `node/executor.ts`
-4. **Add** service logic in `service/index.ts`
-5. **Register** in plugin `src/index.ts`
-6. **Test** with the debug resolver
-7. **Publish** to npm
+| Page | Covers |
+|---|---|
+| [Discoverability](./14-node-discoverability.md) | Writing the words that decide whether the AI builder offers your node |
+| [Testing](./13-testing-nodes.md) | Running a node against the real API before you wire it up |
+| [Packages](./10-package-marketplace.md) | The envelope around a set of nodes |
+| [Troubleshooting](./05-troubleshooting.md) | When a node loads but does nothing |
 
 ---
 
-**Next**: Start with [Quick Start](./01-quick-start.md) for essential templates
+## The shape of a node
+
+```
+apps/unoverse/nodes/<package>/
+├── package.yaml              # the package: category, the hosts it may call
+├── credentials/              # the keys its nodes need
+├── shared/                   # fragments several nodes reuse
+└── nodes/
+    └── YourNode/
+        ├── node.yaml         # what it is
+        ├── interface.yaml    # what it connects to
+        ├── config.yaml       # the settings form
+        ├── api/              # the call, and what leaves the node
+        └── test.yaml         # a fixture you can run
+```
+
+One folder is one node. [Anatomy of a Node](./00-manifest-nodes.md) walks through every file.
+
+## How you build one
+
+1. Create the folder under a package's `nodes/`
+2. Describe the node: `node.yaml`, `interface.yaml`, `config.yaml`
+3. Describe the call: `api/request.yaml`, and `api/events.yaml` for what comes out
+4. Add the host to the package's `egress`
+5. Check it: `unoverse node lint`
+6. Run it against the real service: `unoverse node test <NodeType>`
+
+Save a file and the node reloads. No build, no registration, no publish.
+
+## Nodes to learn from
+
+The `openai` package covers every shape you are likely to need. Read the one closest to
+yours before you start.
+
+| Node | Read it for |
+|---|---|
+| **OpenAI** | The simplest case: one call, one answer |
+| **OpenAI Stream** | Tokens arriving live, accumulated and throttled |
+| **GPT-5 Structured Output** | A request whose shape changes with the settings |
+| **Embedding Service** | A node other nodes call, rather than a workflow step |
+| **OpenAI Agent** | A tool loop, and a second model narrating progress |
+
+---
+
+**Next**: [Anatomy of a Node](./00-manifest-nodes.md)
