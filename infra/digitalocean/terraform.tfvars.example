@@ -1,0 +1,35 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+# Token: set DIGITALOCEAN_TOKEN in the environment (preferred) or do_token here.
+
+region       = "lon1"
+name         = "universe-poc"
+size         = "small"                  # small (POC) | medium | large
+admin_cidr   = "203.0.113.7/32"         # YOUR IP — SSH + Dozzle only
+ssh_key_name = "your-do-ssh-key-name"   # must already exist in the DO account
+domain       = "yourdomain.com"         # api.yourdomain.com → the LB
+manage_dns   = false                    # true only if the domain's DNS is on DO
+
+# POC ONLY: public Canvas at https://api.<domain>:3001 (a second port on the ONE LB).
+# Add that URL to the IdP's allowed origins. Default false = admin-only.
+canvas_public = true
+
+# Auth — byo-oidc (the standing choice: DO universes use the existing Auth0
+# tenant; roles/permissions live THERE, Terraform doesn't touch them).
+auth_issuer    = "https://your-tenant.auth0.com"
+auth_client_id = "your-spa-client-id"
+auth_audience  = "gravity-api"
+
+# Service secrets — with these set, the rendered .env.production is COMPLETE.
+docr_token           = "dop_v1_..."   # registry token (pulls platform images)
+openai_api_key       = "sk-..."       # memory server + OpenAI nodes
+# hyperbrowser_api_key = ""           # optional — page intelligence
+
+# Postgres — three OPTIONAL modes (leave all unset = provision a fresh cluster):
+#   Reuse YOUR existing DO Postgres (the usual case) — Terraform adds the
+#   universe's own db/user/pool to it, touching nothing else. Name from
+#   `doctl databases list`:
+# existing_pg_cluster_name = "your-existing-cluster-name"
+#   Or a fully external database, used verbatim:
+# byo_postgres_url = "postgresql://user:pass@host:5432/db?sslmode=require"
+
+# Redis: always provisioned by Terraform (Managed Redis, TLS). Not configurable.

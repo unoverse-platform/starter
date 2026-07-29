@@ -1,461 +1,324 @@
 ---
 sidebarTitle: "Config Schema"
-title: "Config Schema Reference"
+title: "Config Schema"
 ---
 
-**Complete guide to configSchema options for node configuration UI**
+`config.yaml` is the settings form. **Canvas** renders it, someone fills it in, and your
+calls read the saved values as `{{ config.<field> }}`.
 
-## 🎯 Overview
+It is the file you touch most. Every new option a node grows lands here and nowhere else.
 
-The `configSchema` defines the configuration UI for your node. It uses JSON Schema with custom UI extensions to create forms that users fill out when configuring nodes in workflows.
+```yaml config.yaml
+$schema: ../../../_schema/config.schema.json
 
-## 📋 Basic Structure
+configSchema:
+  type: object
+  required: [model]
+  properties:
+    model:
+      type: string
+      title: Model
+      description: Which model answers
+      enum: [fast, balanced, deep]
+      enumNames: [Fast, Balanced, Deep reasoning]
+      default: balanced
 
-```typescript
-configSchema: {
-  type: "object",
-  properties: {
-    fieldName: {
-      type: "string|number|boolean|object|array",
-      title: "Display Name",
-      description: "Help text for users",
-      default: "default value",
-      // UI-specific options
-      "ui:field": "template|code",
-      "ui:widget": "toggle|select",
-      "ui:dependencies": { otherField: true }
-    }
-  },
-  required: ["fieldName"]
-}
+    prompt:
+      type: string
+      title: Prompt
+      description: The request to answer. Usually wired in from an upstream node.
+      default: ""
+      ui:field: template
+
+"ui:order": [model, prompt]
 ```
 
-## 🔤 Field Types
+`configSchema` is a JSON Schema, so any keyword you already know works. The `ui:` keys are
+the platform's, and they decide how a field is drawn.
 
-### String Fields
+## Writing the labels
 
-#### Basic String
-```typescript
-apiEndpoint: {
-  type: "string",
-  title: "API Endpoint",
-  description: "The API endpoint URL",
-  default: "https://api.example.com"
-}
+Three fields decide whether the form makes sense to the person filling it in.
+
+| Key | Is |
+|---|---|
+| `title` | The label. Without one the raw property name is shown, which reads as unfinished |
+| `description` | The help text under the field |
+| `default` | What the field starts as |
+
+**Say what the setting does, not what it is called.** "Maximum number of tokens to generate"
+tells a reader nothing they could not get from the label. "The model stops when it hits this,
+mid-sentence and without an error" tells them why they might change it.
+
+Keep it to a line or two. Detail belongs in your node's own documentation, not under a form
+field.
+
+## Field types
+
+### Text
+
+```yaml
+systemPrompt:
+  type: string
+  title: System Prompt
+  description: Standing instructions for every run. Optional.
+  default: ""
+  ui:field: template
 ```
 
-#### Template String (Handlebars)
-```typescript
-prompt: {
-  type: "string",
-  title: "Prompt",
-  description: "User message/prompt. Supports template syntax like {{input.fieldName}} to reference input data.",
-  default: "",
-  "ui:field": "template"
-}
-```
-- **Template Syntax**: `{{input.fieldName}}`, `{{signal.data}}`, `{{workflow.variables.userId}}`
-- **Resolves to**: String value after handlebars processing
+### A choice
 
-#### Enum/Dropdown String
-```typescript
-model: {
-  type: "string",
-  title: "Model",
-  description: "Select the Claude model to use",
-  enum: [
-    "us.anthropic.claude-sonnet-4-20250514-v1:0",
-    "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-    "us.anthropic.claude-3-5-haiku-20241022-v1:0"
-  ],
-  enumNames: ["Claude Sonnet 4 (Latest)", "Claude 3.5 Sonnet", "Claude 3.5 Haiku"],
-  default: "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
-}
+`enum` is the values, `enumNames` is what a person sees. They are positional, so they must be
+the same length.
+
+```yaml
+tone:
+  type: string
+  title: Tone
+  enum: [neutral, warm, terse]
+  enumNames: [Neutral, Warm, Terse]
+  default: neutral
 ```
 
-### Number Fields
+### A number
 
-#### Basic Number
-```typescript
-maxTokens: {
-  type: "number",
-  title: "Max Tokens",
-  description: "Maximum number of tokens to generate",
-  default: 256,
-  minimum: 1,
-  maximum: 4096
-}
+```yaml
+maxTokens:
+  type: number
+  title: Max Tokens
+  description: The reply stops when it hits this, mid-sentence and without an error.
+  default: 1200
+  minimum: 1
+  maximum: 128000
+  step: 100
 ```
 
-#### Number with Step
-```typescript
-temperature: {
-  type: "number",
-  title: "Temperature",
-  description: "Controls randomness (0-1)",
-  default: 0.7,
-  minimum: 0,
-  maximum: 1,
-  step: 0.1
-}
-```
+`minimum` and `maximum` are enforced, so a bad value is caught in the form rather than by the
+service.
 
-### Boolean Fields
+### A switch
 
-#### Toggle Widget
-```typescript
-includeImageUrl: {
-  type: "boolean",
-  title: "Include Image URL",
-  description: "Enable image analysis by providing an image URL",
-  default: false,
-  "ui:widget": "toggle"
-}
-```
-
-#### Checkbox (Default)
-```typescript
-generateIds: {
-  type: "boolean",
-  title: "Generate IDs",
-  description: "Generate content IDs",
+```yaml
+includeSources:
+  type: boolean
+  title: Include sources
   default: false
-}
+  ui:widget: toggle
 ```
 
-### Object Fields
+### Structured data
 
-#### Template Object (JavaScript)
-```typescript
-code: {
-  type: "object",
-  title: "Code",
-  description: "JS Code to transform data",
-  default: "",
-  "ui:field": "template"
-}
-```
-- **Template Syntax**: JavaScript return statement
-- **Example**: `return { result: input.data.map(x => x.value) }`
-- **Resolves to**: JavaScript object/value after execution
-
-#### History Object
-```typescript
-history: {
-  type: "object",
-  title: "History",
-  description: "Message history [] for context",
-  default: "",
-  "ui:field": "template"
-}
+```yaml
+schema:
+  type: object
+  title: Output schema
+  description: The JSON Schema the answer must match.
+  ui:field: template
 ```
 
-## 🎨 UI Extensions
+## Making a field wirable
 
-### Template Fields
+`ui:field: template` is what lets a field take data from an upstream node instead of a typed
+value. Without it, the field is whatever someone typed.
 
-#### String Templates (Handlebars)
-```typescript
-"ui:field": "template"
-// With type: "string"
-// Syntax: {{input.fieldName}}, {{signal.data}}
-// Result: Resolved string value
+**The syntax is decided by the field's `type`, always, on every node.**
+
+**A `string` field takes a Handlebars template.**
+
+```yaml
+prompt: "Summarise this: {{signal.inputtrigger1.output.message}}"
 ```
 
-#### Object Templates (JavaScript)
-```typescript
-"ui:field": "template"
-// With type: "object"  
-// Syntax: return { key: input.value }
-// Result: Executed JavaScript result
+Five roots are available:
+
+| Root | Reaches |
+|---|---|
+| `signal.<nodeId>.<output>.<field>` | an upstream node's output |
+| `config.<field>` | another of this node's settings |
+| `credentials.<name>.<field>` | this node's credential |
+| `services.<connector>` | what is wired at run time |
+| `prompt.<blockName>` | a prompt block from the library |
+
+There is **no `input.*` root**. A path that matches nothing resolves to empty and says
+nothing about it, so check the id against the edge you actually drew. Array elements and
+object keys are dot segments, never brackets: `records.0.Name`, not `records[0].Name`.
+
+Helpers work anywhere a template does: `eq`, `contains`, `filter` and `toJSON`. So a
+conditional lives in the field itself.
+
+```yaml
+systemPrompt: |-
+  {{#if (eq config.tone "warm")}}Be warm.{{else}}Be terse.{{/if}}
+  {{prompt.markdownGuidelines}}
 ```
 
-#### What a `return` expression may do (it is sandboxed)
+**An `object` or `array` field takes a `return` expression instead.**
 
-A `return ...` field is not full JavaScript. It is a **data-shaping expression**, evaluated in
-a sandbox that reshapes the data already in its context and nothing else. This is a security
-boundary: template config travels inside workflow definitions (which move by copy-paste, the
-marketplace, or a shared export), so it must not be a place to run arbitrary code.
-
-**Allowed** — everything you need to reshape data:
-
-- Read the context: `signal.<node>.<output>`, `input.<field>`, indexing (`images[0].data`)
-- Build values: object and array literals, spread, template strings
-- Operators and ternaries: `input.count > 0 ? 'has' : 'none'`
-- Safe methods: array/string transforms (`map`, `filter`, `join`, `slice`, `replace`, ...),
-  `JSON`, `Math`, `Object.keys/values/entries`, and arrow callbacks (`items.map(x => x.name)`)
-
-**Rejected** — anything that isn't pure data-shaping:
-
-- Globals: `process`, `require`, `fetch`, `globalThis`, `eval`, `Function`
-- `new`, assignment, and statement blocks (`() => { ... }`)
-- Reaching prototypes: `constructor`, `__proto__`
-
-A rejected expression is logged and never runs.
-
-> **Need real logic, an external call, or a credential?** That belongs in a custom **node**,
-> not a template expression. Nodes are trusted code you author and install; they get scoped
-> credentials (`getNodeCredentials`) and network access by design. Template expressions only
-> reshape data. See [Create Your First Node](../onboarding/03-create-your-first-node.md) and
-> [Credential Management](./04-credentials.md).
-
-### Widgets
-
-#### Toggle Switch
-```typescript
-"ui:widget": "toggle"
-// Creates a toggle switch instead of checkbox
-// Only for boolean fields
+```yaml
+payload: "return { topic: signal.inputtrigger1.output.message, images: signal.upload1.files }"
 ```
 
-### Conditional Dependencies
+A nested object of templates, like `{ topic: "{{...}}" }`, is not valid and never resolves.
 
-#### Show Field Based on Another Field
-```typescript
-imageUrl: {
-  type: "string",
-  title: "Image URL",
-  description: "URL of the image to analyze",
-  default: "",
-  "ui:field": "template",
-  "ui:dependencies": {
-    includeImageUrl: true  // Only show when includeImageUrl is true
-  }
-}
+## The running workflow
+
+The five roots above are your node's own surroundings. A config field can also reach the
+**run** it is part of.
+
+| Root | Reaches |
+|---|---|
+| `workflow.id` | the workflow being run |
+| `workflow.name` | its name |
+| `workflow.runId` | this particular run |
+| `workflow.userId` | the person the run belongs to |
+| `workflow.conversationId` | the conversation it is part of |
+| `workflow.variables` | variables set on the workflow, shared by every node in it |
+| `loop` | the current item, inside a loop |
+| `saved` | outputs other nodes chose to save, keyed by node id |
+
+```yaml
+prompt: "Answer for {{workflow.variables.customerName}} in {{workflow.variables.locale}}."
 ```
 
-#### Multiple Dependencies
-```typescript
-advancedOptions: {
-  type: "object",
-  title: "Advanced Options",
-  "ui:dependencies": {
-    enableAdvanced: true,
-    mode: "custom"  // Show when enableAdvanced=true AND mode="custom"
-  }
-}
+`workflow.variables` is the one to reach for when several nodes need the same value. Set it
+once on the workflow rather than wiring it into each node.
+
+These are resolved **before your node runs**, when the platform prepares its settings. So
+they are available in `config.yaml` fields, and your calls read the result as
+`{{ config.<field> }}`.
+
+## What a `return` expression may do
+
+It is not JavaScript. It is a data-shaping expression that reshapes what is already in front
+of it, and nothing else.
+
+**Allowed:** reading the context, indexing, object and array literals, spread, template
+strings, operators, ternaries, and arrow callbacks like `items.map(x => x.name)`.
+
+| Available | For |
+|---|---|
+| `JSON`, `Math`, `Number`, `String`, `Boolean` | the ordinary ones |
+| `parseInt`, `parseFloat`, `isNaN`, `isFinite` | parsing |
+| `encodeURIComponent`, `encodeURI` | building a URL from data, so an id with a space or a slash encodes rather than breaking |
+| `Date.now()`, `Date.iso(ms)` | timestamps and ISO strings |
+| `sha256(value)` | a stable id derived from content |
+| `Object.keys/values/entries/fromEntries/assign` | reshaping |
+| `Array.isArray/from/of` | building arrays |
+
+Methods: the non-mutating array ones (`map`, `filter`, `slice`, `find`, `reduce`, `flat`,
+`at`, `toSorted`), the string ones (`split`, `replace`, `trim`, `padStart`, `match`), and
+`toFixed`.
+
+**Rejected:** `process`, `require`, `fetch`, `globalThis`, `eval`, `Function`, `new`,
+assignment, statement blocks, `constructor` and `__proto__`. A rejected expression is logged
+and never runs.
+
+**Nothing mutates.** Use `.at(-1)` rather than `.pop()`, and `.toSorted()` rather than
+`.sort()`. `sort` reorders the array in place, and that array is a live upstream output, so
+sorting it would reorder it for every other node reading the same value.
+
+### Dates
+
+Half the APIs a node calls take a date range, and every one of them wants `YYYY-MM-DD` or a
+full ISO string. `Date.iso` is the formatter.
+
+```yaml
+since: "return Date.iso(Date.now() - 30 * 86400000).split('T')[0]"
 ```
 
-#### Match One of Several Values (array)
-```typescript
-email: {
-  type: "string",
-  title: "Email",
-  "ui:dependencies": {
-    type: ["combined", "person"]  // Show when type is "combined" OR "person"
-  }
-}
-```
-- A **scalar** dependency value is a strict-equality match (`config[field] === value`).
-- An **array** dependency value is a membership match (`value.includes(config[field])`) — use it for "show when the parent is any one of these".
+`Date.now()` is milliseconds, `Date.iso(ms)` gives the full ISO string, and `.split('T')[0]`
+gives the date part. One function rather than a family, and there is no `new Date(...)`
+because that is a construction the sandbox refuses.
 
-## 📚 Real Examples from Working Nodes
+Security here is by absence. The interpreter never implements those globals, so there is
+nothing for an expression to escape to.
 
-### AWS Bedrock Claude
-```typescript
-configSchema: {
-  type: "object",
-  properties: {
-    model: {
-      type: "string",
-      title: "Model",
-      enum: [
-        "us.anthropic.claude-sonnet-4-20250514-v1:0",
-        "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
-      ],
-      enumNames: ["Claude Sonnet 4", "Claude 3.5 Sonnet"],
-      default: "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
-    },
-    maxTokens: {
-      type: "number",
-      title: "Max Tokens",
-      default: 256,
-      minimum: 1,
-      maximum: 4096
-    },
-    temperature: {
-      type: "number",
-      title: "Temperature",
-      default: 0.7,
-      minimum: 0,
-      maximum: 1,
-      step: 0.1
-    },
-    systemPrompt: {
-      type: "string",
-      title: "System Prompt",
-      description: "System message. Supports {{input.fieldName}} syntax.",
-      default: "",
-      "ui:field": "template"
-    },
-    prompt: {
-      type: "string", 
-      title: "Prompt",
-      description: "User message. Supports {{input.fieldName}} syntax.",
-      default: "",
-      "ui:field": "template"
-    },
-    includeImageUrl: {
-      type: "boolean",
-      title: "Include Image URL",
-      default: false,
-      "ui:widget": "toggle"
-    },
-    imageUrl: {
-      type: "string",
-      title: "Image URL",
-      description: "URL of image to analyze. Supports {{input.imageUrl}} syntax.",
-      default: "",
-      "ui:field": "template",
-      "ui:dependencies": {
-        includeImageUrl: true
-      }
-    }
-  },
-  required: ["model"]
-}
+## Showing a field only when it matters
+
+`ui:dependencies` hides a field until another field has the right value. A scalar means it
+must match exactly, an array means it must be one of several, and multiple keys are all
+required at once.
+
+```yaml
+mode:
+  type: string
+  title: Mode
+  enum: [simple, advanced]
+  default: simple
+
+retries:
+  type: number
+  title: Retries
+  default: 3
+  ui:dependencies:
+    mode: advanced
+
+timeout:
+  type: number
+  title: Timeout
+  ui:dependencies:
+    mode: [advanced, expert]
 ```
 
-### OpenAI Node
-```typescript
-configSchema: {
-  type: "object",
-  properties: {
-    model: {
-      type: "string",
-      title: "Model",
-      enum: ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview", "gpt-4o"],
-      enumNames: ["GPT-3.5 Turbo", "GPT-4", "GPT-4 Turbo", "GPT-4o"],
-      default: "gpt-3.5-turbo"
-    },
-    temperature: {
-      type: "number",
-      title: "Temperature",
-      description: "Controls randomness (0-2)",
-      default: 0.7,
-      minimum: 0,
-      maximum: 2
-    },
-    maxTokens: {
-      type: "number",
-      title: "Max Tokens",
-      default: 256,
-      minimum: 1,
-      maximum: 4096
-    },
-    systemPrompt: {
-      type: "string",
-      title: "System Prompt",
-      description: "System message. Supports {{input.fieldName}} syntax.",
-      default: "",
-      "ui:field": "template"
-    },
-    prompt: {
-      type: "string",
-      title: "Prompt", 
-      description: "User message. Supports {{input.fieldName}} syntax.",
-      default: "",
-      "ui:field": "template"
-    },
-    history: {
-      type: "object",
-      title: "History",
-      description: "Message history [] for context",
-      default: "",
-      "ui:field": "template"
-    }
-  },
-  required: ["model"]
-}
+Lint checks that every key names a real sibling field, so a rename cannot leave a field
+permanently hidden.
+
+## The two fields every node has
+
+Two of them are not yours to choose. They are identical in every node, and lint checks they
+are there:
+
+```yaml
+authRequired:
+  type: boolean
+  title: Require sign-in
+  description: >-
+    Only a signed-in caller may run this step. Leave off and it runs for whoever the
+    workflow's trigger admitted, which is the usual answer.
+  default: false
+  "ui:widget": toggle
+
+authRole:
+  type: string
+  title: Require role
+  description: >-
+    A claim the caller's account must carry, as noun:verb (finance:approve,
+    payments:refund). Leave blank to require only that they are signed in.
+  default: ""
+  "ui:dependencies": { authRequired: true }
 ```
 
-### Code Node
-```typescript
-configSchema: {
-  type: "object",
-  properties: {
-    code: {
-      type: "object",
-      title: "Code",
-      description: "JS Code to transform data",
-      default: "",
-      "ui:field": "template"  // JavaScript execution
-    },
-    generateIds: {
-      type: "boolean",
-      title: "Generate IDs",
-      description: "Generate content IDs",
-      default: false,
-      "ui:widget": "toggle"
-    }
-  },
-  required: ["code"]
-}
-```
+These belong to the person building the workflow, not to you. The same node type faces staff
+on one canvas and customers on another, and only they know which. Your own floor goes in
+`node.yaml`, and the stricter of the two wins.
 
-## 🎯 Template Resolution
+Both default to off, because a node that gated by default would break every workflow already
+using it. [Who Can Run It](./15-who-can-run-it.md) covers the whole model.
 
-### String Templates (type: "string")
-```typescript
-// Config field:
-prompt: {
-  type: "string",
-  "ui:field": "template"
-}
+## The rest of the vocabulary
 
-// User enters:
-"Hello {{input.name}}, your score is {{signal.score}}"
+| Key | Does |
+|---|---|
+| `ui:order` | The order fields appear in. Lint warns about any field you leave out |
+| `ui:widget: toggle` | A switch instead of a checkbox |
+| `ui:widget: select` | A dropdown where the default control would not be one |
+| `ui:field: textarea` | A multi-line box |
+| `ui:field: password` | Masks what is typed |
+| `ui:field: code` | A code editor |
+| `ui:hidden` | Keeps the field in the schema and out of the form |
+| `required` | Named at the `configSchema` level, not on the field |
 
-// Resolves to:
-"Hello John, your score is 95"
-```
+## When it goes wrong
 
-### Object Templates (type: "object")
-```typescript
-// Config field:
-code: {
-  type: "object", 
-  "ui:field": "template"
-}
-
-// User enters:
-return {
-  filtered: input.items.filter(x => x.score > 80),
-  count: input.items.length
-}
-
-// Resolves to:
-{
-  filtered: [...],
-  count: 25
-}
-```
-
-## 🚨 Critical Rules
-
-### 1. Template Type Distinction
-- **`type: "string"` + `"ui:field": "template"`** → Handlebars syntax `{{input.field}}`
-- **`type: "object"` + `"ui:field": "template"`** → JavaScript return statement
-
-### 2. Required Fields
-```typescript
-required: ["fieldName"]  // Makes field mandatory in UI
-```
-
-### 3. Dependencies
-```typescript
-"ui:dependencies": {
-  parentField: expectedValue        // Show when parent field === expectedValue
-  // or
-  parentField: ["valueA", "valueB"] // Show when parent field is one of these
-}
-```
-
-### 4. Validation
-- Use `minimum`, `maximum` for numbers
-- Use `enum` for dropdowns
-- Use `required` array for mandatory fields
+| What you see | Why |
+|---|---|
+| A field labelled with its property name | No `title` |
+| The template arrived empty and nothing errored | The path matched nothing. Check the node id against the edge you drew |
+| The service rejected a number as a string | The value went through a template. A field that is exactly one `{{ path }}` keeps its type; anything else becomes text |
+| Lint: `ui:order` names a field that does not exist | A rename left the list behind |
+| Lint: `enumNames` is a different length from `enum` | They are positional |
+| A field never appears | A `ui:dependencies` condition that can never be true |
 
 ---
 
-**Next**: [Troubleshooting](./05-troubleshooting.md) - Common config schema issues
+**Next**: [Service Connectors](./07-service-connectors.md)

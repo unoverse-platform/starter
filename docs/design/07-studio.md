@@ -3,9 +3,18 @@ sidebarTitle: "Studio"
 title: "Studio"
 ---
 
-**View and test your work — mock states in isolation, or live against the real platform, on every channel at once.**
+**Build and test your work: mock states in isolation, or live against a real platform, on every channel at once.**
 
-**Studio** (the Unoverse workbench) is to Unoverse what Storybook is to React — but cross-platform, streaming, and connectable to the live agent backend. It is served by the running platform; nothing extra to install.
+**Studio** is the workbench for everything you author. It runs on your own machine, reads
+your files straight off disk, and needs Node and nothing else.
+
+```bash
+npm install -g @unoverse-platform/studio
+unoverse-studio
+```
+
+It opens on http://localhost:4108 and finds your project by looking for `rx/` in the current
+folder or any parent. [Studio](../onboarding/00a-studio.md) covers the setup in full.
 
 ---
 

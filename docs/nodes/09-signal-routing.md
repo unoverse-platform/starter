@@ -1,327 +1,151 @@
 ---
-sidebarTitle: "Signal Routing"
-title: "Signal Routing System"
+sidebarTitle: "Connectors & Signals"
+title: "Connectors & Signals"
 ---
 
-**Understanding how workflow execution flows between nodes**
+Connectors are the dots on a node. Inputs on the left, outputs on the right, and the lines
+you draw between them are how data moves through a workflow.
 
-## Overview
+You declare them in `interface.yaml`, and **Canvas** draws one dot per entry.
 
-The signal routing system is the core mechanism that controls workflow execution. It uses a **signal-based architecture** where:
+```yaml interface.yaml
+inputs:
+  - name: signal
+    type: object
+    description: Data from previous nodes
 
-- **Edges represent both data flow and control signals**
-- **Nodes execute when they receive signals and have required inputs**
-- **The route table pre-computes all signal routes for efficient execution**
-
-## Key Concepts
-
-### 1. Route Table
-
-When a workflow loads, a route table is built containing:
-
-```typescript
-interface RouteTable {
-  // Source node ID → Array of route entries
-  routing: Map<string, RouteEntry[]>;
-
-  // Target node ID → Connector name → Array of source node IDs
-  connectorDependencies: Map<string, Map<string, string[]>>;
-
-  // Nodes that start execution (e.g., InputTrigger)
-  triggerNodes: string[];
-}
-
-interface RouteEntry {
-  targetNodeId: string;
-  signalType: string; // "EXECUTE", "CONTINUE", etc.
-  targetHandle?: string; // Which input connector this connects to
-}
+outputs:
+  - name: quote
+    type: string
+    description: The quote text
+  - name: author
+    type: string
+    description: Who said it
 ```
 
-### 2. Signal Types
+That node has one input dot and two output dots.
 
-| Signal     | Purpose                         | Used By               |
-| ---------- | ------------------------------- | --------------------- |
-| `EXECUTE`  | Primary execution signal        | All nodes (default)   |
-| `CONTINUE` | Advance callback node iteration | Loop, streaming nodes |
-| `SPAWN`    | Initialize callback node actor  | CallbackNode          |
-| `RESET`    | Reset callback node state       | CallbackNode          |
+## Sending something to an output
 
-### 3. Node Inputs Structure
+Declaring an output only creates the dot. `api/events.yaml` is what puts a value on it.
 
-When nodes complete, their outputs are stored in a structured format:
+**One row per output connector, in the same order `interface.yaml` declares them.** Read that
+one file and you know everything the node ever emits.
 
-```typescript
-// nodeInputs[targetNodeId][connectorName][sourceNodeId] = output
-type NodeInputs = Record<string, Record<string, Record<string, any>>>;
+```yaml api/events.yaml
+- emit: quote
+  value: "return response[0].q"
+
+- emit: author
+  value: "return response[0].a"
 ```
 
-Example:
+`emit` names the connector. `value` shapes what lands on it, as an expression over the
+reply. An output with no row is a dot that never carries anything, and lint warns about it.
 
-```javascript
-nodeInputs = {
-  "pineconeupload1": {
-    "metadata": {
-      "code2": { url: "example.com", title: "Example" }
-    },
-    "vector": {
-      "bedrockembedding1": [0.1, 0.2, 0.3, ...]
-    }
-  }
-}
+### Emitting once, or many times
+
+This is where the node's `kind` shows up.
+
+**A `PromiseNode` settles.** One call, one reply, and each row fires once over that reply.
+The rows above are a settling node.
+
+**A `CallbackNode` emits.** The reply arrives as a stream of events, so a row says which
+event it fires on, and it fires every time that event arrives.
+
+```yaml api/events.yaml
+- emit: stream
+  match: response.output_text.delta
+  value: "return response.delta"
+  accumulate: true
+  throttleMs: 200
+
+- emit: text
+  from: complete
+  value: "return events.filter(e => e.emit === 'stream').map(e => e.value).at(-1) ?? ''"
 ```
 
-## Signal Flow Process
+| Key | Does |
+|---|---|
+| `match` | the event type this row fires on. Streaming only |
+| `accumulate` | emit the running total instead of the fragment |
+| `throttleMs`, `throttleChars` | emit at most this often. Nothing held back is lost, it is flushed at the end |
+| `from` | where the row fires from, when it is not the reply |
 
-### Step 1: Node Completes Execution
+`from: complete` fires once at the end, over everything already emitted. That is how a
+streaming node also produces a single settled value for downstream nodes to use.
 
-When a node completes, it emits a `NODE_OUTPUT` event with its output data.
+The other `from` values cover the cases where something leaves the node that was never in
+the reply at all: `tool` for the result of a tool call, and `narrator` for a status line
+written alongside the main work.
 
-### Step 2: Route Signals
+## Reading what arrives
 
-The `SignalRouterOrchestrator` processes the completion:
-
-1. **Look up routes** in the route table for the completed node
-2. **Update nodeInputs** for each downstream node's specific connector
-3. **Check readiness** for each downstream node
-
-### Step 3: Readiness Check
-
-A node is ready to execute when **ANY** of its connectors has all required inputs:
-
-```typescript
-// For each connector of the target node
-for (const [connectorName, requiredSources] of connectorDeps) {
-  const connectorInputs = nodeConnectorInputs[connectorName] || {};
-  const receivedSources = new Set(Object.keys(connectorInputs));
-
-  // Check if this connector has all its required inputs
-  const connectorReady = requiredSources.length === 0 || requiredSources.every((source) => receivedSources.has(source));
-
-  if (connectorReady) {
-    // Node can execute!
-    break;
-  }
-}
-```
-
-### Step 4: Execute Ready Nodes
-
-When a node is ready, the system sends an `EXECUTE_NODE_WITH_SIGNAL` event.
-
-## Connector Dependencies
-
-### How Connectors Work
-
-Nodes can have multiple input connectors, each representing a different type of input:
-
-```typescript
-// Example: PineconeUpload node
-inputs: [
-  {
-    name: "text", // Connector name
-    type: NodeInputType.STRING,
-    required: true,
-  },
-  {
-    name: "metadata", // Another connector
-    type: NodeInputType.OBJECT,
-    required: false,
-  },
-];
-```
-
-### Dependency Tracking
-
-The route table tracks dependencies at the connector level:
-
-```typescript
-// Example connector dependencies
-connectorDependencies.get("pineconeupload1") = Map {
-  "metadata" → ["code2"],
-  "vector" → ["bedrockembedding1"]
-}
-```
-
-## Signal-Based Inputs for Callback Nodes
-
-Callback nodes (like Loop) use signal inputs for control flow:
-
-```typescript
-const definition: EnhancedNodeDefinition = {
-  type: "Loop",
-  inputs: [
-    {
-      name: "items",
-      type: NodeInputType.ARRAY,
-      required: true,
-      signal: "EXECUTE", // Starts the loop
-    },
-    {
-      name: "continue",
-      type: NodeInputType.SIGNAL,
-      required: false,
-      signal: "CONTINUE", // Advances to next iteration
-    },
-  ],
-};
-```
-
-### Benefits
-
-- **Clear Intent**: Signal declarations make control flow explicit
-- **Better Debugging**: "Send CONTINUE to Loop" vs "Execute Loop"
-- **Visual Clarity**: Edges become signal routes in the UI
-
-## Input Structure Patterns
-
-### Single Input Connector Nodes
-
-Inputs are **flattened** for backward compatibility:
-
-```typescript
-// Input structure
-nodeInputs = {
-  targetNode: {
-    default: {
-      sourceNode1: { data: "value1" },
-      sourceNode2: { data: "value2" },
-    },
-  },
-};
-
-// Flattened for executor
-context.inputs = {
-  sourceNode1: { data: "value1" },
-  sourceNode2: { data: "value2" },
-};
-
-// Template access
-("${input.sourceNode1.data}"); // "value1"
-```
-
-### Multi-Connector Nodes
-
-Inputs **preserve connector structure**:
-
-```typescript
-// Input structure
-nodeInputs = {
-  memory1: {
-    signal: {
-      inputtrigger1: { output: { message: "hello" } },
-    },
-    storeConversation: {
-      openai2: { text: "user message" },
-      openaistream1: { text: "assistant response" },
-    },
-  },
-};
-
-// Preserved for executor
-context.inputs = {
-  signal: {
-    inputtrigger1: { output: { message: "hello" } },
-  },
-  storeConversation: {
-    openai2: { text: "user message" },
-    openaistream1: { text: "assistant response" },
-  },
-};
-
-// Template access (includes connector name)
-("${input.storeConversation.openai2.text}"); // "user message"
-```
-
-## Common Workflow Patterns
-
-### 1. Simple Sequential Flow
+A downstream node reads an upstream output by name:
 
 ```
-Node A → Node B → Node C
+signal.<nodeId>.<output>.<field>
 ```
 
-Each node waits for the previous to complete.
+`quote1` is the id **Canvas** gives the node on the canvas, and `quote` is the output
+connector. So `signal.quote1.quote` is the quote text.
 
-### 2. Parallel Execution
+Give outputs names worth reading. They become the reference someone types into a template
+later, and a good name is the difference between `signal.crm1.contact` and
+`signal.crm1.output`.
 
-```
-     → Node B
-Node A
-     → Node C
-```
+## Types
 
-B and C execute in parallel after A completes.
+| `type` | Carries |
+|---|---|
+| `string`, `number`, `boolean` | a single value |
+| `object` | a structured result |
+| `array` | a list |
+| `signal` | nothing but the fact that something happened |
 
-### 3. Multiple Inputs (Join)
+`type` also decides how a wired field is written. A `string` field takes a Handlebars
+template, an `object` or `array` field takes a `return` expression.
+[Config Schema](./06-config-schema.md) covers both.
 
-```
-Node A →
-         Node C (requires both)
-Node B →
-```
+## Required, and what waiting means
 
-Node C waits for both A and B to complete.
+`required: true` means the node waits for that connector before it runs.
 
-### 4. Connector-Specific Inputs
-
-```
-Node A → pinecone.metadata
-Node B → pinecone.vector
-```
-
-Different nodes feed different connectors of the same target.
-
-### 5. Callback Node Loop
-
-```
-InputTrigger → Loop → ProcessItem → Loop.continue
-                 ↓
-              Output
+```yaml
+inputs:
+  - name: content
+    type: string
+    required: true
 ```
 
-Loop emits items, ProcessItem processes them, then signals continue.
+A node that never runs is usually a required connector with nothing wired to it. Nothing
+reports an error, because waiting is a legitimate state for a node to be in.
 
-## Debug Mode
+## Looping over a list
 
-In debug mode, the signal routing system provides additional information:
+A node does not loop itself. You loop in the workflow, with the Loop nodes, and your node
+runs once per item like any other step.
 
-1. **Active signals** - Which nodes are ready to execute
-2. **Triggered signals** - Which downstream nodes will be triggered
-3. **Waiting info** - Which connectors are waiting for which inputs
+That keeps a node simple: it takes what it is given, does one job, and emits.
 
-### Step Debugging with Callback Nodes
+## Service connectors are different
 
-1. **SPAWN signal** - Always executes immediately (initializes actor)
-2. **CONTINUE signals** - Wait for DEBUG_STEP in debug mode
-3. User clicks "Step" → Sends DEBUG_STEP → Next iteration executes
+The dots covered here carry data through a workflow. A node can also offer a capability that
+other nodes call directly, which uses a service edge instead.
 
-## Best Practices
+That is [Service Connectors](./07-service-connectors.md).
 
-1. **Always specify targetHandle** when connecting to nodes with multiple inputs
-2. **Use descriptive connector names** that indicate the data type or purpose
-3. **Mark connectors as required** only when the node cannot function without that input
-4. **Leverage the route table** for efficient signal routing
+## When it goes wrong
 
-## Troubleshooting
-
-### Node Not Executing
-
-- Check if all required connectors have received inputs
-- Verify edges are correctly mapped in the route table
-- Ensure source nodes are completing successfully
-
-### Wrong Data Received
-
-- Verify the targetHandle on the edge matches the connector name
-- Check if inputs are being flattened (single connector) or preserved (multi-connector)
-
-### Callback Node Stuck
-
-- Ensure `isComplete: true` is returned when done
-- Verify CONTINUE signals are being sent from downstream nodes
-- Check that the loop has items to process
+| What you see | Why |
+|---|---|
+| The node never runs | A required connector has nothing wired to it |
+| A template resolves to nothing | The id or the output name is wrong. Check it against the edge you drew |
+| An output stays empty | No row in `events.yaml` emits to it |
+| Lint: an output has nothing emitting to it | The connector and the events table have drifted apart |
+| Lint: this must be a `CallbackNode` | The transport streams, or the node declares a `toolExchange` |
+| A downstream node gets one word at a time | The row needs `accumulate: true` |
 
 ---
 
-**Related**: [Node Types](./02-node-types.md) | [Service Connectors](./07-service-connectors.md)
+**Next**: [Discoverability](./14-node-discoverability.md)

@@ -198,3 +198,226 @@
 .dark #table-of-contents-content .toc-item[data-active]::before {
   background: #8b7ef8;
 }
+
+
+
+/* Security callout: the one panel on a page that should stop a reader.
+   Same construction as .skill-callout, including the `p` override — the theme's
+   `#content-area p { max-width: 42rem }` otherwise leaks into any custom panel. */
+#content-area .security-callout {
+  position: relative;
+  margin: 1.75rem 0;
+  padding: 1.05rem 1.35rem 1.05rem 3.6rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgb(16 185 129 / 0.35);
+  background:
+    radial-gradient(120% 150% at 0% 0%, rgb(16 185 129 / 0.12), transparent 55%),
+    linear-gradient(180deg, rgb(250 254 252), rgb(244 252 248));
+  box-shadow: 0 10px 34px rgb(16 185 129 / 0.12);
+}
+
+#content-area .security-callout::before {
+  content: "🔒";
+  position: absolute;
+  top: 1rem;
+  left: 1.15rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  background: rgb(16 185 129 / 0.14);
+  font-size: 1rem;
+}
+
+#content-area .security-callout .security-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(4 120 87);
+  margin-bottom: 0.5rem;
+}
+
+/* A tight scannable list, not prose. The theme's paragraph rules and list spacing both
+   have to be overridden or the box grows into a wall of text. */
+#content-area .security-callout ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#content-area .security-callout li {
+  max-width: none;
+  margin: 0.3rem 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+#content-area .security-callout strong {
+  color: rgb(6 78 59);
+}
+
+.dark #content-area .security-callout {
+  border-color: rgb(16 185 129 / 0.4);
+  background:
+    radial-gradient(120% 150% at 0% 0%, rgb(16 185 129 / 0.18), transparent 55%),
+    linear-gradient(180deg, rgb(20 28 26), rgb(17 24 23));
+  box-shadow: 0 10px 34px rgb(0 0 0 / 0.4);
+}
+
+.dark #content-area .security-callout .security-eyebrow {
+  color: rgb(52 211 153);
+}
+
+.dark #content-area .security-callout strong {
+  color: rgb(167 243 208);
+}
+
+/* ── Architecture figures ────────────────────────────────────────────────────
+   These pages set `mode: "wide"`, which drops the right-hand contents rail but
+   leaves the prose column at its reading width. A network diagram is not prose.
+
+   The class goes on a WRAPPER, never on <Frame> itself: Frame puts className on
+   an inner div and its own <figure> is overflow:hidden, so a wider inner div is
+   clipped by its own parent. Growth is rightward only, into the space the rail
+   used to occupy; a negative left margin slides under the navigation. */
+#content-area .figure-wide {
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 1280px) {
+  #content-area .figure-wide {
+    width: calc(100% + 10rem);
+    margin-right: -10rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  #content-area .figure-wide {
+    width: calc(100% + 19rem);
+    margin-right: -19rem;
+  }
+}
+
+#content-area .figure-wide figure,
+#content-area .figure-wide img {
+  max-width: none;
+  width: 100%;
+  height: auto;
+}
+
+/* Figure legend and walkthrough, as HTML rather than baked into the SVG, so
+   they render at true text size and stay selectable and searchable.
+
+   The theme's prose styles put markers, indentation and their own inline
+   layout on every list, which broke the text into columns. These clear the
+   lot rather than fighting it item by item. */
+#content-area .fig-notes {
+  display: grid;
+  gap: 1.75rem 3rem;
+  grid-template-columns: 1fr;
+  margin: 0 0 1.75rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+@media (min-width: 900px) {
+  #content-area .fig-notes { grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); }
+}
+
+#content-area .fig-notes ul {
+  /* The theme's 32px item padding survives even !important, so rather than
+     fight it the list is shifted back by the same amount: the padding then
+     lands the content exactly on the column start. */
+  margin: 0 0 0 -2rem;
+  padding: 0;
+  list-style: none;
+}
+
+#content-area .fig-notes li {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr);
+  column-gap: 0.6rem;
+  align-items: start;
+  margin: 0 0 0.55rem;
+  padding: 0;
+}
+
+/* The theme draws its bullet as an absolutely positioned li::before dot and
+   pads the item by 32px, neither of which `list-style: none` touches. */
+#content-area .fig-notes ul li::before,
+#content-area .fig-notes ul li::after {
+  content: none !important;
+  display: none !important;
+}
+
+#content-area .fig-notes ul li {
+  /* The theme sets this as a logical property, so the physical one alone loses. */
+  padding-inline: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#content-area .fig-notes li::marker { content: ""; }
+
+#content-area .fig-notes .zone {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 3px;
+  margin-top: 0.42rem;
+}
+
+#content-area .fig-notes .num {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background: rgb(109 93 246);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#content-area .fig-notes .fig-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgb(107 114 128);
+  margin: 0 0 0.75rem;
+}
+
+
+/* The SVG already draws its own bordered card, so the theme's grey figure panel
+   doubles it up. Strip the panel and let the drawing be the plate. */
+#content-area .figure-wide figure {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* A caption is a credit line, not a headline: small, muted, left aligned to the
+   figure rather than centred across it. */
+#content-area .figure-wide figcaption {
+  text-align: left !important;
+  padding: 0 !important;
+  margin: 0.7rem 0 0 !important;
+  font-size: 0.8125rem !important;
+  color: rgb(107 114 128) !important;
+}
+
+.dark #content-area .figure-wide figcaption { color: rgb(156 163 175) !important; }
+
+/* Tie the notes to the drawing they explain. */
+#content-area .fig-notes {
+  border-top: 1px solid rgb(229 231 235);
+  padding-top: 1.4rem;
+  margin-top: 1.4rem;
+}
+
+.dark #content-area .fig-notes { border-top-color: rgb(55 58 66); }

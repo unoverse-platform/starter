@@ -16,8 +16,8 @@
 #   ./unoverse update    Pull latest images and restart
 #   ./unoverse update nodes  Rebuild packages + restart unoverse only
 #   ./unoverse doctor    Diagnose issues
-#   ./unoverse pull      Pull images only
 #   ./unoverse dev       Install deps, start dev environment
+#   ./unoverse key       Issue / list / revoke publish keys for this universe
 # =============================================================================
 
 # Resolve lib/ directory relative to this script
@@ -39,31 +39,30 @@ source "$GRAVITY_LIB/common.sh"
 source "$GRAVITY_LIB/init.sh"
 source "$GRAVITY_LIB/start.sh"
 source "$GRAVITY_LIB/stop.sh"
-source "$GRAVITY_LIB/status.sh"
 source "$GRAVITY_LIB/logs.sh"
 source "$GRAVITY_LIB/update.sh"
-source "$GRAVITY_LIB/pull.sh"
 source "$GRAVITY_LIB/doctor.sh"
 source "$GRAVITY_LIB/dev.sh"
-source "$GRAVITY_LIB/build.sh"
 source "$GRAVITY_LIB/check.sh"
-source "$GRAVITY_LIB/lint.sh"
-source "$GRAVITY_LIB/new.sh"
 source "$GRAVITY_LIB/dashboard.sh"
 source "$GRAVITY_LIB/help.sh"
-source "$GRAVITY_LIB/open.sh"
 source "$GRAVITY_LIB/db-setup.sh"
 source "$GRAVITY_LIB/db-verify.sh"
 source "$GRAVITY_LIB/deploy.sh"
+source "$GRAVITY_LIB/key.sh"
+# Authoring tools (lint, new, node test/hash, studio) moved to _legacy/scripts-lib
+# 2026-07-28 — authoring lives in Studio now. The CLI is the OPERATOR tool.
 # Owner-only module — absent in the starter kit by design.
 [ -f "$GRAVITY_LIB/publish.sh" ] && source "$GRAVITY_LIB/publish.sh"
 
 # ── Dispatch ───────────────────────────────────────────────────────
+# (The old "studio mode" gate is gone — 2026-07-28. This CLI has ONE job:
+# operate a universe. Studio is a separate app; authoring happens there.)
 case "${1:-}" in
   init)      cmd_init ;;
   start)     cmd_start ;;
   stop)      cmd_stop ;;
-  status)    cmd_status ;;
+  status)    cmd_check ;;   # alias — status merged into check 2026-07-28
   logs)      cmd_logs "${2:-}" ;;
   update)
     if [ "${2:-}" = "nodes" ]; then
@@ -72,21 +71,39 @@ case "${1:-}" in
       cmd_update
     fi
     ;;
-  pull)      cmd_pull ;;
   check)     cmd_check ;;
   doctor)    cmd_doctor ;;
   dev)       cmd_dev ;;
   db-setup)  cmd_db_setup ;;
   db-verify) cmd_db_verify ;;
-  deploy)    shift; cmd_deploy "$@" ;;
+  key)       shift; cmd_key "$@" ;;
+  deploy)
+    # `deploy marketplace` is PLATFORM-OWNER only: it publishes the marketplace package
+    # to npm, which a starter developer never does (they INSTALL from the marketplace).
+    # It lives in publish.sh, the owner-only module sync-starter.sh strips, so on a
+    # starter kit this branch simply reports that it is not their command.
+    if [ "${2:-}" = "marketplace" ]; then
+      if type cmd_deploy_marketplace >/dev/null 2>&1; then shift 2; cmd_deploy_marketplace "$@"
+      else echo "deploy marketplace is a platform-owner command. Not available in the starter kit"; exit 1; fi
+    else
+      shift; cmd_deploy "$@"
+    fi
+    ;;
   publish)
-    if type cmd_publish >/dev/null 2>&1; then shift; cmd_publish "$@"
-    else echo "publish is a platform-owner command — not available in the starter kit"; exit 1; fi
+    # TWO MEANINGS, decided by which kit you are in.
+    #   monorepo  `publish` is the PLATFORM RELEASE (publish.sh, owner-only), so a
+    #             developer publish is `publish assets <project>`.
+    #   starter   sync-starter.sh strips publish.sh, so the name is free and `publish`
+    #             means the only publish a developer has.
+    if [ "${2:-}" = "assets" ]; then
+      shift 2; node --import tsx "$GRAVITY_LIB/publish-assets.mjs" "$@"
+    elif type cmd_publish >/dev/null 2>&1; then
+      shift; cmd_publish "$@"
+    else
+      shift; node --import tsx "$GRAVITY_LIB/publish-assets.mjs" "$@"
+    fi
     ;;
   build)     cmd_build "${2:-}" ;;
-  lint)      cmd_lint "${2:-}" "${3:-}" ;;
-  node)      cmd_node "${2:-}" "${3:-}" "${4:-}" ;;
-  new)       shift; cmd_new "$@" ;;
   open)      cmd_open "${2:-}" ;;
   help|--help|-h) cmd_help ;;
   "")        cmd_dashboard ;;

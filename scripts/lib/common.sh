@@ -31,7 +31,7 @@ banner() {
 # The branded access box. ONE definition so start.sh, update.sh and dashboard.sh
 # never drift apart again.
 print_access_urls() {
-  echo -e "  ${WHITE}${BOLD}unoverse${NC} ${DIM}— the experience layer for AI${NC}"
+  echo -e "  ${WHITE}${BOLD}unoverse${NC}${DIM}, the experience layer for AI${NC}"
   echo -e "  ${DIM}Use the Unoverse MCP to build agents. Somewhere, Skynet is taking notes. 🤖${NC}"
   echo ""
   echo -e "  ${CYAN}Canvas${NC}  ${DIM}(build agents)${NC}   ${UNDERLINE}http://localhost:3001${NC}"
@@ -52,3 +52,7 @@ timer_elapsed() {
     echo "${elapsed}s"
   fi
 }
+
+# The old "studio mode" system (mode file, is_platform_mode, require_platform_mode)
+# was removed 2026-07-28: Studio is a separate app now, and this CLI has one job:
+# operate a universe. See _legacy/scripts-lib/ for the retired authoring tools.

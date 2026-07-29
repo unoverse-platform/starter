@@ -2,6 +2,7 @@
 # unoverse help
 
 cmd_help() {
+
   echo ""
   echo -e "  ${BOLD}${CYAN}⬡ Unoverse Platform CLI${NC} ${DIM}v${GRAVITY_VERSION}${NC}"
   echo ""
@@ -12,7 +13,6 @@ cmd_help() {
   echo -e "  ${BOLD}Platform${NC}"
   echo -e "    ${GREEN}start${NC}       Start all services"
   echo -e "    ${GREEN}stop${NC}        Stop all services"
-  echo -e "    ${GREEN}status${NC}      Show service health"
   echo -e "    ${GREEN}check${NC}       Run full health check"
   echo -e "    ${GREEN}logs${NC}        Open the Dozzle log viewer ${DIM}(./unoverse logs <service> streams one in the terminal)${NC}"
   echo -e "    ${GREEN}update${NC}      Pull latest images and restart"
@@ -24,21 +24,17 @@ cmd_help() {
   echo -e "    ${GREEN}db-verify${NC}   Verify database schema against Prisma"
   echo -e "    ${GREEN}build${NC}       Build and restart ${DIM}(./unoverse build <package>)${NC}"
   echo ""
-  echo -e "  ${BOLD}Design (rx/)${NC}"
-  echo -e "    ${GREEN}new${NC}         Create an org ${DIM}(./unoverse new org <name> — folder structure + default token set)${NC}"
-  echo -e "    ${GREEN}lint${NC}        Lint rx/ definitions ${DIM}(schema + guard rules)${NC}"
-  echo -e "    ${GREEN}lint nodes${NC}  Lint node manifests ${DIM}(nodes/*/nodes/*/*.yaml · 'lint all' runs both)${NC}"
-  echo -e "    ${GREEN}node test${NC}   Run a node against its own testData ${DIM}(real API, keys from .env)${NC}"
-  echo ""
   echo -e "  ${BOLD}Deployment${NC}"
   echo -e "    ${GREEN}deploy${NC}                  Deploy your platform: images + your work → your server"
-  echo -e "    ${GREEN}deploy design${NC}           Fast lane: rx/ definitions only — rsync + restart (no build)"
   echo -e "    ${GREEN}deploy init${NC}             First-time provisioning (install + carve-out)"
   echo -e "    ${GREEN}deploy db${NC}               Run database setup on server"
-  echo -e "    ${GREEN}deploy caddy${NC}            Install TLS reverse proxy"
-  echo -e "    ${GREEN}deploy caddy-uninstall${NC}  Remove Caddy (revert to direct host ports)"
-  echo -e "    ${GREEN}deploy umap${NC}             Install UMAP AI service"
   echo -e "    ${GREEN}deploy harden${NC}           Security hardening"
+  # Owner-only lane. Printed ONLY when publish.sh is present, so a starter kit never
+  # advertises a command it does not have (sync-starter.sh deletes that file).
+  if type cmd_deploy_marketplace >/dev/null 2>&1; then
+    echo -e "    ${GREEN}deploy marketplace${NC}      Publish the marketplace: design system, skills, blocks, nodes"
+    echo -e "    ${GREEN}publish base${NC}            Publish the node runtime open source: npm + github"
+  fi
   echo -e "    ${GREEN}deploy test${NC}             Run connectivity test"
   echo ""
 }

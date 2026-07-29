@@ -7,7 +7,12 @@ cmd_db_setup() {
 
   # Load DATABASE_URL from .env
   local db_url
-  db_url=$(grep "^DATABASE_URL=" "$ROOT/.env" 2>/dev/null | cut -d'=' -f2-)
+  # MIGRATIONS CONNECT DIRECT (INFRASTRUCTURE.md, Postgres law): when the env
+  # carries a pooled DATABASE_URL (PgBouncer transaction mode), node-pg-migrate
+  # must bypass it — DDL and advisory locks don't ride transaction pooling.
+  # DATABASE_URL_DIRECT is rendered by the Terraform alongside the pooled URL.
+  db_url=$(grep "^DATABASE_URL_DIRECT=" "$ROOT/.env" 2>/dev/null | cut -d'=' -f2-)
+  [ -z "$db_url" ] && db_url=$(grep "^DATABASE_URL=" "$ROOT/.env" 2>/dev/null | cut -d'=' -f2-)
   if [ -z "$db_url" ]; then
     fail "DATABASE_URL not found in .env"
     exit 1
@@ -113,7 +118,7 @@ _seed_security_corpus() {
   local seed_file="$2"
 
   if [ ! -f "$seed_file" ]; then
-    echo "  ⚠ Security corpus seed file not found — skipping"
+    echo "  ⚠ Security corpus seed file not found: skipping"
     return 0
   fi
 

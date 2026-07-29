@@ -7,7 +7,7 @@ Your platform starts empty; the marketplace stocks it. Ready-made node packages,
 
 ## Before you begin
 
-The platform is running (`unoverse dev`) and **Studio** is open at http://localhost:3002.
+The platform is running (`unoverse dev`), and **Studio** is open (`unoverse-studio`).
 
 ## Install a package
 

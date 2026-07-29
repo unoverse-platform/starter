@@ -4,13 +4,15 @@ Ansible playbooks for deployment, upgrades, and operations.
 
 ## Quick Start (Single VM)
 
-You don't need to configure Ansible inventory or files for single-VM deployments.
+There is no inventory to configure — deployments are single-VM by contract
+(INFRASTRUCTURE.md) and `unoverse deploy` builds a temporary inventory from
+`.env.production` each run.
 Just use `.env.production` at the project root:
 
 ```bash
-# 1. Configure production environment
-cp .env.production.example .env.production
-# Set DEPLOY_HOST, DEPLOY_USER, Redis, DOMAIN, etc.
+# 1. Configure production environment (Terraform renders it, complete)
+cd infra/digitalocean && terraform apply
+terraform output -raw env_production > ../../.env.production
 
 # 2. Deploy
 gravity deploy
@@ -25,12 +27,8 @@ The `gravity deploy` command reads `.env.production`, builds a temporary invento
 
 ```
 ansible/
-├── inventory/
-│   ├── production.yml.example  # ONLY for enterprise multi-VM setups
-│   └── production.yml          # Your inventory (gitignored, multi-VM only)
 ├── playbooks/                  # All playbooks
 ├── templates/
-│   └── Caddyfile.j2            # Caddy config template
 └── ansible.cfg
 ```
 
@@ -42,11 +40,8 @@ For advanced use or multi-VM enterprise deployments:
 cd ansible
 
 # Single VM (reads .env.production from project root)
-ansible-playbook -i inventory/production.yml playbooks/install.yml
 
 # Multi-VM (target specific groups)
-ansible-playbook -i inventory/production.yml playbooks/install.yml -l app_vms
-ansible-playbook -i inventory/production.yml playbooks/install-umap.yml -l ml_vms
 ```
 
 ## Playbooks
@@ -54,18 +49,15 @@ ansible-playbook -i inventory/production.yml playbooks/install-umap.yml -l ml_vm
 | Playbook                | Purpose                                      |
 | ----------------------- | -------------------------------------------- |
 | `install.yml`           | Fresh install (Docker, images, services)     |
-| `install-umap.yml`      | Install UMAP service (spatial search)        |
-| `install-caddy.yml`     | Caddy reverse proxy with automatic TLS       |
 | `deploy-packages.yml`   | Deploy packages (rsync from local + build)   |
 | `db-setup.yml`          | Database setup and migrations                |
-| `migrate-db.yml`        | Migrate database between providers           |
+| `relocate-db.yml`       | RELOCATE a database (dump/restore to another server) — NOT schema migrations (that is db-setup) |
 | `rollback.yml`          | Rollback to previous version                 |
 | `health-check.yml`      | Verify all services healthy                  |
 | `backup.yml`            | Backup UMAP models                           |
 | `restore.yml`           | Restore UMAP models from backup              |
 | `harden.yml`            | Security hardening (SSH, firewall, fail2ban) |
 | `test-connectivity.yml` | Test VM connectivity and ports               |
-| `uninstall-caddy.yml`   | Remove Caddy                                 |
 
 ## Requirements
 

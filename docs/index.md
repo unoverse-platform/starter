@@ -9,7 +9,7 @@ Your customers increasingly meet your brand through AI. An Agent built on unover
 
 You build, manage, and observe Agents visually in **Canvas**. You create everything an Agent needs in **Studio**: interfaces, nodes, services, skills, and MCPs. And **Spatial** gives every Agent exactly what it needs, exactly when it needs it. The platform is enterprise-grade from the ground up. It runs on your own infrastructure, with the security and governance you expect: authentication, role-based access, and a full audit trail. And everything you build is yours: your Agents, your interfaces, and your content live in your own codebase.
 
-[Get started](./onboarding/01-getting-started.md). You'll have the platform running locally in a few minutes, and your first Agent shortly after.
+[Get started](./onboarding/00a-studio.md). Studio opens in a couple of minutes and needs nothing but Node.
 
 ---
 
@@ -57,7 +57,7 @@ The [architecture overview](./architecture.md) covers the runtime, the security 
 
 | Section | Contents |
 |---|---|
-| [Onboarding](./onboarding/01-getting-started.md) | From clone to deployed, in nine steps |
+| [Onboarding](./onboarding/00a-studio.md) | Set up, then nine challenges in order |
 | [Design](./design/overview.md) | Components, templates, tokens, and the state model |
 | [Nodes](./nodes/overview.md) | Custom node development: types, patterns, credentials, testing |
 | [Runbooks](./runbooks/overview.md) | Operations: deployment, database, TLS, hardening |

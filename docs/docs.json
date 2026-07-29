@@ -38,13 +38,13 @@
     "links": [
       {
         "label": "GitHub",
-        "href": "https://github.com/unoverse-platform/unoverse-starter"
+        "href": "https://github.com/unoverse-platform/starter"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Get Started",
-      "href": "/onboarding/01-getting-started"
+      "href": "/onboarding/00a-studio"
     }
   },
   "navigation": {
@@ -57,8 +57,9 @@
             "pages": [
               "index",
               "architecture",
-              "onboarding/01-getting-started",
-              "onboarding/00-cli"
+              "onboarding/00a-studio",
+              "onboarding/00b-platform",
+              "onboarding/00c-cli"
             ]
           },
           {
@@ -130,17 +131,18 @@
             "group": "Building Blocks",
             "pages": [
               "nodes/04-credentials",
+              "nodes/15-who-can-run-it",
               "nodes/06-config-schema",
               "nodes/07-service-connectors",
               "nodes/08-mcp-services",
-              "nodes/09-signal-routing"
+              "nodes/09-signal-routing",
+              "nodes/12-calls-that-loop"
             ]
           },
           {
             "group": "Ship & Extend",
             "pages": [
               "nodes/10-package-marketplace",
-              "nodes/11-agent-skills",
               "nodes/13-testing-nodes",
               "nodes/14-node-discoverability",
               "nodes/05-troubleshooting"
@@ -148,6 +150,37 @@
           }
         ],
         "icon": "boxes"
+      },
+      {
+        "tab": "Architecture",
+        "groups": [
+          {
+            "group": "The Shape",
+            "pages": [
+              "architecture/overview",
+              "architecture/deployment-options"
+            ]
+          },
+          {
+            "group": "The Ground",
+            "pages": [
+              "architecture/terraform",
+              "architecture/aws",
+              "architecture/digitalocean",
+              "architecture/azure",
+              "architecture/networking",
+              "architecture/data"
+            ]
+          },
+          {
+            "group": "Operating It",
+            "pages": [
+              "architecture/security",
+              "architecture/environments"
+            ]
+          }
+        ],
+        "icon": "sitemap"
       },
       {
         "tab": "Runbooks",
@@ -180,7 +213,7 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/unoverse-platform/unoverse-starter"
+      "github": "https://github.com/unoverse-platform/starter"
     }
   }
 }

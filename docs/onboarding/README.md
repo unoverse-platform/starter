@@ -1,3 +1,4 @@
 # onboarding
 
-Start here: [01-getting-started.md](./01-getting-started.md) or browse this folder in order (01, 02, …).
+Start here: [00a-studio.md](./00a-studio.md). The `00` files are setup, then the numbered
+challenges run 01 to 09 in order.

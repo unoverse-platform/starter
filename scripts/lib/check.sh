@@ -8,7 +8,7 @@ cmd_check() {
   local pass=0 total=0
 
   # 1. Services
-  for svc in unoverse canvas studio umap memory; do
+  for svc in unoverse canvas umap memory; do
     total=$((total + 1))
     local status
     status=$(docker compose -f "$ROOT/docker-compose.yml" ps --format '{{.Status}}' "$svc" 2>/dev/null | head -1)
@@ -16,11 +16,11 @@ cmd_check() {
       ok "$svc"
       pass=$((pass + 1))
     elif echo "$status" | grep -qi "created"; then
-      fail "$svc ${DIM}— stuck in Created (container never started)${NC}"
+      fail "$svc ${DIM}(stuck in Created, the container never started)${NC}"
     elif [ -z "$status" ]; then
-      fail "$svc ${DIM}— no container found${NC}"
+      fail "$svc ${DIM}(no container found)${NC}"
     else
-      fail "$svc ${DIM}— $status${NC}"
+      fail "$svc ${DIM}($status)${NC}"
     fi
   done
   echo ""
@@ -51,7 +51,7 @@ cmd_check() {
     if [ -f "$pkg/dist/index.js" ]; then
       built=$((built + 1))
     else
-      fail "$name ${DIM}— missing dist/index.js${NC}"
+      fail "$name ${DIM}(missing dist/index.js)${NC}"
     fi
   done
   total=$((total + 1))
@@ -72,7 +72,7 @@ cmd_check() {
     ok "$plugin_count nodes loaded"
     pass=$((pass + 1))
   else
-    fail "0 nodes loaded ${DIM}— check unoverse logs${NC}"
+    fail "0 nodes loaded ${DIM}(check unoverse logs)${NC}"
   fi
 
   # 5. Canvas

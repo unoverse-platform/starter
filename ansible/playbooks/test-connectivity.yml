@@ -11,19 +11,19 @@
 
   tasks:
     # ── Infrastructure ──────────────────────────────────────────
-    - name: "[1/9] Check Docker is running"
+    - name: "[1/14] Check Docker is running"
       command: docker info
       register: docker_info
       ignore_errors: yes
 
-    - name: "[2/9] Check container status"
+    - name: "[2/14] Check container status"
       shell: |
         cd /opt/gravity
         docker compose ps --format '{{ '{{' }}.Name{{ '}}' }} {{ '{{' }}.State{{ '}}' }} {{ '{{' }}.Status{{ '}}' }}' 2>/dev/null || echo "FAILED"
       register: container_status
       ignore_errors: yes
 
-    - name: "[3/9] Check for restarting containers"
+    - name: "[3/14] Check for restarting containers"
       shell: |
         cd /opt/gravity
         docker compose ps --format '{{ '{{' }}.Name{{ '}}' }} {{ '{{' }}.State{{ '}}' }}' 2>/dev/null | grep -i restart || echo "NONE"
@@ -31,7 +31,7 @@
       ignore_errors: yes
 
     # ── Ports ───────────────────────────────────────────────────
-    - name: "[4/9] Test internal service ports"
+    - name: "[4/14] Test internal service ports"
       wait_for:
         host: localhost
         port: "{{ item.port }}"
@@ -46,7 +46,7 @@
       ignore_errors: yes
 
     # ── External Dependencies ───────────────────────────────────
-    - name: "[5/9] Test Redis connectivity (external)"
+    - name: "[5/14] Test Redis connectivity (external)"
       shell: |
         REDIS_HOST=$(grep '^REDIS_HOST=' /opt/gravity/.env 2>/dev/null | cut -d'=' -f2-)
         REDIS_PORT=$(grep '^REDIS_PORT=' /opt/gravity/.env 2>/dev/null | cut -d'=' -f2-)
@@ -57,7 +57,7 @@
       register: redis_check
       ignore_errors: yes
 
-    - name: "[6/9] Test database connectivity"
+    - name: "[6/14] Test database connectivity"
       shell: |
         DB_URL=$(grep '^DATABASE_URL=' /opt/gravity/.env 2>/dev/null | cut -d'=' -f2-)
         if [ -z "$DB_URL" ]; then
@@ -74,7 +74,7 @@
       ignore_errors: yes
 
     # ── Health Endpoints ────────────────────────────────────────
-    - name: "[7/9] Test service health endpoints"
+    - name: "[7/14] Test service health endpoints"
       uri:
         url: "http://localhost:{{ item.port }}/health"
         status_code: 200
@@ -97,7 +97,7 @@
       ignore_errors: yes
 
     # ── Application-Level Checks ────────────────────────────────
-    - name: "[8/13] Test API endpoints (read)"
+    - name: "[8/14] Test API endpoints (read)"
       shell: |
         RESPONSE=$(curl -s -w '\n%{http_code}' --max-time 10 http://localhost:{{ item.port }}{{ item.path }})
         STATUS=$(echo "$RESPONSE" | tail -1)
@@ -122,7 +122,7 @@
       register: prompt_blocks_check
       ignore_errors: yes
 
-    - name: "[9/13] Test API write (POST workflow)"
+    - name: "[9/14] Test API write (POST workflow)"
       shell: |
         RESPONSE=$(curl -s -w '\n%{http_code}' --max-time 10 \
           -X POST http://localhost:4101/workflows \
@@ -134,7 +134,7 @@
       register: api_write_check
       ignore_errors: yes
 
-    - name: "[10/13] Check unoverse node catalog loaded"
+    - name: "[10/14] Check unoverse node catalog loaded"
       shell: |
         cd /opt/gravity
         # The internal :4106 runtime is Docker-network-only (never published), and the
@@ -150,7 +150,7 @@
       register: plugin_check
       ignore_errors: yes
 
-    - name: "[11/13] Check packages directory mounted"
+    - name: "[11/14] Check packages directory mounted"
       shell: |
         cd /opt/gravity
         if docker compose exec -T unoverse ls /app/host_packages 2>/dev/null | head -5; then
@@ -165,7 +165,7 @@
       register: packages_check
       ignore_errors: yes
 
-    - name: "[12/13] Check for errors in service logs"
+    - name: "[12/14] Check for errors in service logs"
       shell: |
         cd /opt/gravity
         ERRORS=$(docker compose logs --tail=50 --since=5m 2>&1 | grep -iE 'error|fatal|panic|does not exist|ECONNREFUSED' | grep -v 'NOGROUP' | tail -10)
@@ -178,22 +178,13 @@
       register: log_errors
       ignore_errors: yes
 
-    # ── Caddy / Domain ────────────────────────────────────────────
-    - name: "[13/15] Test external connectivity (if Caddy installed)"
-      wait_for:
-        host: localhost
-        port: "{{ item }}"
-        timeout: 5
-      loop: [80, 443]
-      register: caddy_ports
-      ignore_errors: yes
-
-    - name: "[14/15] Read DOMAIN from .env"
+    # ── Domain (native ingress: the provider LB terminates TLS) ───
+    - name: "[13/14] Read DOMAIN from .env"
       shell: grep '^DOMAIN=' /opt/gravity/.env 2>/dev/null | cut -d'=' -f2-
       register: domain_value
       ignore_errors: yes
 
-    - name: "[15/15] Test public domain endpoints (if DOMAIN set)"
+    - name: "[14/14] Test public domain endpoints (if DOMAIN set)"
       shell: |
         RESULT=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 -k https://{{ item.sub }}{{ domain_value.stdout }}{{ item.path }} 2>/dev/null)
         echo "HTTP $RESULT"
@@ -263,9 +254,6 @@
           ── Recent Errors in Logs ──
           {{ log_errors.stdout | default('(skipped)') }}
 
-          ── Caddy ──
-            - Port 80: {{ 'OK' if not caddy_ports.results[0].failed else 'CLOSED' }}
-            - Port 443: {{ 'OK' if not caddy_ports.results[1].failed else 'CLOSED' }}
 
           ── Public Domain ──
           {% if domain_value.stdout | default('') | length > 0 and domain_value.stdout != 'example.com' %}

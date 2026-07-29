@@ -26,7 +26,7 @@ Definitions are composed from a [small closed set of primitives](../design/02-sd
 <Steps>
 <Step title="Open Studio">
 
-**Studio** runs with the platform at http://localhost:3002. Open **Components**: every definition renders from its prop defaults, and the controls walk its layouts and states. This is where you'll live while designing.
+Open **Studio** with `unoverse-studio`, then open **Components**: every definition renders from its prop defaults, and the controls walk its layouts and states. This is where you'll live while designing.
 
 </Step>
 <Step title="Create your org">

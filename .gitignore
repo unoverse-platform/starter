@@ -10,5 +10,4 @@ dist/
 .package-lock.hash
 
 # Customer-specific files (never commit these)
-ansible/inventory/production.yml
 package-lock.json

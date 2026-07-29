@@ -80,9 +80,12 @@ cmd_login() {
 
 cmd_init() {
   echo ""
-  echo -e "  ${BOLD}${CYAN}⬡ Unoverse Platform Setup${NC}"
+  echo -e "  ${BOLD}${CYAN}⬡ Unoverse Setup${NC}"
   echo -e "  ${DIM}─────────────────────────────────${NC}"
   echo ""
+
+  # (The studio/platform mode interview was removed 2026-07-28 — Studio is a
+  # separate app, and this CLI only sets up the platform.)
   timer_start
 
   # Check Docker
@@ -100,7 +103,7 @@ cmd_init() {
 
   # Apple Silicon check
   if [ "$(uname -m)" = "arm64" ]; then
-    ok "Apple Silicon detected — multi-arch images will run natively"
+    ok "Apple Silicon detected: multi-arch images will run natively"
     echo ""
   fi
 
@@ -137,7 +140,7 @@ cmd_init() {
     if [ -n "$DATABASE_URL" ] && [[ "$DATABASE_URL" != *"user:password"* ]]; then
       break
     fi
-    fail "DATABASE_URL is required — get it from your Unoverse admin"
+    fail "DATABASE_URL is required. Get it from your Unoverse admin"
   done
 
   # Auto-add SSL params if missing
@@ -148,10 +151,10 @@ cmd_init() {
        [[ "$DATABASE_URL" == *"127.0.0.1"* ]] || \
        [[ "$DATABASE_URL" == *"host.docker.internal"* ]]; then
       DATABASE_URL="${DATABASE_URL}${sep}sslmode=disable"
-      ok "Local database detected — added sslmode=disable"
+      ok "Local database detected. Added sslmode=disable"
     else
       DATABASE_URL="${DATABASE_URL}${sep}sslmode=require"
-      ok "Managed database detected — added sslmode=require"
+      ok "Managed database detected. Added sslmode=require"
     fi
   fi
 
@@ -173,7 +176,7 @@ cmd_init() {
     if [ -n "$AUTH_ISSUER" ] && [[ "$AUTH_ISSUER" != *"your-tenant"* ]]; then
       break
     fi
-    fail "AUTH_ISSUER is required — get it from your Unoverse admin"
+    fail "AUTH_ISSUER is required. Get it from your Unoverse admin"
   done
 
   while true; do
@@ -181,7 +184,7 @@ cmd_init() {
     if [ -n "$AUTH_CLIENT_ID" ] && [[ "$AUTH_CLIENT_ID" != *"your-"* ]]; then
       break
     fi
-    fail "AUTH_CLIENT_ID is required — get it from your Unoverse admin"
+    fail "AUTH_CLIENT_ID is required. Get it from your Unoverse admin"
   done
 
   read -p "  AUTH_AUDIENCE [gravity-api]: " AUTH_AUDIENCE
@@ -220,7 +223,7 @@ ENVEOF
   if echo "$DOCR_TOKEN" | docker login "$DOCR_REGISTRY" -u "$DOCR_TOKEN" --password-stdin &>/dev/null; then
     ok "Logged in to DOCR"
   else
-    fail "DOCR login failed — check your token"
+    fail "DOCR login failed. Check your token"
     exit 1
   fi
 

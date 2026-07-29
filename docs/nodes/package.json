@@ -1,7 +1,7 @@
 {
   "name": "@unoverse-platform/docs",
   "version": "1.0.7",
-  "description": "Comprehensive documentation for GravityAI plugin node development",
+  "description": "Documentation for building unoverse nodes",
   "main": "index.js",
   "scripts": {
     "build": "echo 'Documentation package - no build required'",
@@ -10,14 +10,15 @@
     "preview": "python3 -m http.server 8000"
   },
   "keywords": [
-    "gravityai",
-    "plugin",
+    "unoverse",
     "node",
+    "yaml",
+    "manifest",
     "documentation",
     "ai",
     "workflow"
   ],
-  "author": "GravityAI",
+  "author": "unoverse",
   "license": "MIT",
   "files": [
     "*.md",

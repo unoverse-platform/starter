@@ -55,7 +55,7 @@ cmd_update() {
     ok "Code updated"
     rm -f "$git_log"
   else
-    warn "Code update failed — attempting recovery"
+    warn "Code update failed. Attempting recovery"
     local git_err
     git_err=$(cat "$git_log" 2>/dev/null | head -5)
     if [ -n "$git_err" ]; then
@@ -66,7 +66,7 @@ cmd_update() {
     # Recovery: download latest CLI script from GitHub, then force-sync
     printf "  ${DIM}●${NC} Downloading latest update script..."
     local temp_update=$(mktemp)
-    if curl -fsSL "https://raw.githubusercontent.com/unoverse-platform/unoverse-starter/main/scripts/lib/update.sh" -o "$temp_update" 2>/dev/null; then
+    if curl -fsSL "https://raw.githubusercontent.com/unoverse-platform/starter/main/scripts/lib/update.sh" -o "$temp_update" 2>/dev/null; then
       cp "$temp_update" "$GRAVITY_LIB/update.sh"
       rm -f "$temp_update"
       printf "\r\033[2K"
@@ -85,17 +85,9 @@ cmd_update() {
       ok "Forced sync completed"
     else
       printf "\r\033[2K"
-      fail "Recovery failed — run: cd $ROOT && git reset --hard origin/main"
+      fail "Recovery failed. Run: cd $ROOT && git reset --hard origin/main"
       exit 1
     fi
-  fi
-
-  # Safety: restore production.yml from example if missing
-  local inv="$ROOT/ansible/inventory/production.yml"
-  local inv_ex="$ROOT/ansible/inventory/production.yml.example"
-  if [ ! -f "$inv" ] && [ -f "$inv_ex" ]; then
-    cp "$inv_ex" "$inv"
-    warn "production.yml was missing — restored from example. Edit with your VM details."
   fi
 
   # Step 2: Images — login to registry if DOCR_TOKEN is set
@@ -116,7 +108,7 @@ cmd_update() {
     ok "Images pulled ${DIM}(${total_elapsed}s)${NC}"
   else
     echo ""
-    fail "Image pull failed — check network/registry and run ${BOLD}unoverse update${NC} again"
+    fail "Image pull failed. Check network/registry and run ${BOLD}unoverse update${NC} again"
     exit 1
   fi
 
@@ -173,7 +165,7 @@ cmd_update() {
   if [ $build_exit -eq 0 ]; then
     ok "Packages built"
   else
-    warn "Build completed with warnings — check output:"
+    warn "Build completed with warnings. Check output:"
     cat "$build_log" | tail -20 | sed 's/^/    /'
   fi
   rm -f "$build_log"
@@ -205,7 +197,7 @@ cmd_update() {
   if [ "${up_count:-0}" -eq "${total_count:-0}" ] && [ "${total_count:-0}" -gt 0 ]; then
     ok "All $up_count services running"
   elif [ "${created_count:-0}" -gt 0 ]; then
-    warn "$up_count/$total_count services running — $created_count stuck in Created state"
+    warn "$up_count/$total_count services running: $created_count stuck in Created state"
     info "Run ${BOLD}unoverse doctor${NC} to diagnose"
   elif [ "${up_count:-0}" -gt 0 ]; then
     warn "$up_count/$total_count services running"
@@ -262,4 +254,77 @@ cmd_update_nodes() {
   echo ""
   echo -e "  ${GREEN}${BOLD}Done${NC} ${DIM}in $(timer_elapsed)${NC}"
   echo ""
+}
+
+# ── cmd_pull — INTERNAL helper (init + update use it). Not a user command since 2026-07-28. ──
+
+cmd_pull() {
+  echo ""
+  read -r -p "  Pull platform images now? (~1.2GB first time) [Y/n] " REPLY
+  echo ""
+  if [[ "$REPLY" =~ ^[Nn]$ ]]; then
+    info "Skipped. Run ${BOLD}./unoverse start${NC} later."
+    return
+  fi
+
+  local IMAGES=(
+    "registry.digitalocean.com/gravity-repo/canvas:latest"
+    "registry.digitalocean.com/gravity-repo/umap:latest"
+    "registry.digitalocean.com/gravity-repo/unoverse:latest"
+    "registry.digitalocean.com/gravity-repo/memory:latest"
+  )
+
+  local total=${#IMAGES[@]}
+  local count=0
+  local failed=0
+
+  local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+
+  echo ""
+  for img in "${IMAGES[@]}"; do
+    count=$((count + 1))
+    local short="${img##*/}"          # gravity-server:latest
+    short="${short%%:*}"              # gravity-server
+
+    # Start pull in background
+    docker pull "$img" &>/dev/null &
+    local pid=$!
+
+    # Animate spinner while pulling
+    local i=0
+    while kill -0 "$pid" 2>/dev/null || false; do
+      local c="${spin:i%${#spin}:1}"
+      i=$((i + 1))
+      printf "\r  ${DIM}[%d/%d]${NC} ${CYAN}%s${NC} Pulling ${BOLD}%s${NC} " "$count" "$total" "$c" "$short"
+      sleep 0.1
+    done
+
+    # Check result
+    local pull_exit=0
+    wait "$pid" 2>/dev/null || pull_exit=$?
+    if [ $pull_exit -eq 0 ]; then
+      printf "\r  ${DIM}[%d/%d]${NC} ${GREEN}✓${NC} Pulling ${BOLD}%s${NC} \n" "$count" "$total" "$short"
+    else
+      printf "\r  ${DIM}[%d/%d]${NC} ${RED}✗${NC} Pulling ${BOLD}%s${NC} \n" "$count" "$total" "$short"
+      failed=$((failed + 1))
+    fi
+  done
+  echo ""
+
+  # Count how many gravity images we have now
+  local pulled
+  pulled=$(docker images -a --format "{{.Repository}}" | grep -c "gravity-repo" || true)
+  pulled=$(echo "$pulled" | tr -d '[:space:]')
+  pulled=${pulled:-0}
+
+  echo ""
+  if [ "$pulled" -ge 5 ]; then
+    ok "All $pulled images pulled"
+  elif [ "$pulled" -gt 0 ]; then
+    warn "$pulled images pulled (some may need retry)"
+    info "Run ${BOLD}unoverse pull${NC} to retry"
+  else
+    fail "No images pulled. Check your DOCR token and network"
+    exit 1
+  fi
 }

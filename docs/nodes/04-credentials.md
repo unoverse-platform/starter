@@ -1,180 +1,188 @@
 ---
 sidebarTitle: "Credentials"
-title: "Credential Management"
+title: "Credentials"
 ---
 
-**The One Rule: Nodes NEVER touch credentials. Services read credentials from `credentialContext.credentials`.**
+Most services want a key before they will answer. So most nodes need one, and this page is
+how yours gets it.
 
-## ✅ CORRECT Pattern
+**The value never goes in your files.** Not in a config default, not in a `.example`, not
+commented out. Your node names the credential it needs, and that name is all your YAML ever
+holds.
 
-The platform resolves credentials into `context.credentials` before execution. Services read them directly from there — no async fetch required.
+Someone enters the real value once in **Canvas**. The platform stores it encrypted, and
+hands it to your node at the moment it runs, and only to your node.
 
-### 1. Node Level (Executor)
+That is what makes a node safe to commit, and safe to hand to someone else. It is also what
+makes it publishable: the same node runs in someone else's universe, against their account,
+with nothing of yours in it.
 
-```typescript
-// ✅ CORRECT: Build credential context and pass to service
-protected async executeNode(inputs, config, context) {
-  const credentialContext = this.buildCredentialContext(context);
-  const result = await myService(config, credentialContext, context.api);
-  return { __outputs: result };
-}
+A node that calls a public API declares no credential at all, and skips all of this.
 
-private buildCredentialContext(context: NodeExecutionContext) {
-  const { workflowId, executionId, nodeId } = this.validateAndGetContext(context);
-  return {
-    workflowId, executionId, nodeId,
-    nodeType: this.nodeType,
-    config: context.config,
-    credentials: context.credentials || {},
-  };
-}
+## A credential is not a permission
+
+These two get confused constantly, because both look like "auth" and both show up on the
+same node in a workflow. They answer opposite questions.
+
+Picture a refund step on a canvas.
+
+| | **Credential** | **Run authorization** |
+| --- | --- | --- |
+| Answers | How does the node prove itself to the payments API? | May this caller set off a refund? |
+| About | Your node and the service it calls | The person, and this box in this workflow |
+| Direction | Outbound | Inbound |
+| You write | `credentials:` in `interface.yaml` | `auth:` in `node.yaml` |
+| Someone else supplies | The key, once, in **Canvas** | The sign-in and role settings, per box |
+| Getting it wrong looks like | A 401 from the service | Anyone who reaches the node can issue refunds |
+
+**The key is always there.** Once an admin has entered it, every run of that node can spend
+it, whoever set the run off. The credential never asks who is calling.
+
+That is precisely why the second question exists. Nothing about holding the key limits who
+may pull the trigger, so a node that does something serious has to say so separately.
+[Who Can Run It](./15-who-can-run-it.md) is that half.
+
+## Three steps
+
+### 1. Describe the credential
+
+One file per credential type, in the package's `credentials/` folder. It describes the
+shape, never a value.
+
+```yaml credentials/exampleCredential.yaml
+$schema: ../../_schema/credential.schema.json
+
+name: exampleCredential
+displayName: Example
+description: Credentials for the Example API
+documentationUrl: https://example.com/docs/api-keys
+
+properties:
+  - name: apiKey
+    displayName: API Key
+    type: string
+    required: true
+    secret: true
+    description: Your Example API key
+    placeholder: sk-...
+
+  - name: baseUrl
+    displayName: Base URL
+    type: string
+    required: false
+    secret: false
+    description: Custom API endpoint
+    default: https://api.example.com
 ```
 
-### 2. Service Level
+**`properties` becomes the form** someone fills in. `displayName`, `description` and
+`placeholder` are what they read while doing it, so write them for a person who has your
+service open in another tab. `documentationUrl` is the link to where the key comes from.
 
-> **🛑 Select your credential BY NAME first.** `context.credentials` contains **every credential in the workflow**, keyed by credential type name (see [Credential Context Structure](#-credential-context-structure)). Many credential types expose the same field — `openAICredential`, `apolloCredential`, `hunterCredential`, `searchapiCredential` all have an `apiKey`. A blind "first object with `.apiKey`" scan therefore grabs **whichever happens to be first in the bag**, not yours. A node works in isolation, then silently authenticates with the wrong service the moment another `apiKey` credential is added to the workflow (symptom: a `401`/`No user found` from the API even though the correct credential is selected in the UI).
->
-> Always read `available.<yourCredentialName>` first; fall back to the field-signature scan only for single-credential convenience.
+**`secret: true` is the field's whole security posture.** Mark anything that grants access.
+A base URL is not secret. A key is.
 
-```typescript
-// ✅ CORRECT: Select THIS node's credential by its declared name, then fall back to a scan
-export async function myService(config: any, credentialContext: any, api?: any) {
-  const available = credentialContext.credentials || {};
+### 2. Ask for it
 
-  // Name-first: matches the credential this node declares (`credentials: [{ name: "myCredential" }]`).
-  // The fallback scan only disambiguates correctly when one credential is present.
-  const creds: any =
-    available.myCredential ?? Object.values(available).find((v) => (v as any)?.apiKey);
+The node names what it needs in `interface.yaml`.
 
-  if (!creds?.apiKey) {
-    throw new Error("myCredential missing apiKey");
-  }
-
-  // Use the credential
-  return await externalAPI.call(creds.apiKey, config.data);
-}
-
-// ❌ WRONG: bare field-signature scan — grabs the first apiKey in the bag, not necessarily yours
-// for (const val of Object.values(available)) { if (val?.apiKey) { creds = val; break; } }
-
-// ❌ WRONG: api.getNodeCredentials() does not reliably return credentials
-// const creds = await api.getNodeCredentials(credentialContext, "myCredential");
+```yaml interface.yaml
+credentials:
+  - name: exampleCredential
+    required: true
+    displayName: Example API
 ```
 
-## Real Example — OpenAI
+**Canvas** reads this and asks for the credential on the node's settings. A node with
+`required: true` and no credential selected tells you before it runs.
 
-```typescript
-// _legacy/nodes/openai/src/shared/openaiStream/client/openaiClient.ts
-// (the openai package is a YAML manifest now, where the same rule is `credentials:` in
-//  interface.yaml; this stays as the reference pattern for a CODE node)
-export async function initializeOpenAIClient(context: any, logger: any, api?: any) {
-  const availableCredentials = context.credentials || {};
+### 3. Use it
 
-  // Name-first: this node declares `openAICredential`. Falling back to a scan is only safe
-  // when no other apiKey credential (Apollo, Hunter, SearchAPI, …) is in the workflow.
-  const credentials: OpenAICredentials | undefined =
-    availableCredentials.openAICredential ??
-    (Object.values(availableCredentials).find((c) => (c as any)?.apiKey) as OpenAICredentials | undefined);
+Reference the value in the call, by name.
 
-  if (!credentials?.apiKey) {
-    throw new Error("OpenAI API key not found in credentials");
-  }
-
-  return new OpenAI({ apiKey: credentials.apiKey });
-}
+```yaml api/run.yaml
+- name: fetch
+  method: GET
+  url: https://api.example.com/things
+  transport: json
+  credential:
+    scheme: bearer
+    token: "{{ credentials.exampleCredential.apiKey }}"
 ```
 
-## 🏗️ Credential Context Structure
+The path is `credentials.<name>.<field>`: the name from `interface.yaml`, then the property
+from the credential file.
 
-```typescript
-interface CredentialContext {
-  workflowId: string;
-  executionId: string;
-  nodeId: string;
-  nodeType: string;
-  config: any;
-  credentials: Record<string, any>; // ALL workflow credentials, keyed by credential type name
-                                     // (e.g. { openAICredential: {...}, hunterCredential: {...} }).
-                                     // Select yours by name — NOT by scanning for the first apiKey.
-}
+## Auth schemes
+
+`scheme` names how the credential reaches the service. Each one is implemented by the
+platform, so you pick one rather than assembling headers yourself.
+
+| Scheme | What it sends |
+|---|---|
+| `bearer` | `Authorization: Bearer <token>` |
+| `basic` | `Authorization: Basic <base64 of username:password>` |
+| `apiKeyHeader` | your key in a header you name |
+| `apiKeyQuery` | your key as a query parameter you name |
+| `oauth2ClientCredentials` | fetches a token, then retries once if the service answers 401 |
+| `awsSigV4` | signs the request with AWS Signature Version 4 |
+| `none` | no auth, for a public API |
+
+`awsSigV4` is what turns every AWS service into a node. The signature hashes the exact
+bytes being sent, so it is computation rather than description, and the platform does it.
+
+A key that belongs in a header of its own:
+
+```yaml
+credential:
+  scheme: apiKeyHeader
+  header: X-API-Key
+  token: "{{ credentials.exampleCredential.apiKey }}"
 ```
 
-## 📋 Complete Implementation
+## Testing with your own key
 
-### 1. Node Definition — Declare Credentials
+`unoverse node test` runs a node against the real service, so it needs a real key. It reads
+yours from your own `.env`, and stores nothing.
 
-```typescript
-export const MyNode: EnhancedNodeDefinition = {
-  type: "MyNode",
-  // ...
-  credentials: [
-    {
-      name: "myCredential",
-      type: "myCredentialType",
-      required: true,
-    },
-  ],
-};
-```
+The variable is the credential name and the field, in upper snake case, with any trailing
+`Credential` dropped:
 
-### 2. Credential Definition
+| Credential and field | Variable |
+|---|---|
+| `openAICredential.apiKey` | `OPENAI_API_KEY` |
+| `exampleCredential.apiKey` | `EXAMPLE_API_KEY` |
+| `exampleCredential.baseUrl` | `EXAMPLE_BASE_URL` |
 
-```typescript
-// src/credentials/index.ts
-export const MyCredential = {
-  name: "myCredential",
-  displayName: "My Service",
-  description: "Credentials for My Service",
-  properties: [
-    {
-      name: "apiKey",
-      displayName: "API Key",
-      type: "string" as const,
-      required: true,
-      secret: true,
-      description: "Your API key",
-    },
-  ],
-};
-```
+A missing one is named before anything runs, rather than surfacing as a 401 from the
+service.
 
-### 3. Service — Read Credentials
+## Your node sees only its own credential
 
-```typescript
-export async function myService(config: any, credentialContext: any, api?: any) {
-  const available = credentialContext.credentials || {};
+A node receives the credentials it declared in `interface.yaml`, and nothing else. A workflow
+holding an OpenAI node and a HubSpot node keeps the two apart: neither can read the other's
+key, whatever it writes.
 
-  // Name-first (the name from `credentials: [{ name: "myCredential" }]`), scan as fallback.
-  const creds: any =
-    available.myCredential ?? Object.values(available).find((v) => (v as any)?.apiKey);
+So `{{ credentials.hubspotCredential.apiKey }}` inside a node that declared only
+`exampleCredential` resolves to nothing. That is not a bug to work around. Declare what you
+need, and reference what you declared.
 
-  if (!creds?.apiKey) throw new Error("API key not found in credentials");
+Naming the credential also rules out a subtler mistake. A node that went looking for "the
+first thing with an `apiKey`" would find whichever credential came first, since
+`openAICredential`, `apolloCredential` and `hunterCredential` all have one. It would work
+alone and authenticate against the wrong service the moment a second credential joined the
+workflow. `{{ credentials.<name>.<field>}}` names the credential, so the wrong one is never
+reachable by accident either.
 
-  const response = await fetch(config.apiEndpoint, {
-    headers: { Authorization: `Bearer ${creds.apiKey}` },
-  });
+## When it goes wrong
 
-  return response.json();
-}
-```
-
-## 🚨 Common Issues
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `"Credentials are required"` | Missing `credentials: [...]` on node definition | Add credential declaration |
-| `"Credential not found"` | Config missing credential ID | Populate credential ID in node config UI |
-| Empty/undefined credential values | Using `api.getNodeCredentials()` | Read from `credentialContext.credentials` directly |
-| `401` / `No user found` **despite** the right credential selected in the UI | Service scans for the first `.apiKey` and grabs another node's credential (the bag holds every workflow credential) | Select by name: `available.<yourCredentialName> ?? <scan>` |
-
-## 🔗 Study Real Implementations
-
-- `_legacy/nodes/openai/src/shared/openaiStream/client/openaiClient.ts` — the canonical
-  name-first pattern for reading `context.credentials`. Kept as a reference only: the
-  `openai` package is a manifest now, where a credential is declared in `interface.yaml`
-  and interpolated as `{{ credentials.<name>.<field> }}` with no code at all.
-- `@unoverse-platform/miro-bridge` — `mcpHandlers.ts` — same pattern for bearer token auth
+| What you see | Why | Fix |
+|---|---|---|
+| Lint: needs credential `x` but no `credentials/x.yaml` exists | The node asks for a credential its package never described | Add the credential file, or correct the name in `interface.yaml` |
+| Lint: credential is declared elsewhere with different fields | Two packages describe the same credential differently. They share one entry at run time, so they have to agree | Make the `properties` match, or give yours its own name |
+| `unoverse node test` names a missing variable | No key in your `.env` | Add it in the form above |
+| 401 from the service | The key is wrong, or the scheme is | Check the value in **Canvas**, then check `scheme` against the service's own docs |
 
 ---
 
-**Next**: [Troubleshooting](./05-troubleshooting.md)
+**Next**: [Who Can Run It](./15-who-can-run-it.md)

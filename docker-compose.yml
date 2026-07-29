@@ -36,8 +36,8 @@ services:
   # ═══════════════════════════════════════════════════════════════════════════
   # RETIRED at the One Engine completion (ONE_ENGINE.md step 5): the gateway has
   # zero jobs — the unoverse container serves /api, /ws/gravity, /components,
-  # and the Content Engine. ROLLBACK: uncomment this block and repoint Caddy's
-  # api.{domain} back to :4100. Image still published by CI.
+  # and the Content Engine. ROLLBACK: uncomment this block and repoint the
+  # ingress api.{domain} target back to :4100. Image still published by CI.
   # ═══════════════════════════════════════════════════════════════════════════
   # server:
   #   image: registry.digitalocean.com/gravity-repo/server:latest
@@ -116,23 +116,8 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
-  # Studio — component/template/asset workbench (static build, served by nginx like Canvas;
-  # proxies /mcp, /dev, /api, /stream to unoverse:4105). DEV-ONLY: the runbook
-  # (ansible/playbooks/install.yml) starts only `core_services`, which does NOT include
-  # studio — so it is structurally excluded from production, no toggle involved.
-  studio:
-    image: registry.digitalocean.com/gravity-repo/studio:latest
-    ports:
-      - "3002:80"
-    environment:
-      # OIDC for the Studio SPA (same as Canvas) — the entrypoint writes these into config.js.
-      - VITE_AUTH_ISSUER=${AUTH_ISSUER}
-      - VITE_AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
-      - VITE_AUTH_AUDIENCE=${AUTH_AUDIENCE}
-    depends_on:
-      - unoverse
-    logging: *default-logging
-    restart: unless-stopped
+  # Studio is NOT a platform image (removed 2026-07-28): it ships from npm and
+  # connects to a universe over the API with a publish key.
 
   # UMAP Service - Python ML service
   umap:
@@ -161,12 +146,15 @@ services:
     ports:
       - "4105:4105" # PUBLIC port
       - "127.0.0.1:4106:4106" # builder MCP + runtime, LOOPBACK ONLY — local Claude Code connects here; never "4106:4106"
-      - "4101:4101" # workflow surface (engine in-process) — same exposure the workflow service had (host-firewalled)
+      # LOOPBACK ONLY. The engine surface is unauthenticated; a plain "4101:4101" is
+      # internet-reachable on a VM because Docker's iptables rules BYPASS ufw — the
+      # harden.yml firewall does not protect published ports. Host tooling (./unoverse key,
+      # health checks) still reaches it via 127.0.0.1. Never widen to "4101:4101".
+      - "127.0.0.1:4101:4101" # workflow surface (engine in-process)
     environment:
       - NODE_ENV=production
       # Studio/workbench is a Vite DEV server — it only runs via `npm run dev` (source),
       # NOT in this production image. Keep this 0; the Docker runtime serves MCP + API only.
-      - UNOVERSE_WORKBENCH=0
       - UNOVERSE_PORT=4105
       # PUBLIC origin the app's OWN /mcp + /stream live at — baked into each MCP app's
       # widget CSP (openai/widgetCSP.connect_domains). MUST be the api.<domain> host, or
@@ -175,9 +163,16 @@ services:
       # where the code falls back to localhost:4105.
       - UNOVERSE_PUBLIC_URL=${DOMAIN:+https://api.${DOMAIN}}
       - UNOVERSE_RUNTIME_PORT=4106
+      # The internal listeners (:4106 runtime, :4101 engine) bind LOOPBACK by default in
+      # code. Inside the container they must bind all interfaces (docker-proxy and sibling
+      # containers connect to the container IP); the loopback-only port mappings above and
+      # the Docker network are the boundary here.
+      - UNOVERSE_INTERNAL_BIND=0.0.0.0
       - AUTH_ISSUER=${AUTH_ISSUER}
       - AUTH_AUDIENCE=${AUTH_AUDIENCE}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Optional: page-intelligence features (promote-page extraction).
+      - HYPERBROWSER_API_KEY=${HYPERBROWSER_API_KEY}
       # TEMP test shim: SearchPlaces/SearchAPI env fallback when no credential is stored.
       - SEARCHAPI_KEY=${SEARCHAPI_KEY}
       - SERVER_WS_URL=ws://server:4100
@@ -192,6 +187,14 @@ services:
       # ── ONE_ENGINE CUTOVER ACTIVE: DATABASE_URL is the capability gate that boots
       # the in-process engine (the retired workflow block above is the rollback).
       - DATABASE_URL=${DATABASE_URL}
+      # Connection budget (INFRASTRUCTURE.md, Postgres law) — per-size values
+      # rendered by the infra Terraform; unset in local dev = code defaults (10).
+      - DB_POOL_ENGINE=${DB_POOL_ENGINE}
+      - DB_POOL_ENGINE_LEGACY=${DB_POOL_ENGINE_LEGACY}
+      # Encrypts stored credentials at rest. WITHOUT this the engine falls back to a
+      # key committed in source (SECURITY.md § Credential encryption at rest) — set it
+      # in every deployment: openssl rand -base64 32
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY}
       - REDIS_NAMESPACE=${REDIS_NAMESPACE}
       - UMAP_SERVICE_URL=http://umap:5001
       # Agent nodes POST conversation turns to the memory server (ingestConversationTurn).
@@ -199,9 +202,6 @@ services:
       # container — so every ingest silently fails (fire-and-forget) and memory never
       # updates on deployed envs. The memory server is the sibling `memory` container.
       - MEMORY_SERVICE_URL=http://memory:4104
-      # The kit's runtime — the Canvas Deploy button / `unoverse deploy runtime <id>`
-      # push compiled canvases here (engine POST /workflows/:id/deploy target).
-      - RUNTIME_URL=http://unoverse-runtime:4107
       # Marketplace installs node packages here at runtime (npm) — nodes are NOT baked
       # into the image; only the core workflow nodes ship with the platform (in the
       # workflow image). This volume persists installs across restarts.
@@ -241,7 +241,7 @@ services:
   # internal :4106/mcp (the app-discovery/workflow-MCP path). Source moved to
   # _legacy/mcp-server; the last gravity-repo/mcp-server image stays in DOCR as the
   # rollback hatch. ROLLBACK: restore apps/mcp-server from _legacy, re-add to the CI
-  # matrix, uncomment this block, and re-add the mcp.{domain} route in Caddyfile.j2.
+  # matrix, uncomment this block.
   # mcp-server:
   #   image: registry.digitalocean.com/gravity-repo/mcp-server:latest
   #   ports:
@@ -268,6 +268,8 @@ services:
       - NODE_ENV=production
       - PORT=4104
       - DATABASE_URL=${DATABASE_URL}
+      # Connection budget (INFRASTRUCTURE.md) — Terraform-rendered per size.
+      - DB_POOL_MEMORY=${DB_POOL_MEMORY}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -284,45 +286,8 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
-  # ===========================================================================
-  # UNOVERSE RUNTIME — the kit's deploy target (docs/architecture/UNOVERSE_RUNTIME.md)
-  # ===========================================================================
-  # The lite runtime that hosts COMPILED canvases: the Canvas Deploy button /
-  # `unoverse deploy runtime <id>` push here (the platform's RUNTIME_URL points at
-  # this container). Boots as an EMPTY SLOT; the deployed artifact persists in the
-  # runtime_workflow volume, so it survives restarts. Same image a customer VM runs.
-  unoverse-runtime:
-    # NOT part of the core platform. It's the per-workflow runtime you eject/test with — a ~1.5GB
-    # image. Behind a profile so a plain `docker compose pull` / `up -d` (the deploy path) SKIPS it
-    # entirely; start it only when needed: `docker compose --profile runtime up -d unoverse-runtime`.
-    profiles: ["runtime"]
-    image: registry.digitalocean.com/gravity-repo/unoverse-runtime:${TAG:-latest}
-    ports:
-      - "4107:4107"
-    environment:
-      - NODE_ENV=production
-      - PORT=4107
-      - WORKFLOW_PATH=/workflow/workflow.json
-      - AUTH_ISSUER=${AUTH_ISSUER}
-      - AUTH_AUDIENCE=${AUTH_AUDIENCE}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_TLS=${REDIS_TLS}
-      # Same namespace as the platform/memory — CRM-sync nodes share outbox lanes by key.
-      - REDIS_NAMESPACE=${REDIS_NAMESPACE}
-      # Companions (§6.2): memory rides the kit's memory server.
-      - MEMORY_SERVICE_URL=http://memory:4104
-    volumes:
-      - runtime_workflow:/workflow
-      # The §5 node store: deploy-time `npm install` of each artifact's nodePackages lands
-      # here — a named volume so installs persist across restarts/updates. First run seeds
-      # it from the image (externals + plugin-base only; the image ships ZERO node packages).
-      - runtime_node_store:/app/node_modules
-    labels:
-      - "com.docker.compose.service=unoverse-runtime"
-    logging: *default-logging
-    restart: unless-stopped
+  # unoverse-runtime REMOVED 2026-07-28: WIP, excluded from the platform
+  # (docs/architecture/INFRASTRUCTURE.md). Returns when the user declares it ready.
 
   # ===========================================================================
   # OBSERVABILITY — log viewer (runs by default)
@@ -349,5 +314,3 @@ services:
 volumes:
   umap_models:
   unoverse_plugins: # Marketplace-installed node packages (persisted across restarts)
-  runtime_workflow: # The runtime's deployed workflow artifact (survives restarts)
-  runtime_node_store: # Deploy-time-installed node packages (§5 golden rule — only what's needed)

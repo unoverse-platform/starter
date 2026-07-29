@@ -1,267 +1,128 @@
 ---
 sidebarTitle: "Service Connectors"
-title: "Service Connectors & MCP Integration"
+title: "Service Connectors"
 ---
 
-**Connect nodes to share capabilities through service connectors**
+Most nodes pass data along a workflow. Some instead offer a capability that other nodes call
+on demand, like turning text into a vector.
 
-## 🔌 What are Service Connectors?
+A service connector is that arrangement. One node offers, another calls, and they are joined
+by a service edge on the **Canvas** rather than a data edge.
 
-Service connectors allow nodes to provide and consume services from other nodes in a workflow. This enables:
-- Dynamic capability discovery
-- Service composition
-- Tool integration (like MCP)
-- Reusable functionality
+## Two channels, and they never cross
 
-## 🎯 Quick Guide
+A node has two ways of being triggered, and it is worth keeping them apart.
 
-| Connector Type | Purpose | Example |
-|----------------|---------|---------|
-| **Embedding Service** | Generate text embeddings | OpenAI → PostgresFetch |
-| **MCP Service** | Dynamic tool discovery | PostgresFetch → Nova |
-| **Custom Service** | Any node-specific service | Your custom services |
+| Channel | Triggered by | Produces |
+|---|---|---|
+| Workflow | the graph reaching the node | emits on its output connectors |
+| Service | another node calling a method | returns a value to that caller |
 
-## 📋 Service Connector Definition
+A service call **returns to its caller** and fires no output connectors. Nothing leaks from
+one channel into the other.
 
-Add service connectors to your node definition:
+A node can have both. A node that only ever answers other nodes has no inputs and no outputs
+at all.
 
-```typescript
-export const definition = {
-  type: "YourNode",
-  // ... other properties ...
-  
-  serviceConnectors: [
-    {
-      name: "embeddingService",
-      description: "Embedding service connection",
-      serviceType: "embedding",
-      methods: ["createEmbedding"],
-      isService: false, // This node CONSUMES services
-    },
-    {
-      name: "mcpService", 
-      description: "MCP service for tool discovery",
-      serviceType: "mcp",
-      isService: true, // This node PROVIDES services
-    }
-  ]
-};
-```
+## Offering a service
 
-## 🔄 Service Flow
+Declare the connector in `interface.yaml`, with `isService: true` and the methods you offer.
 
-### 1. Service Provider (isService: true)
-```typescript
-// In your executor's handleServiceCall method
-async handleServiceCall(method: string, params: any, context: any) {
-  switch (method) {
-    case 'getSchema':
-      return this.getMCPSchema();
-    
-    case 'yourMethod':
-      return this.executeMethod(params);
-      
-    default:
-      throw new Error(`Unknown method: ${method}`);
-  }
-}
-```
-
-### 2. Service Consumer (isService: false)
-```typescript
-// In your executor
-import { callService } from "@unoverse-platform/plugin-base";
-
-const result = await callService("methodName", params, context);
-```
-
-## 🤖 MCP (Model Context Protocol) Integration
-
-MCP enables dynamic tool discovery for AI models. Here's how it works:
-
-### 1. MCP Service Provider
-
-```typescript
-// PostgresFetch as MCP provider
-export const PostgresVectorSearchSchema = {
-  name: "PostgresVectorSearch",
-  version: "1.0.0",
-  methods: {
-    getChunksByQuery: {
-      input: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "Search query" },
-          topK: { type: "integer", default: 10 }
-        },
-        required: ["query"]
-      },
-      output: {
-        type: "object",
-        properties: {
-          results: { type: "array" },
-          count: { type: "integer" }
-        }
-      }
-    }
-  }
-};
-
-// In executor
-async handleServiceCall(method: string, params: any) {
-  if (method === 'getSchema') {
-    return PostgresVectorSearchSchema;
-  }
-  // Handle actual method calls
-}
-```
-
-### 2. MCP Service Consumer (e.g., Nova)
-
-```typescript
-// Nova automatically discovers and uses MCP tools
-serviceConnectors: [
-  {
-    name: "mcpService",
-    description: "MCP service connector",
-    serviceType: "mcp",
-    isService: false, // Consumes MCP services
-  }
-]
-
-// The workflow system automatically:
-// 1. Calls getSchema on connected MCP services
-// 2. Converts schemas to tool format
-// 3. Injects tools into the AI model configuration
-```
-
-## 🔗 Connecting Services in Workflows
-
-In the workflow editor:
-1. Add nodes with compatible service connectors
-2. Connect service outputs to service inputs:
-   - Drag from provider's `service` handle
-   - Drop on consumer's `serviceConsumer` handle
-3. Services are automatically discovered and available
-
-## 📊 Service Types
-
-### Standard Service Types
-
-| Type | Methods | Purpose |
-|------|---------|---------|
-| `embedding` | `createEmbedding` | Text to vector conversion |
-| `mcp` | `getSchema`, dynamic methods | Tool discovery for AI |
-| `storage` | `store`, `retrieve` | Data persistence |
-| `search` | `search`, `index` | Search operations |
-
-### Custom Service Types
-
-You can define your own service types:
-
-```typescript
-serviceConnectors: [
-  {
-    name: "customService",
-    serviceType: "myCustomType",
-    methods: ["method1", "method2"],
+```yaml interface.yaml
+serviceConnectors:
+  - name: embeddingService
+    description: Provides embedding generation services
+    serviceType: embedding
     isService: true
-  }
-]
+    methods:
+      - createEmbedding
+      - createBatchEmbeddings
 ```
 
-## 🚀 Real Examples
+Then write the methods in `api/service.yaml`, keyed by name.
 
-### Example 1: Embedding Service Chain
-```
-OpenAI (provides embedding) → PostgresFetch (consumes embedding)
-```
+```yaml api/service.yaml
+createEmbedding:
+  description: Embed one piece of text and return its vector.
 
-OpenAI provides:
-```typescript
-{
-  name: "embeddingService",
-  serviceType: "embedding", 
-  methods: ["createEmbedding"],
-  isService: true
-}
-```
+  calls:
+    - name: embed
+      method: POST
+      url: https://api.example.com/v1/embeddings
+      transport: json
+      credential:
+        scheme: bearer
+        token: "{{ credentials.exampleCredential.apiKey }}"
+      body: >-
+        return { model: config.model, input: params.text }
 
-PostgresFetch consumes:
-```typescript
-{
-  name: "embeddingService",
-  serviceType: "embedding",
-  methods: ["createEmbedding"], 
-  isService: false
-}
+  returns: "return response.data[0].embedding"
 ```
 
-### Example 2: MCP Tool Integration
-```
-PostgresFetch (provides MCP) → Nova (consumes MCP)
-```
+Three things to notice.
 
-PostgresFetch provides vector search tools:
-```typescript
-{
-  name: "vectorSearchService",
-  serviceType: "mcp",
-  isService: true
-}
-```
+**`params` is what the caller passed.** A method reads its arguments there, the way a call
+reads settings from `config`.
 
-Nova automatically discovers and uses tools:
-```typescript
-{
-  name: "mcpService",
-  serviceType: "mcp",
-  isService: false
-}
-```
+**`returns` says what the caller gets back.** It is `returns` rather than an events table,
+because a service call hands back one value and emits nothing.
 
-## 🎯 Best Practices
+**A method's calls are a list**, the same shape as `api/run.yaml`. A method needing two
+requests is the same idea as a node needing two.
 
-1. **Clear Service Contracts**: Define clear input/output schemas
-2. **Error Handling**: Always handle service call failures gracefully
-3. **Service Discovery**: Use `getSchema` for dynamic discovery
-4. **Type Safety**: Use TypeScript interfaces for service methods
-5. **Documentation**: Document your service methods clearly
+Every method name in `service.yaml` must appear in the connector's `methods` list, and lint
+checks that they agree.
 
-## 🚨 Common Patterns
+## Consuming a service
 
-### Pattern 1: Service Proxy
-```typescript
-// Automatically created by the workflow system
-const services = {
-  embeddingService: {
-    createEmbedding: (text) => callService("createEmbedding", { text }, context)
-  }
-};
+Declare the same `serviceType` with `isService: false`. The node now accepts a service edge
+from any node that provides it.
+
+```yaml interface.yaml
+serviceConnectors:
+  - name: embeddingService
+    serviceType: embedding
+    isService: false
+    methods:
+      - createEmbedding
 ```
 
-### Pattern 2: Schema-based Discovery
-```typescript
-// MCP services return their capabilities
-const schema = await callService("getSchema", {}, context);
-const availableMethods = Object.keys(schema.methods);
+On the **Canvas**, drag from the provider's `service` handle to the consumer's
+`serviceConsumer` handle.
+
+Whether anything is wired is a run-time fact, and templates read it through the `services`
+root. That is how a node adapts to what it was actually given.
+
+```yaml
+body:
+  tools: "{{#if services.mcpService.tools}}...{{/if}}"
 ```
 
-### Pattern 3: Service Chaining
-```typescript
-// Service A → Service B → Service C
-const embedding = await callService("createEmbedding", { text }, context);
-const results = await callService("search", { embedding }, context);
-const enhanced = await callService("enhance", { results }, context);
-```
+Nothing wired should still work. Degrade to the simple path rather than failing.
 
-## 🔍 Debugging Service Connections
+## Service types
 
-1. **Check Service Registration**: Look for `[ServiceRegistry] Loaded X services` in logs
-2. **Verify Connections**: Ensure service edges exist in workflow
-3. **Test Schema**: Call `getSchema` to verify MCP services
-4. **Monitor Calls**: Watch for `Service call: methodName` in logs
+There are two.
+
+| `serviceType` | For |
+|---|---|
+| `embedding` | turning text into vectors |
+| `mcp` | tools an Agent can choose to call |
+
+`mcp` is the larger of the two and has its own page: [MCP Services](./08-mcp-services.md).
+
+A provider may also carry `instructions`, which tell an Agent how to use its tools well
+together. That is strategy, and it is separate from the description of each method.
+
+## When it goes wrong
+
+| What you see | Why |
+|---|---|
+| Lint: a method is missing from the connector | `service.yaml` and `methods` have drifted apart |
+| The consumer sees nothing | Nothing is wired, or the provider offers a different `serviceType` |
+| The provider runs but nothing reaches the workflow | Expected. A service call returns to its caller and fires no outputs |
+| A pure service node never triggers | Also expected. It has no inputs, so the graph never reaches it |
 
 ---
 
-**Next**: [Config Schema Reference](./06-config-schema.md) - UI configuration guide
+**Next**: [MCP Services](./08-mcp-services.md)

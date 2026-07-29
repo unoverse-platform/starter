@@ -2,6 +2,7 @@
 # unoverse doctor
 
 cmd_doctor() {
+
   banner "Unoverse Doctor"
   echo ""
 
@@ -17,7 +18,7 @@ cmd_doctor() {
 
   # Apple Silicon
   if [ "$(uname -m)" = "arm64" ]; then
-    ok "Apple Silicon detected — multi-arch images will run natively"
+    ok "Apple Silicon detected: multi-arch images will run natively"
   fi
 
   # Project root
@@ -39,7 +40,7 @@ cmd_doctor() {
   if [ -f "$ROOT/.env" ]; then
     ok ".env file exists"
   else
-    fail ".env file missing — run ${BOLD}unoverse init${NC}"
+    fail ".env file missing. Run ${BOLD}unoverse init${NC}"
     issues=$((issues + 1))
     print_summary $issues
     return
@@ -81,7 +82,7 @@ cmd_doctor() {
   if [ -f "$docker_config" ] && grep -q "$DOCR_REGISTRY" "$docker_config" 2>/dev/null; then
     ok "Logged in to DigitalOcean Container Registry"
   else
-    fail "Not logged in to DOCR — run ${BOLD}unoverse init${NC}"
+    fail "Not logged in to DOCR. Run ${BOLD}unoverse init${NC}"
     issues=$((issues + 1))
   fi
 
@@ -94,7 +95,7 @@ cmd_doctor() {
   if [ "$image_count" -ge 5 ]; then
     ok "$image_count images available"
   else
-    warn "Images not pulled yet — run ${BOLD}unoverse pull${NC}"
+    warn "Images not pulled yet. Run ${BOLD}unoverse pull${NC}"
     issues=$((issues + 1))
   fi
 
@@ -174,3 +175,6 @@ print_summary() {
   fi
   echo ""
 }
+
+# Studio mode diagnostics: Node, dependencies, and the folders Studio reads.
+

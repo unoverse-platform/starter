@@ -1,139 +1,130 @@
 ---
-sidebarTitle: "Package Marketplace"
-title: "Package Marketplace Schema"
+sidebarTitle: "Packages"
+title: "Packages"
 ---
 
-This document defines the ideal `gravity` field schema for `package.json` that powers the unified Package Marketplace in **Canvas**.
+A package is the folder your nodes live in. It carries what they share and what the
+marketplace shows.
 
-## The `gravity` field in package.json
+`package.yaml` describes it, and there is one per package.
 
-Every publishable Gravity package must include a `gravity` field with marketplace metadata. This is what the marketplace UI reads to display packages with rich detail.
+```yaml package.yaml
+$schema: ../_schema/package.schema.json
 
-```jsonc
-{
-  "name": "@unoverse-platform/openai",
-  "version": "1.1.9",
-  "description": "OpenAI integration for Gravity workflow system",
-  "keywords": ["gravity", "openai", "workflow", "gpt", "embeddings", "ai"],
-  // ... standard npm fields ...
+name: example
+displayName: Example
+description: Example integration for unoverse
+version: 1.0.0
+category: ai
+logoUrl: https://example.com/logo.svg
 
-  "gravity": {
-    // REQUIRED — Display & discovery
-    "displayName": "OpenAI",
-    "category": "ai",
-    "logoUrl": "https://res.cloudinary.com/sonik/image/upload/v.../ChatGPT-Logo.svg.webp",
+features:
+  - Search across your catalogue
+  - Read a record by id
+  - Streaming responses
 
-    // REQUIRED — Node manifest
-    "nodes": [
-      {
-        "name": "ChatGPT Agent",
-        "type": "PromiseNode",
-        "description": "Conversational AI agent with tool use and memory",
-        "category": "AI",
-        "mcp": false
-      },
-      {
-        "name": "OpenAI Stream",
-        "type": "CallbackNode",
-        "description": "Streaming token-by-token response from GPT models",
-        "category": "AI",
-        "mcp": false
-      },
-      {
-        "name": "Embedding Service",
-        "type": "PromiseNode",
-        "description": "Generate text embeddings via OpenAI ada/text-embedding-3",
-        "category": "AI",
-        "mcp": true
-      }
-    ],
+allowedHosts:
+  - api.example.com
 
-    // REQUIRED — Features list (shown as chips/badges in marketplace)
-    "features": [
-      "GPT-4o & GPT-5 support",
-      "Streaming responses",
-      "Function/tool calling",
-      "Text embeddings",
-      "Structured output (JSON mode)",
-      "Vision (image inputs)"
-    ],
-
-    // OPTIONAL — Rich detail
-    "screenshots": [
-      "https://res.cloudinary.com/sonik/image/upload/v.../openai-workflow-example.webp"
-    ],
-    "documentation": "https://docs.gravityai.dev/packages/openai",
-    "changelog": "https://github.com/unoverse-platform/packages/blob/main/packages/openai/CHANGELOG.md",
-
-    // OPTIONAL — Credential requirements (what the user needs to configure)
-    "credentials": [
-      {
-        "name": "OpenAI API Key",
-        "type": "openaiApiKey",
-        "required": true,
-        "description": "API key from platform.openai.com"
-      }
-    ],
-
-    // OPTIONAL — Compatibility & requirements
-    "requires": {
-      "nodeService": ">=1.0.0",
-      "pluginBase": ">=1.0.0"
-    },
-
-    // OPTIONAL — Author & support
-    "author": {
-      "name": "Gravity Team",
-      "url": "https://gravityai.dev"
-    },
-    "support": "https://github.com/unoverse-platform/packages/issues"
-  }
-}
+requires:
+  credential: [bearer]
+  transport: [json]
+  executorVersion: ">=1.0.0"
 ```
 
-## Category taxonomy
+`name`, `displayName` and `version` are required. The rest earn their place below.
 
-Packages must declare exactly one primary `category`:
+## What the marketplace shows
 
-| Category | Slug | Description |
-|----------|------|-------------|
-| AI & LLMs | `ai` | Language models, embeddings, agents, structured output |
-| Data & Storage | `storage` | Databases, file storage, caching |
-| Ingest & Scraping | `ingest` | Web scraping, document parsing, data extraction |
-| Communication | `communication` | Email, messaging, notifications |
-| Cloud Services | `cloud` | AWS, GCP, Azure service wrappers |
-| Flow Control | `flow` | Loops, conditionals, routing, code execution |
-| Media & Design | `media` | Image processing, PDF, video, design tools |
-| Search & Discovery | `search` | Web search, vector search, social media |
-| Productivity | `productivity` | Spreadsheets, project management, CRM |
+| Key | Used for |
+|---|---|
+| `displayName` | The name someone reads. Short, no scope prefix, no "integration for unoverse" |
+| `description` | One line on what the package connects to |
+| `category` | Which section it appears under |
+| `logoUrl` | A square icon, `.webp` or `.svg` |
+| `features` | Three to eight short lines on what someone can **do**, not how it works |
 
-## Node object schema
+Categories are `ai`, `storage`, `ingest`, `communication`, `cloud`, `flow`, `media`,
+`search` and `productivity`.
 
-Each entry in `gravity.nodes[]` is now an object (not a plain string):
+This is a different list from the `category` on a node. A package category groups it in the
+marketplace; a node category describes the job that node does. Both are enums, and confusing
+them is a lint error rather than a silently wrong grouping.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | yes | Display name shown in node palette |
-| `type` | `"PromiseNode"` \| `"CallbackNode"` | yes | Execution model |
-| `description` | string | yes | One-line description of what this node does |
-| `category` | string | yes | Node category in the **Canvas** palette |
-| `mcp` | boolean | no | Whether this node exposes MCP service tools |
+You do not list the nodes here. Every `node.yaml` under `nodes/` is found on its own, so the
+package cannot disagree with what it actually contains.
 
-## Features list guidelines
+## `allowedHosts`: the hosts your nodes may call
 
-The `features` array should contain 3–8 short strings (under 40 chars each) that describe the package's key capabilities. These are displayed as chips in the marketplace card and detail view. Focus on what a user can DO with the package, not implementation details.
+Every host any node in this package reaches, and nothing else is permitted.
 
-Good: `"Streaming responses"`, `"Vector similarity search"`, `"PDF text extraction"`
-Bad: `"Uses TypeScript"`, `"Has unit tests"`, `"Exports PromiseNode"`
-
-## Migration from legacy format
-
-Legacy format (just a string array for nodes):
-```json
-"gravity": {
-  "logoUrl": "...",
-  "nodes": ["ChatGPT Agent", "OpenAI", "OpenAI Agent"]
-}
+```yaml
+allowedHosts:
+  - api.example.com
+  - "*.example-cdn.com"
 ```
 
-New format extends this — the marketplace API should handle both. If `nodes[0]` is a string, treat it as legacy and display with minimal detail.
+Deny by default. A call to a host not on this list is refused with the host named, and
+non-https is refused outright, so a key cannot travel in clear text.
+
+`*.example.com` matches exactly one level, so `files.example.com` passes and
+`a.files.example.com` does not.
+
+The list is checked when you lint and again at run time, after the URL has been assembled.
+That second check matters because a host can itself come from a template, and only the
+finished URL can be judged.
+
+It is also what somebody accepts when you publish the package. Keep it short and keep it
+honest: a list of two hosts is read and approved in seconds, and a list that quietly grows
+is the one that gets questioned.
+
+## `requires`: what the platform must support
+
+What your nodes need from the platform in order to run.
+
+```yaml
+requires:
+  credential: [bearer]
+  transport: [json, sse]
+  executorVersion: ">=1.0.0"
+```
+
+Publishing refuses the package where the universe cannot satisfy it. Without that, a node
+using a newer capability would publish cleanly and then fail when something ran it.
+
+## Sharing what nodes have in common
+
+Two folders sit beside `nodes/`, and both exist so a value has one home.
+
+```
+example/
+├── package.yaml
+├── credentials/
+│   └── exampleCredential.yaml
+├── shared/
+│   ├── endpoints.yaml
+│   └── models.yaml
+└── nodes/
+```
+
+`credentials/` describes each credential the package's nodes ask for. `shared/` holds
+fragments more than one node reuses, reached with `$ref`.
+
+```yaml
+url: { $ref: endpoints#search }
+```
+
+When the API moves an endpoint, one file changes rather than every node.
+
+## When it goes wrong
+
+| What you see | Why |
+|---|---|
+| Lint: host not declared | A node calls somewhere `allowedHosts` does not list |
+| Lint: a node needs a credential the package does not describe | No matching file in `credentials/` |
+| Lint: unknown category | A node category used on a package, or the reverse |
+| A node calls out and is refused at run time | The URL resolved to a host outside `allowedHosts` |
+
+---
+
+**Next**: [Troubleshooting](./05-troubleshooting.md)

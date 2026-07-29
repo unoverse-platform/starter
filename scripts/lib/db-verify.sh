@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 # unoverse db-verify
 # Verifies all required tables and columns exist in the database.
-# Derived from the Prisma schema (source of truth).
+#
+# The list below is HAND-WRITTEN, not derived. It cannot be derived at runtime: this
+# runs inside the container in production where the schema path differs, and Prisma
+# field names are not reliably column names (workflow_snapshots.workflows is a relation).
+# It was once described as derived, drifted by four tables, and reported "all tables
+# verified" while ignoring them.
+#
+# server/tests/boot/db-verify-coverage.test.ts fails the build if a Prisma model is
+# missing here. ADDING A TABLE MEANS EDITING THIS FILE TOO.
 
 cmd_db_verify() {
   banner "Database Verification"
 
   # Load DATABASE_URL from .env
   local db_url
-  db_url=$(grep "^DATABASE_URL=" "$ROOT/.env" 2>/dev/null | cut -d'=' -f2-)
+  db_url=$(grep "^DATABASE_URL_DIRECT=" "$ROOT/.env" 2>/dev/null | cut -d'=' -f2-)
+  [ -z "$db_url" ] && db_url=$(grep "^DATABASE_URL=" "$ROOT/.env" 2>/dev/null | cut -d'=' -f2-)
   if [ -z "$db_url" ]; then
     fail "DATABASE_URL not found in .env"
     exit 1
@@ -35,7 +44,7 @@ cmd_db_verify() {
       node_traces: [
         "trace_id", "execution_id", "node_id", "node_type", "start_time",
         "end_time", "duration", "ttft_ms", "status", "inputs", "outputs",
-        "error", "created_at"
+        "error", "created_at", "fingerprint"
       ],
       credentials: [
         "id", "name", "type", "scope", "data", "created_at", "updated_at"
@@ -52,7 +61,7 @@ cmd_db_verify() {
       ],
       user_profiles: [
         "id", "user_id", "workflow_id", "profile", "insights", "raw_data",
-        "metadata", "created_at", "updated_at"
+        "metadata", "created_at", "updated_at", "embedding_original"
       ],
       memories: [
         "id", "user_id", "workflow_id", "memory_id", "content",
@@ -81,11 +90,11 @@ cmd_db_verify() {
         "universal_id", "content_hash", "title", "description", "object_type",
         "needs", "source_url", "umap_x", "umap_y", "umap_z",
         "umap_cluster_id", "color_hex", "needs_umap_update", "created_at",
-        "updated_at", "workflow_id", "key_need", "metadata"
+        "updated_at", "workflow_id", "key_need", "metadata", "embedding_original"
       ],
       dictionary_content_chunks: [
         "chunk_id", "text", "source_url", "source_type", "metadata",
-        "workflow_id", "created_at", "updated_at"
+        "workflow_id", "created_at", "updated_at", "embedding_original"
       ],
       dictionary_chunk_need_matches: [
         "chunk_id", "need_id", "similarity_score", "rank", "match_type",
@@ -101,6 +110,19 @@ cmd_db_verify() {
         "config", "extraction_config", "started_at", "completed_at",
         "progress", "error", "created_at"
       ],
+      goals: [
+        "goal_id", "user_id", "workflow_id", "status", "description",
+        "acceptance_criteria", "budget", "goal_state", "created_workflow_ids",
+        "created_at", "updated_at", "completed_at"
+      ],
+      knowledge_docs: [
+        "id", "workflow_id", "title", "doc_type", "sections", "version",
+        "links", "metadata", "created_at", "updated_at"
+      ],
+      content_sources: [
+        "workflow_id", "connector", "source_key", "group_path", "label",
+        "status", "last_ingested", "metadata", "created_at", "updated_at"
+      ],
       security_attack_corpus: [
         "id", "category", "label", "attack_prompt", "expected_result",
         "severity", "source", "is_active", "created_at"
@@ -109,6 +131,24 @@ cmd_db_verify() {
         "id", "run_id", "corpus_attack_id", "category", "severity",
         "attack_prompt", "agent_response", "result", "judge_reasoning",
         "judged_at"
+      ],
+      workflow_snapshots: [
+        "id", "workflow_id", "source", "label", "definition", "created_at"
+      ],
+      installed_plugins: [
+        "id", "name", "version", "source", "enabled", "installed_at",
+        "updated_at", "metadata"
+      ],
+      items: [
+        "kind", "name", "definition", "fingerprint", "source", "org",
+        "enabled", "published", "bundle", "title", "description", "category",
+        "icon", "when_to_use", "publisher", "pricing", "created_at", "updated_at",
+        "owner_id", "owner_label", "published_by", "published_by_email", "base_version"
+      ],
+      publish_keys: [
+        "id", "label", "key_prefix", "key_hash", "scopes", "expires_at",
+        "revoked_at", "last_used_at", "created_by", "created_at",
+        "owner_id", "owner_label"
       ]
     };
 
@@ -125,7 +165,7 @@ cmd_db_verify() {
 
       for (const [table, columns] of Object.entries(schema)) {
         if (!existingTables.has(table)) {
-          console.log("  \u2717 " + table + " — TABLE MISSING");
+          console.log("  \u2717 " + table + ": TABLE MISSING");
           tableFail++;
           missing.push({ table, column: null });
           continue;
@@ -141,7 +181,7 @@ cmd_db_verify() {
 
         const missingCols = columns.filter(c => !existingCols.has(c));
         if (missingCols.length > 0) {
-          console.log("  \u2717 " + table + " — missing columns: " + missingCols.join(", "));
+          console.log("  \u2717 " + table + ". Missing columns: " + missingCols.join(", "));
           colFail += missingCols.length;
           colOk += columns.length - missingCols.length;
           for (const c of missingCols) missing.push({ table, column: c });
@@ -161,9 +201,9 @@ cmd_db_verify() {
         console.log("  MISSING (" + missing.length + "):");
         for (const m of missing) {
           if (m.column) {
-            console.log("    ALTER TABLE " + m.table + " ADD COLUMN IF NOT EXISTS " + m.column + " — needs migration");
+            console.log("    ALTER TABLE " + m.table + " ADD COLUMN IF NOT EXISTS " + m.column + ". Needs migration");
           } else {
-            console.log("    CREATE TABLE " + m.table + " — run ./unoverse db-setup");
+            console.log("    CREATE TABLE " + m.table + ". Run ./unoverse db-setup");
           }
         }
         process.exit(1);
@@ -185,7 +225,7 @@ cmd_db_verify() {
   else
     # Starter/Docker — exec into the unoverse container (engine runs in-process)
     if ! docker compose -f "$ROOT/docker-compose.yml" ps --status running unoverse 2>/dev/null | grep -q unoverse; then
-      fail "unoverse service not running — start it first"
+      fail "unoverse service not running. Start it first"
       exit 1
     fi
     docker compose -f "$ROOT/docker-compose.yml" exec -T \
@@ -197,7 +237,7 @@ cmd_db_verify() {
   if [ $verify_exit -eq 0 ]; then
     ok "Database schema verified"
   else
-    fail "Database schema has issues — re-run ${BOLD}./unoverse db-setup${NC}"
+    fail "Database schema has issues: re-run ${BOLD}./unoverse db-setup${NC}"
   fi
   return $verify_exit
 }

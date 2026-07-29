@@ -3,120 +3,127 @@ sidebarTitle: "Testing Nodes"
 title: "Testing Nodes"
 ---
 
-Every code node should ship an **integration test** that exercises the node's real
-behavior against the real upstream API. This is a true feature test — not a mock —
-and it does **not** require the platform to be running.
+Run your node against the real service before you put it in a workflow. **Studio** has a
+Nodes tab for exactly that, and nothing has to be published first.
 
-## Why integration, not platform-run
+## In Studio
 
-A marketplace package is self-contained and sandboxed: it has no DB access and never
-fetches credentials itself — **credentials are passed in per execution** (see
-`docs/architecture/MARKETPLACE_ARCHITECTURE.md`). So a test does exactly what the engine
-does at runtime: it calls the node's service with a credential **handed in**. The key is
-the developer's own (an external publisher tests with *their* API key), supplied via a
-gitignored `.env` — never the platform's stored credentials, which a package can't reach
-by design.
+Open the **Nodes** tab and pick your node. You get three panes.
 
-## Layout — one test per node, co-located
+**The node**, as everyone else will read it: name, category, description, and the
+`whenToUse` you wrote. Any credential it needs is named here too, so a node asking for
+something you have not set up says so before you run it.
 
-Tests live in a `test/` folder inside each node, next to `node/`, `service/`, `util/`:
+**The settings**, rendered from your `config.yaml`. This is the same form **Canvas** shows,
+built from the same file, so a field that reads badly here reads badly everywhere.
 
-```
-src/
-  HyperbrowserExtract/
-    node/  service/  util/
-    test/
-      HyperbrowserExtract.test.ts     ← imports ../service/...
-```
+**The output**, empty until you press Run.
 
-Jest discovers them via `testMatch: ["**/*.test.ts"]` under `roots: ["<rootDir>/src"]`.
-The package's `*.test.ts` files are excluded from the build (`tsconfig` `exclude`).
+Fill in the settings, press **Run**, and the node calls the real service. A streaming node
+streams into the pane as it arrives.
 
-## Credentials — gitignored `.env`, passed in, skip if absent
+This is the fastest way to see whether your node works, and it is also the honest preview of
+your `config.yaml`. If the labels are unclear or the fields are in a strange order, fix it
+now rather than after someone else meets it.
 
-Keys live in a per-package `.env` (gitignored). `dotenv` loads them into `process.env`;
-the test passes the key into `context.credentials[<type>]` exactly as the engine delivers
-it. When the platform isn't initialized, plugin-base's `getNodeCredentials` stub falls
-back to `context.credentials[<type>]`, so **no running platform is needed**.
+## Load sample
 
-If the key is missing, the suite is **skipped, not failed** — CI without secrets stays
-green; a dev with the key gets real coverage.
+If your node has `test.yaml`, Studio shows a **Load sample** button. It fills the form from
+`testData.config` and the inputs from `testData.inputs`, so you are one click from a run
+rather than typing settings each time.
 
-```typescript
-// src/HyperbrowserExtract/test/HyperbrowserExtract.test.ts
-import { extractFromUrls } from "../service/extractService";
+That is most of why `test.yaml` earns its place.
 
-const apiKey = process.env.HYPERBROWSER_API_KEY;
-const ctx = {
-  credentials: { hyperbrowserCredential: { apiKey } },
-  nodeType: "HyperbrowserExtract",
-  workflowId: "test", executionId: "test", nodeId: "extract-test",
-};
+```yaml test.yaml
+$schema: ../../../_schema/test.schema.json
 
-(apiKey ? describe : describe.skip)("HyperbrowserExtract (integration, real API)", () => {
-  it("extracts structured data from a URL", async () => {
-    const result = await extractFromUrls(
-      { urls: ["https://example.com"], prompt: "Return the heading as { heading }" } as any,
-      ctx,
-    );
-    expect(result).toBeDefined();
-    expect(result.data).toBeDefined();
-  });
-});
+testData:
+  config:
+    model: gpt-5.6
+    prompt: Explain what a workflow engine does, in two sentences.
+    maxTokens: 1200
+  inputs:
+    signal:
+      topic: workflow engines
+  expect:
+    text: "return output.text.length > 0"
 ```
 
-`describe.skip` (not an early `return`) so skipped suites show as **skipped** in the
-report, never as hollow passes.
+Write the fixture as a real request, not a minimal one. It is the sample every future
+reader loads first.
 
-## Setup — config in `package.json`, no root config files
+## From the command line
 
-Each package already has `jest` + `ts-jest` devDeps. Put the config in `package.json`
-(keeps the package root clean — no `jest.config.js` / `jest.setup.js`), add `dotenv`:
-
-```jsonc
-// package.json
-"jest": {
-  "preset": "ts-jest",
-  "testEnvironment": "node",
-  "roots": ["<rootDir>/src"],
-  "testMatch": ["**/*.test.ts"],
-  "setupFiles": ["dotenv/config"],   // loads .env into process.env
-  "testTimeout": 60000                // real API calls need room
-},
-"devDependencies": { "dotenv": "^16.4.0", "...": "..." }
-```
-
-Commit a `.env.example` listing the keys the package needs; gitignore the real `.env`:
+The same run, without opening anything:
 
 ```bash
-# .env.example  (committed)
-HYPERBROWSER_API_KEY=
-APIFY_API_TOKEN=
-
-# .gitignore
-.env
+unoverse node test <NodeType>
 ```
 
-## Running
+It prints the call it is about to make, the sample data it is using, what each output
+received, and whether the `expect` assertions passed.
 
-```bash
-# from the starter repo root (node packages live in packages/)
-npm install                       # picks up dotenv
-cp apps/unoverse/nodes/<pkg>/.env.example apps/unoverse/nodes/<pkg>/.env  # fill in your dev keys
-npm test -w @unoverse-platform/<pkg>     # whole package
-# or one node:
-cd apps/unoverse/nodes/<pkg> && npx jest HyperbrowserExtract
+```
+OpenAI  (openai/OpenAI, PromiseNode)
+POST https://api.openai.com/v1/responses   transport: json
+
+── sample data (test.yaml) ──
+  model              gpt-5.6
+  prompt             Explain what a workflow engine does, in two sentences.
+
+── outputs ──
+  text         A workflow engine automates, coordinates and monitors…
+  usage        {"input_tokens":29,…}
+── expect ──
+  ✓ text  return output.text.length > 0
+
+✓ OpenAI ran in 1302ms
 ```
 
-## Guidelines
+The platform does not need to be running. It is your node, your machine, the real service.
 
-- **Keep fixtures small and cheap** — one URL, `maxPages: 1`, `example.com`. Real calls
-  cost money and time.
-- **Assert the contract, not exact content** — that a `result.markdown` string came back,
-  that `result.pages` is a non-empty array — not the page's literal text.
-- **Expect some flakiness from real APIs.** A real call can intermittently fail (rate
-  limits, transient upstream errors). If a node is genuinely flaky, that's a finding worth
-  surfacing — don't paper over it by removing the test.
-- **One test per node minimum** — the happy path that proves the node actually works.
-  Add error-path cases (missing required input, etc.) as plain assertions; those need no
-  key and always run.
+## Keys stay yours
+
+Both routes need a real key, and neither stores one.
+
+The command line reads your own `.env`, using the credential name and field in upper snake
+case with any trailing `Credential` dropped. So `openAICredential.apiKey` is
+`OPENAI_API_KEY`. A missing one is named before anything runs.
+
+## What `expect` is for
+
+`expect` turns a run into a check. Each key is an output, and each value is an expression
+over `output` that has to come back true.
+
+```yaml
+expect:
+  text: "return output.text.length > 0"
+  usage: "return output.usage.total_tokens > 0"
+```
+
+Assert the **shape**, not the words. A model writes something different every time, so
+`output.text.length > 0` holds and `output.text === "Hello"` does not.
+
+For a service node, name the method to call:
+
+```yaml
+testData:
+  call:
+    method: createEmbedding
+    params: { text: hello }
+  expect:
+    embedding: "return output.dimensions === 1024"
+```
+
+## What a run cannot tell you
+
+A node can pass here and still misbehave in a workflow, because the bench feeds it
+`testData.inputs` while a workflow feeds it whatever the edges carry.
+
+When that happens, the difference is almost always a template path: the node id or the
+output name does not match the edge you drew. [Troubleshooting](./05-troubleshooting.md)
+covers it.
+
+---
+
+**Next**: [Discoverability](./14-node-discoverability.md)

@@ -50,7 +50,6 @@
     - name: Install security packages (Debian/Ubuntu)
       apt:
         name:
-          - ufw
           - fail2ban
           - unattended-upgrades
           - logrotate
@@ -60,7 +59,6 @@
     - name: Install security packages (RHEL/Amazon Linux)
       dnf:
         name:
-          - firewalld
           - fail2ban
           - dnf-automatic
           - logrotate
@@ -107,94 +105,14 @@
       notify: Restart SSH
 
     # =========================================================================
-    # FIREWALL (UFW - Debian/Ubuntu)
+    # FIREWALL: NONE HERE (moved to the ground, 2026-07-28)
     # =========================================================================
-    - name: Reset UFW to default
-      ufw:
-        state: reset
-      when: ansible_facts['os_family'] == "Debian"
+    # The cloud firewall (DO cloud firewall / AWS security groups, owned by
+    # infra/ Terraform) is the boundary. Host ufw/firewalld was removed: Docker's
+    # iptables rules BYPASS ufw for published ports, so it protected nothing —
+    # the ground firewall structurally can't be bypassed (traffic never reaches
+    # the box). On-prem: firewall at the customer's network layer, not here.
 
-    - name: Set UFW default policy - deny incoming
-      ufw:
-        direction: incoming
-        policy: deny
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Set UFW default policy - allow outgoing
-      ufw:
-        direction: outgoing
-        policy: allow
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Allow SSH (UFW)
-      ufw:
-        rule: allow
-        port: "{{ ssh_port }}"
-        proto: tcp
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Allow public ports (UFW)
-      ufw:
-        rule: allow
-        port: "{{ item.port }}"
-        proto: "{{ item.proto }}"
-      loop: "{{ allowed_ports }}"
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Allow internal ports from private network (UFW)
-      ufw:
-        rule: allow
-        port: "{{ item.port }}"
-        proto: "{{ item.proto }}"
-        from_ip: "10.0.0.0/8"
-      loop: "{{ internal_ports }}"
-      when: ansible_facts['os_family'] == "Debian" and (restrict_internal_ports | default(true))
-
-    - name: Enable UFW
-      ufw:
-        state: enabled
-      when: ansible_facts['os_family'] == "Debian"
-
-    # =========================================================================
-    # FIREWALL (firewalld - RHEL/Amazon Linux)
-    # =========================================================================
-    - name: Start firewalld
-      service:
-        name: firewalld
-        state: started
-        enabled: yes
-      when: ansible_facts['os_family'] == "RedHat"
-
-    - name: Allow SSH (firewalld)
-      firewalld:
-        port: "{{ ssh_port }}/tcp"
-        permanent: yes
-        state: enabled
-      when: ansible_facts['os_family'] == "RedHat"
-
-    - name: Allow public ports (firewalld)
-      firewalld:
-        port: "{{ item.port }}/{{ item.proto }}"
-        permanent: yes
-        state: enabled
-      loop: "{{ allowed_ports }}"
-      when: ansible_facts['os_family'] == "RedHat"
-
-    - name: Allow internal ports from private network (firewalld)
-      firewalld:
-        rich_rule: 'rule family="ipv4" source address="10.0.0.0/8" port port="{{ item.port }}" protocol="{{ item.proto }}" accept'
-        permanent: yes
-        state: enabled
-      loop: "{{ internal_ports }}"
-      when: ansible_facts['os_family'] == "RedHat" and (restrict_internal_ports | default(true))
-
-    - name: Reload firewalld
-      command: firewall-cmd --reload
-      when: ansible_facts['os_family'] == "RedHat"
-
-    # =========================================================================
-    # FAIL2BAN (Brute force protection)
-    # =========================================================================
     - name: Configure fail2ban for SSH
       copy:
         dest: /etc/fail2ban/jail.local

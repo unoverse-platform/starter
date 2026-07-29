@@ -26,7 +26,7 @@ cmd_dashboard() {
 
     echo ""
     if [ "$running" -eq "$total" ] && [ "$total" -gt 0 ]; then
-      echo -e "  ${GREEN}●${NC} ${BOLD}Platform running${NC} ${DIM}— $running services${NC}"
+      echo -e "  ${GREEN}●${NC} ${BOLD}Platform running${NC} ${DIM}($running services)${NC}"
       echo ""
       print_access_urls
     elif [ "$created" -gt 0 ] && [ "$running" -eq 0 ]; then
@@ -39,7 +39,7 @@ cmd_dashboard() {
       echo ""
       print_access_urls
     else
-      echo -e "  ${RED}●${NC} ${BOLD}Platform not running${NC} ${DIM}— $total containers stopped${NC}"
+      echo -e "  ${RED}●${NC} ${BOLD}Platform not running${NC} ${DIM}($total containers stopped)${NC}"
       echo ""
       echo -e "  Run ${GREEN}${BOLD}./unoverse start${NC} to launch"
     fi
@@ -53,4 +53,33 @@ cmd_dashboard() {
   echo ""
   echo -e "  ${DIM}Run ${NC}${BOLD}./unoverse help${NC}${DIM} for all commands${NC}"
   echo ""
+}
+
+# ── unoverse open — browser shortcut (merged from open.sh 2026-07-28) ──
+
+cmd_open() {
+  local target="${1:-canvas}"
+  local url
+
+  case "$target" in
+    canvas)        url="http://localhost:3001" ;;
+    api)           url="http://localhost:4105" ;;
+    logs|dozzle)   url="http://localhost:8080" ;;
+    *)
+      fail "Unknown target: $target"
+      info "Options: canvas, api, logs"
+      return
+      ;;
+  esac
+
+  ok "Opening $target → ${UNDERLINE}$url${NC}"
+
+  # Cross-platform open
+  if command -v open &>/dev/null; then
+    open "$url"
+  elif command -v xdg-open &>/dev/null; then
+    xdg-open "$url"
+  else
+    info "Open in your browser: $url"
+  fi
 }

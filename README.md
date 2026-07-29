@@ -1,13 +1,13 @@
 # Unoverse Starter
 
-Your workspace for building on the **Unoverse platform** — a self-hosted AI
+Your workspace for building on the **Unoverse platform**. A self-hosted AI
 platform where you compose agent-powered apps out of three kinds of things:
 
-- **Workflows** — built visually on the **Canvas**, wiring nodes into agents,
+- **Workflows**. Built visually on the **Canvas**, wiring nodes into agents,
   tools, and data flows
-- **UI as data** — components and templates written as JSON definitions
+- **UI as data**. Components and templates written as JSON definitions
   (no React, no CSS), rendered live by the platform's SDK
-- **Behavior** — agent skills and prompt blocks in plain markdown
+- **Behavior**. Agent skills and prompt blocks in plain markdown
 
 The platform services run as Docker images; **you edit only the three folders
 under `apps/unoverse/`** (see [What you build](#what-you-build)) and they are
@@ -19,7 +19,7 @@ mounted straight into the running platform.
 - **Node.js 20+** and npm (for building custom nodes)
 - A **read-only registry token** from your platform admin (for pulling the
   platform's Docker images)
-- A **Postgres** database, **Redis**, and an **Auth0 (OIDC)** app — all
+- A **Postgres** database, **Redis**, and an **Auth0 (OIDC)** app. All
   configured in `.env` (`.env.example` documents every variable)
 
 ## Quick start
@@ -36,9 +36,8 @@ Then open:
 
 | Surface | URL | |
 |---|---|---|
-| **Canvas** — visual workflow builder | http://localhost:3001 | |
-| **API** — the platform's public listener | http://localhost:4105 | |
-| **Studio** — preview components, templates, skills, nodes | http://localhost:4105 | set `UNOVERSE_WORKBENCH=1` on the `unoverse` service first |
+| **Canvas**. Visual workflow builder | http://localhost:3001 | |
+| **API**. The platform's public listener | http://localhost:4105 | |
 | **Logs** (Dozzle, live container logs) | http://localhost:8080 | `docker compose --profile observability up -d dozzle` |
 
 ## New here? Follow the onboarding
@@ -54,9 +53,9 @@ Three developer-editable folders are mounted into the running platform:
 
 | Folder | What it is | To see changes live |
 |--------|------------|---------------------|
-| `apps/unoverse/rx/`      | **Design** — components, atoms, org templates + styles (JSON definitions) | restart (`docker compose restart unoverse`) — nodes synthesize from definitions; restyles apply live. Deploy: `unoverse deploy design` |
-| `apps/unoverse/prompts/` | **Behavior** — agent skills (`skills/`) + prompt blocks (`blocks/`) | `docker compose restart unoverse` |
-| `apps/unoverse/nodes/`   | **Logic** — custom workflow node packages (TypeScript) | `./unoverse build @unoverse-platform/<pkg>` |
+| `apps/unoverse/rx/`      | **Design**. Components, atoms, org templates + styles (JSON definitions) | restart (`docker compose restart unoverse`) — nodes synthesize from definitions; restyles apply live. Deploy: `unoverse deploy design` |
+| `apps/unoverse/prompts/` | **Behavior**. Agent skills (`skills/`) + prompt blocks (`blocks/`) | `docker compose restart unoverse` |
+| `apps/unoverse/nodes/`   | **Logic**. Custom workflow node packages (TypeScript) | `./unoverse build @unoverse-platform/<pkg>` |
 
 ### Build with Claude Code
 
@@ -65,9 +64,9 @@ builder MCP registration** (`.mcp.json`). Open the repo in
 [Claude Code](https://claude.com/claude-code) and ask for what you want:
 
 - *"create a pricing card component"*, *"add a node that calls our inventory
-  API"*, *"write a returns-handling skill"* — Claude writes the artifacts,
+  API"*, *"write a returns-handling skill"*: Claude writes the artifacts,
   following the platform's authoring rules, validation, and deploy loop.
-- *"build me a workflow that …"* — Claude connects to the platform's **builder
+- *"build me a workflow that …"*: Claude connects to the platform's **builder
   MCP** and builds the workflow live on your Canvas, one tested stage at a
   time. You create a new empty workflow in Canvas, give Claude its id
   (`wf-xxxxxx` from the URL), and watch it build in your browser.
@@ -112,5 +111,5 @@ and approve the `unoverse-builder` server the first time Claude Code asks.
 ## Production
 
 Deploy to a server with the `ansible/` playbooks and `docs/runbooks/`
-(HTTPS via Caddy, hardening, observability). Update a running server with
+(TLS at the provider load balancer, hardening, observability). Update a running server with
 `./unoverse update`. See [`docs/onboarding/08-deployment.md`](docs/onboarding/08-deployment.md).

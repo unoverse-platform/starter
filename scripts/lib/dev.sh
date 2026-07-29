@@ -33,7 +33,7 @@ cmd_dev() {
   # Re-check after potential cmd_start — bail if still not running
   running_count=$(docker compose -f "$ROOT/docker-compose.yml" ps --format "{{.Name}}" --filter "status=running" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$running_count" -eq 0 ] 2>/dev/null; then
-    fail "Platform failed to start — run ${BOLD}unoverse doctor${NC} to diagnose"
+    fail "Platform failed to start. Run ${BOLD}unoverse doctor${NC} to diagnose"
     exit 1
   fi
 
@@ -61,7 +61,7 @@ cmd_dev() {
   local ns_status
   ns_status=$(docker compose -f "$ROOT/docker-compose.yml" ps --format '{{.Status}}' unoverse 2>/dev/null | head -1)
   if ! echo "$ns_status" | grep -qi "up"; then
-    warn "unoverse is not running (status: ${ns_status:-unknown}) — skipping restart"
+    warn "unoverse is not running (status: ${ns_status:-unknown}). Skipping restart"
     info "Run ${BOLD}unoverse doctor${NC} to diagnose"
   elif [ "$dev_cold_start" = "1" ]; then
     echo "  Restarting unoverse..."
@@ -77,9 +77,9 @@ cmd_dev() {
   banner "Dev Environment Ready"
   echo ""
   if [ "$running_count" -gt 0 ]; then
-    ok "Platform running ($running_count services) — Canvas: http://localhost:3001"
+    ok "Platform running ($running_count services): Canvas: http://localhost:3001"
   else
-    warn "Platform may not be fully running — check ${BOLD}unoverse status${NC}"
+    warn "Platform may not be fully running. Check ${BOLD}unoverse status${NC}"
   fi
   ok "Custom code in ${BOLD}packages/${NC} is mounted into unoverse"
   echo ""

@@ -2,66 +2,15 @@
 # unoverse deploy — deploy to production VM from local
 
 cmd_deploy() {
-  # ── deploy runtime <workflow-id> — push a canvas to the kit's runtime ──
-  # No VM, no ansible, no .env.production: the PLATFORM compiles the workflow and
-  # pushes the artifact to the runtime (same path as the Canvas Deploy button).
-  #   PLATFORM_URL (default http://localhost:4105)  UNOVERSE_TOKEN (bearer; empty in dev)
-  # The runtime target is the platform's RUNTIME_URL (default http://localhost:4107).
-  if [ "${1:-}" = "runtime" ]; then
-    local wf_id="${2:-}"
-    if [ -z "$wf_id" ]; then
-      fail "Usage: unoverse deploy runtime <workflow-id>"
-      info "The workflow id is in the Canvas URL: /workflow/<id>"
-      exit 1
-    fi
-    local platform="${PLATFORM_URL:-http://localhost:4105}"
-    local auth_args=()
-    [ -n "${UNOVERSE_TOKEN:-}" ] && auth_args=(-H "Authorization: Bearer $UNOVERSE_TOKEN")
-
-    banner "Deploying workflow $wf_id to the runtime"
-    echo ""
-    local resp http_code body
-    resp=$(curl -s -w "\n%{http_code}" -X POST "${auth_args[@]}" \
-      -H "Content-Type: application/json" \
-      "$platform/api/workflows/$wf_id/deploy" 2>&1) || {
-      fail "Platform unreachable at $platform — is the dev stack running?"
-      exit 1
-    }
-    http_code=$(echo "$resp" | tail -1)
-    body=$(echo "$resp" | sed '$d')
-
-    if [ "$http_code" = "200" ]; then
-      ok "Deployed"
-      echo "$body" | python3 -c '
-import json,sys
-d = json.load(sys.stdin)
-rt = d.get("runtime", {})
-print("  workflow:  %s (%s)" % (rt.get("name") or "?", rt.get("workflowId") or "?"))
-print("  nodes:     %s" % rt.get("nodeCount", "?"))
-print("  runtime:   %s  (open for status/runs)" % d.get("runtimeUrl", "?"))
-' 2>/dev/null || echo "  $body"
-    else
-      fail "Deploy failed (HTTP $http_code)"
-      echo "  $body"
-      case "$http_code" in
-        401|403) info "Set UNOVERSE_TOKEN=<jwt> when the platform's auth is on" ;;
-        404)     info "No workflow with that id — check the Canvas URL: /workflow/<id>" ;;
-        502)     info "The runtime isn't reachable from the platform — start it (RUNTIME_URL, default :4107)" ;;
-      esac
-      exit 1
-    fi
-    echo ""
-    return 0
-  fi
 
   local env_prod="$ROOT/.env.production"
 
   if [ ! -f "$env_prod" ]; then
     fail ".env.production not found"
     echo ""
-    info "Create it from the template:"
-    info "  cp .env.production.example .env.production"
-    info "  # Fill in DEPLOY_HOST, DEPLOY_USER, and production values"
+    info "Terraform renders it, complete (see .env.production.example):"
+    info "  cd infra/digitalocean && terraform apply"
+    info "  terraform output -raw env_production > ../../.env.production"
     echo ""
     exit 1
   fi
@@ -124,46 +73,24 @@ EOF
 
   case "$subcommand" in
     ""|deploy)
-      # THE deploy (starter developers): YOUR server gets the latest platform
-      # images AND your local work (your custom nodes built locally with dists
-      # shipped, your rx design, your prompts).
-      info "Deploying your platform (images + your local work)..."
+      # THE deploy: the server takes the latest platform images (pull + restart).
+      # Content does NOT ride deploys — it arrives via git (`unoverse update`
+      # pulls the starter clone incl. the carve-out), the marketplace (DB-driven,
+      # self-healing at boot) and, when the gate lands, Studio publish.
+      info "Deploying platform images..."
       echo ""
       ansible-playbook \
         -i "$tmp_inventory" \
         "$ansible_dir/playbooks/deploy-images.yml" \
         -e "env_file=$env_prod"
-
-      echo ""
-      ansible-playbook \
-        -i "$tmp_inventory" \
-        "$ansible_dir/playbooks/deploy-packages.yml" \
-        -e "env_file=$env_prod"
-      ;;
-    design|rx)
-      # Design fast lane: rsync rx/ only + restart. No build — definitions
-      # synthesize into component nodes at boot; restyles apply live.
-      info "Deploying design (rx/ definitions)..."
-      echo ""
-      ansible-playbook \
-        -i "$tmp_inventory" \
-        "$ansible_dir/playbooks/deploy-design.yml"
       ;;
     init|full)
-      # FIRST-TIME provisioning only (base host + services + carve-out).
-      # Marketplace nodes need no step: boot converges them from the shared
-      # installed_plugins state (keep-latest). Day-to-day = `deploy a` / `deploy b`.
-      info "First-time provisioning (install + carve-out)..."
+      # FIRST-TIME provisioning only (base host + services).
+      info "First-time provisioning (install)..."
       echo ""
       ansible-playbook \
         -i "$tmp_inventory" \
         "$ansible_dir/playbooks/install.yml" \
-        -e "env_file=$env_prod"
-
-      echo ""
-      ansible-playbook \
-        -i "$tmp_inventory" \
-        "$ansible_dir/playbooks/deploy-packages.yml" \
         -e "env_file=$env_prod"
       ;;
     db)
@@ -172,44 +99,6 @@ EOF
       ansible-playbook \
         -i "$tmp_inventory" \
         "$ansible_dir/playbooks/db-setup.yml" \
-        -e "env_file=$env_prod"
-      ;;
-    caddy)
-      local domain
-      domain=$(grep '^DOMAIN=' "$env_prod" | cut -d= -f2-)
-      if [ -z "$domain" ] || [ "$domain" = "yourdomain.com" ]; then
-        fail "DOMAIN is not set in .env.production"
-        exit 1
-      fi
-      # Optional flags from .env.production (both default off):
-      #   CADDY_INCLUDE_UMAP=true → expose umap.<domain> (POC only)
-      #   CADDY_BEHIND_LB=true    → plain :80, the customer LB terminates TLS
-      local include_umap behind_lb
-      include_umap=$(grep '^CADDY_INCLUDE_UMAP=' "$env_prod" | cut -d= -f2- | tr -d '\r\n' | xargs)
-      behind_lb=$(grep '^CADDY_BEHIND_LB=' "$env_prod" | cut -d= -f2- | tr -d '\r\n' | xargs)
-      info "Installing Caddy for $domain..."
-      echo ""
-      ansible-playbook \
-        -i "$tmp_inventory" \
-        "$ansible_dir/playbooks/install-caddy.yml" \
-        -e "domain=$domain" \
-        -e "include_umap=${include_umap:-false}" \
-        -e "behind_lb=${behind_lb:-false}" \
-        -e "env_file=$env_prod"
-      ;;
-    caddy-uninstall|uninstall-caddy)
-      info "Uninstalling Caddy (reverts to direct host ports)..."
-      echo ""
-      ansible-playbook \
-        -i "$tmp_inventory" \
-        "$ansible_dir/playbooks/uninstall-caddy.yml"
-      ;;
-    umap)
-      info "Installing UMAP service..."
-      echo ""
-      ansible-playbook \
-        -i "$tmp_inventory" \
-        "$ansible_dir/playbooks/install-umap.yml" \
         -e "env_file=$env_prod"
       ;;
     test|check)
@@ -234,17 +123,12 @@ EOF
       echo "               (your nodes built locally, rx, prompts) + restart."
       echo ""
       echo "Runtime:"
-      echo "  runtime <workflow-id>   Compile + push a canvas to the kit's runtime (:4107)"
       echo ""
       echo "Fast lane:"
-      echo "  design       rx/ definitions only: rsync + restart (no build)"
       echo ""
       echo "Setup & utilities:"
       echo "  init         First-time provisioning (install + carve-out)"
       echo "  db           Run database setup"
-      echo "  caddy        Install Caddy TLS reverse proxy"
-      echo "  caddy-uninstall  Remove Caddy"
-      echo "  umap         Install UMAP AI service"
       echo "  harden       Security hardening (SSH, firewall, updates)"
       echo "  test         Run connectivity test"
       rm -f "$tmp_inventory"

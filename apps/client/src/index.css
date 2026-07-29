@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* The chat now lives in a fixed, full-height sliding drawer (see SlidingPanel),
+   so the mount host no longer needs its own height — the panel sizes itself.
+   In dev, index.html styles #unoverse-sab as a click-through overlay over the
+   fake page; in production the real host page owns the document chrome. */
+body {
+  margin: 0;
+}

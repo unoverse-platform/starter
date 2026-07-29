@@ -1,0 +1,41 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+
+region       = "us-east-1"
+name         = "universe-poc"
+admin_cidr   = "203.0.113.7/32"        # YOUR IP — the only SSH source
+ssh_key_name = "your-ec2-keypair-name" # must already exist in the region
+admin_email  = "you@example.com"       # initial admin (Cognito user, all roles; invite emailed)
+size         = "small"                 # small (POC) | medium | large
+domain       = "yourdomain.com"        # api.yourdomain.com → the ALB
+
+# OPTIONAL: the domain's Route53 hosted zone id — set it and Terraform creates the
+# DNS records AND auto-validates the certificate. Empty = you add the printed
+# CNAMEs/aliases yourself (outputs: acm_validation_records, alb_dns_name).
+# route53_zone_id = "Z0123456789ABC"
+
+# POC ONLY: public Canvas at https://unoverse.<domain> — a host rule on the ONE
+# ALB (no second LB; ALBs host-route, unlike DO). Add the URL to oauth origins.
+canvas_public = true
+
+# Service secrets — with these set, the rendered .env.production is COMPLETE.
+docr_token           = "dop_v1_..."   # registry token (pulls platform images)
+openai_api_key       = "sk-..."       # memory server + OpenAI nodes
+# hyperbrowser_api_key = ""           # optional — page intelligence
+
+oauth_callback_urls = [
+  "https://yourdomain.com",
+  "http://localhost:5173", # local Studio/Canvas dev against this universe
+]
+
+# RBAC roles (noun:verb — the grammar node manifests' requires.role matches).
+# Each becomes a Cognito group; put a user in the group and the role rides their
+# token. THE FULL SET, mirroring the Auth0 tenant's Gravity API permissions
+# (2026-07-28). The first two are enforced by code gates and are always created
+# even if removed from this list; the last two are declared intent (no code gate
+# yet — enforcement arrives with the surfaces they name).
+roles = [
+  "workflow:author",    # build and test workflows (builder gate — ENFORCED)
+  "marketplace:publish", # publish assets to this universe (publish gate — ENFORCED)
+  "workflow:promote",   # promote a draft to active / go-live (declared only)
+  "admin:access",       # admin to Unoverse Canvas (declared only)
+]

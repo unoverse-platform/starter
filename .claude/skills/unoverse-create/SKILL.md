@@ -12,7 +12,7 @@ editable folders mounted into the running platform:
 |---|---|
 | `apps/unoverse/rx/` | **Design** (data, not code): components, atoms, org-scoped templates + styles |
 | `apps/unoverse/prompts/` | **Behavior**: agent skills (`skills/`) + prompt blocks (`blocks/`) |
-| `apps/unoverse/nodes/` | **Logic**: custom workflow node packages (TypeScript) |
+| `apps/unoverse/nodes/` | **Logic**: custom workflow nodes, authored as YAML |
 
 ## Step 1 — Identify the artifact, read its playbook
 
@@ -77,10 +77,10 @@ required; justify any warning).
 | Component / atom / template / style | `./unoverse lint`, then restart unoverse — nodes SYNTHESIZE from definitions (no codegen); deploy with `unoverse deploy design` |
 | Existing component restyle/edit only | takes effect live (SDK reads `rx/` directly) |
 | Agent skill / prompt block | `docker compose restart unoverse` |
-| Node | `./unoverse build @unoverse-platform/<pkg>` (or `./unoverse update nodes` for all) |
+| Node | `unoverse node lint`, then `unoverse node test <NodeType>`. No build: a node is YAML |
 
 Verify with `./unoverse check` (services, node catalog, bundles). Preview components in
-the Studio: set `UNOVERSE_WORKBENCH=1` on the `unoverse` service, open the API port.
+Studio: run `unoverse-studio` from the project folder, which opens on :4108.
 
 > In the platform monorepo (not the starter), the node docs live at
 > `docs-starter/nodes/`, the design journey at `docs-starter/design/`, and the dev loop

@@ -3,469 +3,119 @@ sidebarTitle: "Troubleshooting"
 title: "Troubleshooting"
 ---
 
-**Common issues and solutions for GravityAI plugin node development**
-
-## 🚨 Critical Errors
-
-### "Node X is not a PromiseNode but was executed as one"
-
-**Cause**: Incorrect base class import
-
-**✅ Correct Pattern:**
-
-```typescript
-// For PromiseNode:
-import { PromiseNode, type NodeExecutionContext } from "@unoverse-platform/plugin-base";
-
-export default class MyExecutor extends PromiseNode {
-  constructor() {
-    super("MyNode");
-  }
-}
-
-// For CallbackNode:
-import { getPlatformDependencies } from "@unoverse-platform/plugin-base";
-const { CallbackNode } = getPlatformDependencies();
-
-export default class MyCallbackExecutor extends CallbackNode {
-  constructor() {
-    super("MyNode");
-  }
-}
-```
-
-**Why**: The workflow system validates node types. PromiseNode can be imported directly, but CallbackNode still needs `getPlatformDependencies()`.
-
-### "Cannot find name 'PromiseNode'"
-
-**Cause**: Missing import
-
-**✅ Correct:**
-
-```typescript
-import { PromiseNode, type NodeExecutionContext } from "@unoverse-platform/plugin-base";
-
-export default class MyExecutor extends PromiseNode {
-  constructor() {
-    super("MyNode");
-  }
-}
-```
-
-### "Startup Freeze" / Plugin Loading Hangs
-
-**Cause**: Module-level calls to platform dependencies
-
-**✅ Correct - Use Direct Imports:**
-
-```typescript
-import { PromiseNode, type NodeExecutionContext } from "@unoverse-platform/plugin-base";
-import { myService } from "./service";
-
-export default class MyExecutor extends PromiseNode {
-  // No module-level getPlatformDependencies() needed
-}
-```
-
-**Note**: Only CallbackNode still needs `getPlatformDependencies()` at module level.
-
-## 🔧 Build & Import Errors
-
-### "Module cannot have multiple default exports"
-
-**Cause**: Duplicate default exports in executor file
-
-**❌ Wrong:**
-
-```typescript
-export default class MyExecutor extends PromiseNode<Config> {
-  // ...
-}
-
-// Later in same file
-export default MyExecutor; // Duplicate!
-```
-
-**✅ Correct:**
-
-```typescript
-export default class MyExecutor extends PromiseNode<Config> {
-  // ...
-}
-
-// OR use named export
-export { MyExecutor };
-```
-
-### "Cannot find module '@unoverse-platform/plugin-base'"
-
-**Cause**: Missing dependency in package.json
-
-**Solution**: Add to package.json:
-
-```json
-{
-  "dependencies": {
-    "@unoverse-platform/plugin-base": "^1.0.0"
-  }
-}
-```
-
-### TypeScript Compilation Errors
-
-**Common Issues:**
-
-- Missing type imports
-- Incorrect generic types
-- Missing return types
-
-**✅ Correct Types:**
-
-```typescript
-import { PromiseNode, type NodeExecutionContext, type ValidationResult } from "@unoverse-platform/plugin-base";
-
-export default class MyExecutor extends PromiseNode {
-  protected async validateConfig(config: MyConfig): Promise<ValidationResult> {
-    return { success: true };
-  }
-
-  protected async executeNode(
-    inputs: Record<string, any>,
-    config: MyConfig,
-    context: NodeExecutionContext
-  ): Promise<MyOutput> {
-    // Use injected API
-    const logger = context.api?.createLogger?.(this.nodeType) || console;
-    const result = await myService(config, credentialContext, context.api);
-    return { __outputs: result };
-  }
-}
-```
-
-## 🔐 Credential Issues
-
-### "Credentials are required" Error
-
-**Cause**: Node definition doesn't declare credential requirements
-
-**✅ Solution:**
-
-```typescript
-export const MyNode: EnhancedNodeDefinition = {
-  type: "MyNode",
-  // ... other properties
-  credentials: [
-    {
-      name: "myCredential",
-      type: "myCredentialType",
-      required: true,
-    },
-  ],
-};
-```
-
-### "Credential not found" Error
-
-**Cause**: Node config doesn't have credential ID stored
-
-**Check Config Structure:**
-
-```json
-{
-  "credentials": {
-    "myCredential": "cred_xxxxx"
-  },
-  "otherConfig": "value"
-}
-```
-
-**Debug Steps:**
-
-1. Check if credential exists in database
-2. Verify credential ID in node config
-3. Ensure credential type matches node definition
-
-### Service Can't Access Credentials
-
-**❌ Wrong Pattern:**
-
-```typescript
-// Don't access credentials directly
-const apiKey = context.credentials.myCredential.apiKey;
-```
-
-**✅ Correct Pattern:**
-
-```typescript
-// Service fetches credentials from injected API
-export async function myService(config: any, credentialContext: CredentialContext, api: any) {
-  const credentials = await api.getNodeCredentials(credentialContext, "myCredential");
-  const apiKey = credentials.apiKey;
-  // Use apiKey...
-}
-```
-
-## 🔄 Runtime Issues
-
-### Node Doesn't Execute
-
-**Check List:**
-
-1. ✅ Node is registered in plugin setup
-2. ✅ Node definition is exported correctly
-3. ✅ Executor extends correct base class
-4. ✅ `executeNode()` method is implemented
-5. ✅ No errors in plugin loading
-
-### CallbackNode Doesn't Continue
-
-**Common Issues:**
-
-- Missing `isComplete` in state
-- Not handling "continue" signals properly
-- State not updating correctly
-- Wrong import pattern for CallbackNode
-
-**✅ Correct CallbackNode Pattern:**
-
-```typescript
-import { getPlatformDependencies } from "@unoverse-platform/plugin-base";
-
-const { CallbackNode } = getPlatformDependencies();
-
-initializeState(inputs: any): MyState {
-  return {
-    items: [], // Start empty, get from config
-    currentIndex: 0,
-    isComplete: false, // Important!
-  };
-}
-
-async handleEvent(event, state, emit) {
-  const { inputs, config } = event;
-
-  // Handle continue signal to advance iteration
-  if (inputs?.continue !== undefined && state.items.length > 0) {
-    if (state.currentIndex >= state.items.length) {
-      return { ...state, isComplete: true };
-    }
-
-    const item = state.items[state.currentIndex];
-    const result = await processItem(item);
-
-    emit({
-      __outputs: {
-        item: result,
-        index: state.currentIndex,
-        hasMore: state.currentIndex < state.items.length - 1
-      }
-    });
-
-    return {
-      ...state,
-      currentIndex: state.currentIndex + 1,
-      isComplete: state.currentIndex + 1 >= state.items.length
-    };
-  }
-
-  // Initialize with items from config
-  if (state.items.length === 0 && config?.items) {
-    return { ...state, items: config.items };
-  }
-
-  return state;
-}
-```
-
-### Logger Not Working
-
-**✅ Correct Pattern:**
-
-```typescript
-// In executor, use this.logger
-this.logger.info("Processing started");
-
-// Or get from context.api
-const logger = context.api?.createLogger?.(this.nodeType) || console;
-
-// In service, get from injected API
-export async function myService(config: any, credentialContext: any, api: any) {
-  const logger = api?.createLogger?.("MyService") || console;
-  logger.info("Service called");
-}
-```
-
-## 🧪 Testing & Debugging
-
-### Test Your Node
-
-**1. Build Test:**
+Two commands answer most of it.
 
 ```bash
-npm run build
+unoverse node lint          # every static rule, before anything runs
+unoverse node test <Type>   # the node against the real service
 ```
 
-**2. Plugin Loading Test:**
+Lint messages name the rule they broke and the page that explains it. Start there.
 
-```bash
-# Start server and check logs for plugin loading
-npm start
+## Lint stops you
+
+| Message | What to do |
+|---|---|
+| `api must be a FOLDER` | Split `api.yaml` into `api/run.yaml` and `api/events.yaml` |
+| `is retired: this is api/run.yaml, a LIST` | Make it a list, each entry starting `- name:` |
+| `"api" is defined in api/ and node.yaml` | A section lives in one place. Delete one |
+| `has no testData` | Add `test.yaml`, or a `test:` block in `node.yaml` |
+| `events rows are ordered X but the connectors are Y` | Reorder the rows to match `interface.yaml` |
+| `emits to "x", which is not a declared output` | The row names a connector that does not exist |
+| `output "x" is declared but nothing emits to it` | Add a row, or drop the output |
+| `needs credential "x" but no credentials/x.yaml exists` | Add the credential file to the package |
+| `request.url is not https` | A credential must not travel in clear text |
+| `capability is declared but not implemented` | Use one that exists, or ask for it to be built |
+| `enumNames is a different length from enum` | They are positional |
+| `ui:order names a field that does not exist` | A rename left the list behind |
+
+## The node runs but nothing happens
+
+**An output stays empty.** Nothing emits to it. Open `api/events.yaml` and check there is a
+row whose `emit` matches the connector name.
+
+**A streaming node emits nothing.** Its rows need `match`, naming the event type they fire
+on. Without one, a row on a streaming transport fires on everything or nothing, and lint
+will tell you which.
+
+**A downstream node receives one word at a time.** The row needs `accumulate: true`, so it
+emits the running total rather than each fragment.
+
+**The node never runs at all.** A required input has nothing wired to it. The node is
+waiting, which is a legitimate state, so nothing reports an error.
+
+## A template resolved to empty
+
+This is the one that wastes the most time, because nothing errors.
+
+A path that matches nothing resolves to empty and says nothing about it. The usual causes:
+
+- **The node id is wrong.** `signal.quote1.quote` needs the id **Canvas** gave that node.
+  Check it against the edge you actually drew.
+- **The output name is wrong.** It has to match `interface.yaml` exactly.
+- **You used `input.*`.** There is no such root.
+- **You used brackets.** `records[0].Name` does not resolve. Use `records.0.Name`.
+
+Run the node and look at what it printed for the sample data. If the value is not there, the
+path is wrong.
+
+## The service rejects the request
+
+**A number arrived as a string.** A field that is exactly one `{{ path }}` keeps its type.
+Anything else, including a template with text around it, becomes a string.
+
+**A 200 that is really a failure.** Some services answer 200 with an error in the body. Add
+`error` to the call, and it will surface instead of flowing downstream as nonsense.
+
+```yaml
+error:
+  when: "return !!response.error"
+  message: "return response.error.message"
 ```
 
-**3. Debug Execution:**
+**401 from the service.** Check the credential value in **Canvas**, then check `scheme`
+against the service's own documentation. Bearer and API-key-in-header are easy to confuse.
 
-```bash
-# Execute the node directly via the runtime (internal port, local dev)
-curl -X POST http://localhost:4106/execute \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nodeType": "MyNode",
-    "config": { "test": "value" },
-    "inputs": { "input": "test data" }
-  }'
-```
+**Refused before it left.** `refusing a request to "x"` means the host is not in the
+package's `allowedHosts`. Add it, and remember it is checked again after templating, so a
+host built from config has to resolve to something on the list.
 
-### Debug Logging
+## An expression failed
 
-**Add Debug Logs:**
+Expressions are sandboxed. They reshape data and nothing else.
 
-```typescript
-protected async executeNode(inputs, config, context) {
-  this.logger.info("Node execution started", {
-    nodeId: context.nodeId,
-    config: config
-  });
+No `process`, `require`, `fetch`, `eval`, `Function`, `new`, assignment or `constructor`.
+Nothing mutates either, so `.pop()` fails where `.at(-1)` works.
 
-  try {
-    const result = await myService(config, credentialContext);
-    this.logger.info("Node execution completed", { result });
-    return { __outputs: result };
-  } catch (error) {
-    this.logger.error("Node execution failed", { error: error.message });
-    throw error;
-  }
-}
-```
+A rejected expression is logged and never runs.
 
-### Common Debug Steps
+## The Agent ignores your node
 
-1. **Check Plugin Registration:**
+It never saw it. The AI workflow builder asks for the nodes that suit a step and gets back a
+handful, so a node with weak `whenToUse` is invisible rather than rejected.
 
-   - Look for plugin loading logs in server startup
-   - Verify node appears in available nodes list
+Read [Discoverability](./14-node-discoverability.md). The usual fault is an opening sentence
+about mechanism rather than the job.
 
-2. **Check Credential Loading:**
+## The Agent ignores your tool
 
-   - Verify credentials exist in database
-   - Check credential IDs in node config
-   - Test credential fetching in service
+Same failure, one level down. A tool's `description` is what the Agent reads to decide
+whether to call it. Write what the tool achieves.
 
-3. **Check Execution Flow:**
-   - Add logging to executor methods
-   - Verify service calls work independently
-   - Check output structure matches expected format
+If the Agent has no tools at all, nothing is wired to the `mcp` connector.
 
-## 🔗 Getting Help
+## Testing without the platform
 
-### Study Working Examples
+`unoverse node test` needs no server. It reads keys from your own `.env` as
+`<CREDENTIAL>_<FIELD>` in upper snake case, so `openAICredential.apiKey` is
+`OPENAI_API_KEY`, and it names any that are missing before it runs.
 
-**PromiseNode Issues:**
+If a node passes on the bench and fails in a workflow, the difference is what reaches it.
+The bench uses `testData.inputs`; the workflow uses whatever the edges carry.
 
-- Compare with `@unoverse-platform/aws-bedrock`
-- Check `@unoverse-platform/aws-bedrock` implementation
+## Still stuck
 
-**CallbackNode Issues:**
-
-- Compare with `@unoverse-platform/ingest`
-- Check `@unoverse-platform/flow` implementation
-
-**Credential Issues:**
-
-- Study any working package's credential handling
-- Check credential definitions in published packages
-
-### Error Message Patterns
-
-| Error Message                    | Likely Cause                  | Solution                      |
-| -------------------------------- | ----------------------------- | ----------------------------- |
-| "is not a PromiseNode"           | Wrong import                  | Import PromiseNode directly   |
-| "Cannot find name"               | Missing import                | Add import statement          |
-| "Startup freeze"                 | Module-level deps call        | Use direct imports            |
-| "Credentials are required"       | Missing credential definition | Add to node definition        |
-| "Credential not found"           | Missing credential ID         | Check node config             |
-| "Multiple default exports"       | Duplicate exports             | Remove duplicate              |
-| "Node never completes"           | Missing isComplete            | Return `{ isComplete: true }` |
-| "Downstream nodes not triggered" | Wrong emit pattern            | Call `emit()` before `return` |
-
-## 🔀 Signal Routing Issues
-
-### CallbackNode Never Completes
-
-**Cause**: Missing `isComplete: true` in return
-
-**❌ Wrong:**
-
-```typescript
-return { __outputs: { text: "done" } }; // Missing isComplete!
-```
-
-**✅ Correct:**
-
-```typescript
-emit({ __outputs: { text: "done" } });
-return { isComplete: true };
-```
-
-### Downstream Nodes Not Receiving Data
-
-**Cause**: Returning outputs instead of emitting them
-
-**❌ Wrong:**
-
-```typescript
-return { __outputs: { data: result }, isComplete: true }; // Outputs LOST!
-```
-
-**✅ Correct:**
-
-```typescript
-emit({ __outputs: { data: result } }); // Sends to downstream
-return { isComplete: true }; // Closes the actor
-```
-
-### Loop Node Stuck After First Item
-
-**Cause**: Missing CONTINUE signal handling
-
-**✅ Correct:**
-
-```typescript
-async handleEvent(event, state, emit) {
-  const { inputs } = event;
-
-  // Handle continue signal
-  if (inputs?.continue !== undefined) {
-    // Process next item
-    emit({ __outputs: { item: state.items[state.currentIndex] } });
-    return { ...state, currentIndex: state.currentIndex + 1 };
-  }
-
-  return state;
-}
-```
-
-### Node Not Executing
-
-**Cause**: Missing connector dependencies
-
-**Solution**: Check that all required connectors have received inputs:
-
-- Verify edges are correctly mapped
-- Check targetHandle matches connector name
-- Ensure source nodes are completing
-
-See [Signal Routing](./09-signal-routing.md) for complete details.
-
----
-
-**Previous**: [Credential Management](./04-credentials.md) - Authentication pattern
+- [Anatomy of a Node](./00-manifest-nodes.md) for the format
+- [Config Schema](./06-config-schema.md) for templates and the run context
+- [Credentials](./04-credentials.md) for keys and auth schemes
+- `unoverse node lint` again, because most of this is a rule it already knows

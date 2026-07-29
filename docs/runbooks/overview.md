@@ -48,7 +48,7 @@ Modular runbooks for deploying and managing Gravity Platform VMs.
 | [08-deploy-packages](./08-deploy-packages.md)                                                                        | Deploy customer packages to server                                               | `deploy-packages.yml`       |
 | [09-restart-rebuild](./09-restart-rebuild.md)                                                                        | Local restart & rebuild decision table                                           | —                           |
 | [10-deploy-design](./10-deploy-design.md)                                                                            | Deploy design (rx/) only: rsync + restart, no build                              | `deploy-design.yml`         |
-| [Architecture Diagrams](https://unoverse-platform.github.io/unoverse-starter/docs/runbooks/architecture-diagrams/index.html) | Interactive system architecture diagrams ([local](./architecture-diagrams/index.html)) | —                           |
+| [Architecture Diagrams](https://unoverse-platform.github.io/starter/docs/runbooks/architecture-diagrams/index.html) | Interactive system architecture diagrams ([local](./architecture-diagrams/index.html)) | —                           |
 
 ---
 
