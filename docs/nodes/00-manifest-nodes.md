@@ -63,7 +63,7 @@ is why they can say yes quickly.
 ## One folder is one node
 
 ```
-apps/unoverse/nodes/<package>/
+nodes/<package>/            # in your Studio project workspace
   package.yaml                # the package envelope: name, category, allowedHosts, requires
   credentials/
     <name>Credential.yaml     # one credential type

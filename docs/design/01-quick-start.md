@@ -17,7 +17,7 @@ A `PriceCard` component: a card that shows a product name, a price, and a short 
 
 ## Step 1 — Scaffold, then shape the definition
 
-> Throughout these docs, `rx/` means the design folder in your repo: **`apps/unoverse/rx/`**. It is mounted straight into the running platform.
+> Throughout these docs, `rx/` means the design folder in your Studio project workspace. Studio reads it directly; publishing sends it to your universe.
 
 ```bash
 # In Studio: New Project → "acme" — scaffolds rx/acme/ (components/, templates/,
@@ -78,7 +78,7 @@ The JSON Schema at `rx/_schema/unoverse.schema.json` catches structural mistakes
   "json.schemas": [
     {
       "fileMatch": ["**/rx/**/components/**/*.json", "**/rx/**/templates/**/*.json", "**/rx/**/atoms/*.json"],
-      "url": "./apps/unoverse/rx/_schema/unoverse.schema.json"
+      "url": "./rx/_schema/unoverse.schema.json"
     }
   ]
 }

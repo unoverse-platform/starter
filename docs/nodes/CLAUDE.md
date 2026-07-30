@@ -7,7 +7,7 @@ numbered guides.
 ## A node is a folder
 
 ```
-apps/unoverse/nodes/<package>/
+nodes/<package>/            # in your Studio project workspace
   package.yaml                # the package: name, category, allowedHosts, requires
   credentials/
     <name>Credential.yaml     # the SHAPE of a credential, never a value

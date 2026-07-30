@@ -10,7 +10,7 @@ There is nothing to compile and no package to install. You write the files, run 
 | | |
 | --- | --- |
 | **What you'll build** | <span className="node-chip">Quote</span>, a node that fetches a famous quote |
-| **Where it lives** | `apps/unoverse/nodes/quote/` |
+| **Where it lives** | `nodes/quote/` in your Studio project workspace |
 | **What it outputs** | Two connectors: `quote` and `author` |
 | **Why this API** | It needs no key, so you can build and run it in under a minute |
 
@@ -57,7 +57,7 @@ Four small files, and none of them is code.
 <Steps>
 <Step title="Create the package">
 
-A package holds one or more nodes and declares which hosts they may call. Create `apps/unoverse/nodes/quote/` with one file in it:
+A package holds one or more nodes and declares which hosts they may call. In your Studio project workspace, create `nodes/quote/` with one file in it:
 
 ```yaml package.yaml
 $schema: ../_schema/package.schema.json

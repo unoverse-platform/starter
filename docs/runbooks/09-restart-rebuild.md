@@ -7,9 +7,8 @@ Rebuild packages and restart services so the platform picks up your latest chang
 
 ## When To Use
 
-- New or updated **rx definitions** (components, atoms, templates, styles in `apps/unoverse/rx/`)
-- New or updated **custom node packages** (in `apps/unoverse/nodes/`)
-- New or updated **prompts** (agent skills / prompt blocks in `apps/unoverse/prompts/`)
+- **Marketplace installs and Studio publishes** — live immediately, no restart (database-driven)
+- **Platform image updates** — `unoverse deploy` (server) / `unoverse update`
 - After `git pull` or `unoverse update` when the platform isn't reflecting changes
 
 ## Quick Commands
@@ -52,7 +51,7 @@ unoverse deploy    # pull latest images + restart
 
 | You changed | Do |
 |---|---|
-| A node package (`apps/unoverse/nodes/<pkg>/`) | `./unoverse build @unoverse-platform/<pkg>` |
+| A newly published node (from Studio) | nothing — live on the next workflow run |
 | An **existing** component/template's look (`rx/`) | nothing — definitions are read live; hard-refresh the client |
 | A **new** component, or props/structure changes (`rx/`) | `./unoverse build` |
 | A skill or prompt block (`prompts/`) | `./unoverse build` |

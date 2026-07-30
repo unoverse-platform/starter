@@ -52,7 +52,7 @@ makes it.
 ## The shape of a node
 
 ```
-apps/unoverse/nodes/<package>/
+nodes/<package>/            # in your Studio project workspace
 ├── package.yaml
 ├── credentials/
 ├── shared/
