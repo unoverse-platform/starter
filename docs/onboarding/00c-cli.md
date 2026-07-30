@@ -3,11 +3,36 @@ sidebarTitle: "The unoverse CLI"
 title: "The unoverse CLI"
 ---
 
-One CLI drives everything: setup, daily development, design tooling, and deployment. It ships at the root of your repository, and `unoverse help` prints this list in your terminal.
+One CLI operates your universe: setup, daily development, and deployment. It ships at the root of your repository, and `unoverse help` prints this list in your terminal. Authoring (nodes, design, prompts) lives in **Studio**, not here.
 
 <Note>
-Run `./unoverse` (with the `./`) the first time. After `init`, the CLI installs itself to your PATH and `unoverse` works from anywhere.
+Run `./unoverse` (with the `./`) the first time. After `init`, the CLI installs itself to your PATH and `unoverse` works from anywhere. Run it with no arguments for a live dashboard of your universe.
 </Note>
+
+## Your first hour
+
+The complete path from a fresh clone to a running universe:
+
+```bash
+# LOCAL — run it on your machine
+./unoverse init          # wizard: DOCR token, database, Redis, auth → writes .env
+./unoverse start         # pull images, start every service
+./unoverse db-setup      # apply database migrations
+./unoverse check         # green across the board? you're running
+./unoverse open canvas   # meet your universe
+```
+
+When you're ready for a server, three more:
+
+```bash
+./unoverse ground        # prefills terraform.tfvars from your cloud CLI (doctl or aws)
+# fill the FILL_ME lines, then in infra/<ground>: terraform init && terraform apply
+# render the env:  terraform output -raw env_production > ../../.env.production
+./unoverse deploy init   # first time, end to end: install + db + harden + verify
+./unoverse deploy        # every deploy after that
+```
+
+If anything misbehaves at any point: `./unoverse doctor`.
 
 ## Setup
 
@@ -26,16 +51,16 @@ Start, stop, and watch the running platform.
 
 | Command | What it does |
 | --- | --- |
+| `unoverse` | No arguments: a live dashboard of your universe. |
 | `unoverse start` | Starts all services. |
 | `unoverse stop` | Stops all services. |
-| `unoverse status` | Shows service health at a glance. |
-| `unoverse check` | Runs the full health check: containers, health endpoints, built packages, loaded nodes, **Canvas** reachability. |
+| `unoverse check` | Runs the full health check: containers, health endpoints, built packages, loaded nodes, **Canvas** reachability. (`unoverse status` is an alias.) |
 | `unoverse logs` | Opens the Dozzle log viewer. `unoverse logs <service>` streams one service's logs in the terminal. |
-| `unoverse update` | Pulls the latest platform images, rebuilds packages, and restarts. |
+| `unoverse update` | Pulls the latest platform images, rebuilds packages, and restarts. `unoverse update nodes` rebuilds node packages only, no image pull. |
 | `unoverse open` | Opens a service in your browser: `unoverse open canvas`, `open api`, or `open logs`. |
 
 <Note>
-`unoverse update` updates the platform only. Your own code, the nodes, design, and prompts you build in **Studio**, is never touched.
+`unoverse update` updates the platform only. Your own work, the nodes, design, and prompts you build in **Studio**, is never touched.
 </Note>
 
 ## Development
@@ -46,29 +71,20 @@ The daily loop: bring the platform up and build your packages.
 | --- | --- |
 | `unoverse dev` | The daily starter: brings the platform up if needed, installs workspace dependencies, and builds your node packages so the platform loads them. |
 | `unoverse build` | Builds all node packages and restarts services. `unoverse build <package>` builds just one, for example `unoverse build @unoverse-platform/my-node`. |
-
-## Design
-
-Tooling for the definitions in `rx/`.
-
-| Command | What it does |
-| --- | --- |
-| `unoverse new` | Creates an org: `unoverse new org <name>` sets up the folder structure with the default token set, ready to rebrand. |
-| `unoverse lint` | Lints your rx/ definitions against the schema and the platform's guard rules, the same rules **Studio** and the conformance checks apply. |
+| `unoverse key` | Issues, lists, and revokes publish keys, the credential **Studio** uses to publish to this universe. |
+| `unoverse publish assets <project>` | Publishes a project's static assets. |
 
 ## Deployment
 
-From your laptop to your server. `unoverse deploy` does the whole job: the first run provisions the server, sets up the database, and installs the supporting services. The sub-commands re-run one piece on its own; you rarely need them.
+From your laptop to your server. Provision with Terraform first (`ground` writes the input file); after that `unoverse deploy` is the whole job, and the sub-commands re-run one piece on its own.
 
 | Command | What it does |
 | --- | --- |
-| `unoverse deploy` | Deploys your platform to your server: platform images plus your nodes, design, and prompts. |
-| `unoverse deploy design` | The fast lane for design changes: rsyncs `rx/` to the server and restarts. No build. |
-| `unoverse deploy test` | Runs a connectivity test against the deployed platform. |
-| `unoverse deploy init` | Re-runs server provisioning on its own. |
+| `unoverse ground` | Prefills `terraform.tfvars` from your cloud CLI: your IP, SSH keys, existing Postgres clusters (doctl), or region, key pairs, and the Route53 zone (aws). `ground do` / `ground aws` picks explicitly. |
+| `unoverse deploy` | Deploys the platform to your server: pulls the latest images and restarts. |
+| `unoverse deploy init` | First-time setup, end to end: install, database, hardening, verify. One command after `terraform apply`. |
 | `unoverse deploy db` | Re-runs database setup on the server. |
-| `unoverse deploy caddy` | Re-installs the Caddy reverse proxy for TLS. `deploy caddy-uninstall` removes it. |
-| `unoverse deploy umap` | Re-installs the **Spatial** ML service. |
-| `unoverse deploy harden` | Re-applies security hardening to the server. |
+| `unoverse deploy test` | Runs a connectivity test against the deployed platform. |
+| `unoverse deploy harden` | Applies security hardening: SSH keys-only, fail2ban, automatic security updates. Never touches app ports or key-based root SSH, so future deploys and MCP clients keep working. |
 
-Deployment is covered step by step in [Deployment](./08-deployment.md) and the [Runbooks](../runbooks/overview.md).
+TLS and the firewall are not CLI jobs: your ground's Terraform owns them (load balancer certificate, cloud firewall). See [Deployment](./08-deployment.md) and the [Runbooks](../runbooks/overview.md).

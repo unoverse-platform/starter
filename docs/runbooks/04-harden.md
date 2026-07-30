@@ -9,11 +9,16 @@ Apply security hardening to Gravity Platform VMs.
 
 This runbook applies security best practices to production VMs:
 
-- Firewall configuration (UFW)
 - SSH hardening
 - Fail2ban for brute-force protection
-- Audit logging
-- Docker security settings
+- Unattended security updates
+
+> **Where is the firewall?** Owned by your ground's Terraform (`infra/`): the DO
+> cloud firewall or AWS security groups. There is no host firewall (UFW) by
+> design: Docker's iptables rules bypass UFW for published ports, so a host
+> firewall protects nothing. The cloud firewall sits in front of the box, where
+> traffic structurally cannot bypass it. SSH and Dozzle are admin-IP-only
+> (`admin_cidr` in terraform.tfvars); app ports accept the load balancer.
 
 ## Prerequisites
 
@@ -23,11 +28,10 @@ This runbook applies security best practices to production VMs:
 
 ## Steps
 
-### 1. Run Hardening Playbook
+### 1. Run Hardening
 
 ```bash
-cd ansible
-ansible-playbook -i inventory/production.yml playbooks/harden.yml
+unoverse deploy harden
 ```
 
 ### 2. Verify Access Still Works
@@ -37,67 +41,31 @@ ansible-playbook -i inventory/production.yml playbooks/harden.yml
 ssh root@<VM_IP>
 
 # Test services
-ansible-playbook -i inventory/production.yml playbooks/test-connectivity.yml
+unoverse deploy test
 ```
 
 ## What Gets Configured
 
-### Firewall (UFW)
-
-| Port | Protocol | Source        | Purpose               |
-| ---- | -------- | ------------- | --------------------- |
-| 22   | TCP      | Your IP       | SSH access            |
-| 80   | TCP      | Any           | HTTP (Caddy redirect) |
-| 443  | TCP      | Any           | HTTPS (Caddy)         |
-| 5432 | TCP      | Outbound only | PostgreSQL            |
-
 ### SSH Hardening
 
-- Disable password authentication
-- Disable root login (use sudo user)
-- Limit SSH to specific IPs (optional)
+- Disable password authentication (keys only)
+- Disable root password login
+- SSH stays on port 22, reachable only from `admin_cidr` (cloud firewall)
 
 ### Fail2ban
 
-- Bans IPs after 3 failed SSH attempts
+- Bans IPs after repeated failed SSH attempts
 - 1 hour ban duration (3600 seconds)
 - Protects against brute-force attacks
-
-## Expected Output
-
-```
-SECURITY HARDENING APPLIED
-============================================
-Host: gravity-prod (<YOUR_VM_IP>)
-
-Applied:
-  - UFW firewall: ENABLED
-  - SSH hardening: APPLIED
-  - Fail2ban: RUNNING
-  - Audit logging: ENABLED
-```
 
 ## Troubleshooting
 
 | Issue                 | Cause                    | Fix                                                |
 | --------------------- | ------------------------ | -------------------------------------------------- |
-| Locked out of SSH     | Firewall too strict      | Use DO Console to access VM                        |
-| Services unreachable  | Ports not opened         | Check UFW rules: `ufw status`                      |
+| Locked out of SSH     | Your IP changed          | Update `admin_cidr` in terraform.tfvars and `terraform apply`; or use the cloud console |
+| Services unreachable  | Cloud firewall rules     | Check the ground: `terraform plan` shows drift     |
 | Fail2ban blocking you | Too many failed attempts | Wait 1 hour or unban: `fail2ban-client unban <IP>` |
-
-## Rollback
-
-If hardening causes issues:
-
-```bash
-# Disable firewall temporarily
-ssh root@<VM_IP> "ufw disable"
-
-# Then fix the rules and re-enable
-ssh root@<VM_IP> "ufw enable"
-```
 
 ## Next Steps
 
-- [05-caddy.md](./05-caddy.md) - TLS + reverse proxy (optional)
 - [06-test.md](./06-test.md) - Verify connectivity

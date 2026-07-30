@@ -86,13 +86,35 @@ EOF
         -e "env_file=$env_prod"
       ;;
     init|full)
-      # FIRST-TIME provisioning only (base host + services).
-      info "First-time provisioning (install)..."
+      # FIRST-TIME setup, END TO END: install → db → harden → verify. One
+      # command after `terraform apply`, not four in the right order. Each
+      # piece stays available as its own subcommand for re-runs.
+      info "First-time setup: install → database → harden → verify"
       echo ""
+      info "[1/4] Provisioning (Docker, services, mounts)..."
       ansible-playbook \
         -i "$tmp_inventory" \
         "$ansible_dir/playbooks/install.yml" \
-        -e "env_file=$env_prod"
+        -e "env_file=$env_prod" || { rm -f "$tmp_inventory"; fail "install failed — fix and re-run: unoverse deploy init"; exit 1; }
+      echo ""
+      info "[2/4] Database setup..."
+      ansible-playbook \
+        -i "$tmp_inventory" \
+        "$ansible_dir/playbooks/db-setup.yml" \
+        -e "env_file=$env_prod" || { rm -f "$tmp_inventory"; fail "db setup failed — fix and re-run: unoverse deploy db"; exit 1; }
+      echo ""
+      info "[3/4] Security hardening..."
+      ansible-playbook \
+        -i "$tmp_inventory" \
+        "$ansible_dir/playbooks/harden.yml" || { rm -f "$tmp_inventory"; fail "hardening failed — fix and re-run: unoverse deploy harden"; exit 1; }
+      echo ""
+      info "[4/4] Verifying..."
+      ansible-playbook \
+        -i "$tmp_inventory" \
+        "$ansible_dir/playbooks/test-connectivity.yml" \
+        -e "env_file=$env_prod" || { rm -f "$tmp_inventory"; fail "verification failed — inspect and re-run: unoverse deploy test"; exit 1; }
+      echo ""
+      ok "Your universe is up. From now on, deploys are just: unoverse deploy"
       ;;
     db)
       info "Running database setup..."
@@ -120,18 +142,13 @@ EOF
     *)
       echo "Usage: unoverse deploy [command]"
       echo ""
-      echo "  (none)       Deploy your platform: pull images + ship your work"
-      echo "               (your nodes built locally, rx, prompts) + restart."
+      echo "  (none)       Deploy: pull latest platform images + restart"
+      echo "  init         First-time setup, end to end: install + db + harden + verify"
       echo ""
-      echo "Runtime:"
-      echo ""
-      echo "Fast lane:"
-      echo ""
-      echo "Setup & utilities:"
-      echo "  init         First-time provisioning (install + carve-out)"
-      echo "  db           Run database setup"
-      echo "  harden       Security hardening (SSH, firewall, updates)"
-      echo "  test         Run connectivity test"
+      echo "Re-run one piece:"
+      echo "  db           Database setup"
+      echo "  harden       Security hardening (SSH, fail2ban, auto-updates)"
+      echo "  test         Connectivity test"
       rm -f "$tmp_inventory"
       exit 1
       ;;

@@ -27,9 +27,9 @@ cmd_help() {
   echo -e "  ${BOLD}Deployment${NC}"
   echo -e "    ${GREEN}ground${NC}                  Prefill terraform.tfvars from your cloud CLI ${DIM}(./unoverse ground do|aws)${NC}"
   echo -e "    ${GREEN}deploy${NC}                  Deploy your platform: images + your work → your server"
-  echo -e "    ${GREEN}deploy init${NC}             First-time provisioning (install + carve-out)"
-  echo -e "    ${GREEN}deploy db${NC}               Run database setup on server"
-  echo -e "    ${GREEN}deploy harden${NC}           Security hardening"
+  echo -e "    ${GREEN}deploy init${NC}             First-time setup, end to end: install + db + harden + verify"
+  echo -e "    ${GREEN}deploy db${NC}               Re-run database setup on server"
+  echo -e "    ${GREEN}deploy harden${NC}           Re-run security hardening"
   # Owner-only lane. Printed ONLY when publish.sh is present, so a starter kit never
   # advertises a command it does not have (sync-starter.sh deletes that file).
   if type cmd_deploy_marketplace >/dev/null 2>&1; then

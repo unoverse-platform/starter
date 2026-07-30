@@ -7,27 +7,20 @@
   become: yes
 
   vars:
-    # SSH hardening
+    # SSH hardening.
+    # PermitRootLogin MUST be prohibit-password, never "no": unoverse deploy and
+    # unoverse update SSH in as root (DEPLOY_USER=root on DO). "no" locks every
+    # future deploy out of the box after the first harden run; prohibit-password
+    # keeps key-based root working and blocks only password logins — which is
+    # the attack fail2ban and this hardening actually defend against.
     ssh_port: 22
-    ssh_permit_root_login: "no"
+    ssh_permit_root_login: "prohibit-password"
     ssh_password_authentication: "no"
 
-    # Firewall ports (customize per host group)
-    allowed_ports:
-      - { port: 22, proto: tcp } # SSH
-      - { port: 80, proto: tcp } # HTTP (redirect to HTTPS)
-      - { port: 443, proto: tcp } # HTTPS
-
-    # Internal ports (only from load balancer / internal network)
-    internal_ports:
-      - { port: 4101, proto: tcp } # engine (workflow surface, published by unoverse)
-      - { port: 4104, proto: tcp } # memory
-      - { port: 4105, proto: tcp } # unoverse (public MCP/plugins, JWT-gated in-app)
-      # 4106 (unoverse internal node runtime) is NOT listed: compose never publishes
-      # it to the host, so there is nothing to firewall — Docker-network-only.
-      - { port: 5001, proto: tcp } # umap
-      - { port: 3001, proto: tcp } # canvas
-      - { port: 3007, proto: tcp } # sab
+    # NO firewall vars here: the firewall is the ground's (cloud firewall / SGs,
+    # owned by infra/ Terraform). This playbook must never touch app ports —
+    # 4105 (API/MCP: Canvas, Studio, Claude, ChatGPT) and 3001 stay governed by
+    # the load balancer and admin_cidr, so hardening can't cut clients off.
 
   tasks:
     # =========================================================================

@@ -32,12 +32,12 @@ Rebuild packages and restart services so the platform picks up your latest chang
 
 ### Production Server
 
-```bash
-# Design only (rx/): rsync + restart, no build — see 10-deploy-design.md
-unoverse deploy design
+Content does not ride deploys. Nodes, design, and prompts reach a server through
+`unoverse update` (git-synced carve-out), the Marketplace (installed per item,
+database-driven), and Studio publish. `unoverse deploy` moves platform images only:
 
-# Full carve-out (nodes, rx, prompts): rsync + build + restart
-unoverse deploy packages
+```bash
+unoverse deploy    # pull latest images + restart
 ```
 
 ## What Each Step Does
@@ -116,6 +116,4 @@ docker compose exec -T unoverse node -e \
 ## Related
 
 - [01-core.md](./01-core.md) — Initial deployment
-- [08-deploy-packages.md](./08-deploy-packages.md) — Deploy the full carve-out to production
-- [10-deploy-design.md](./10-deploy-design.md) — Deploy design (rx/) only to production
 - [06-test.md](./06-test.md) — Full health check

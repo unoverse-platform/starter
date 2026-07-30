@@ -13,7 +13,7 @@ This runbook validates:
 - All containers are healthy
 - Internal ports are open
 - Health endpoints respond
-- External access works (if Caddy installed)
+- External access works (once DNS points api.&lt;domain&gt; at the load balancer)
 
 ## Prerequisites
 
@@ -25,8 +25,7 @@ This runbook validates:
 ### 1. Run Connectivity Test
 
 ```bash
-cd ansible
-ansible-playbook -i inventory/production.yml playbooks/test-connectivity.yml
+unoverse deploy test
 ```
 
 ### 2. Manual Verification (Optional)
@@ -94,13 +93,8 @@ packages_mounted=16
 ── Recent Errors in Logs ──
 No recent errors
 
-── Caddy ──
-  - Port 80: OK
-  - Port 443: OK
-
 ── Public Domain ──
 Domain: yourdomain.com
-  - https://yourdomain.com/: HTTP 200
   - https://api.yourdomain.com/health: HTTP 200
 ============================================
 ```
@@ -270,7 +264,7 @@ echo "=== Done ==="
 | Services not running   | Container crashed                  | `docker compose logs <service>` then `unoverse update`     |
 | Health endpoint failed | Missing `.env` vars                | Check `.env` has `REDIS_HOST`, `DATABASE_URL`, auth vars  |
 | Packages not built     | No `dist/` directory               | `unoverse update` (builds all packages)                    |
-| Nodes registered: 0    | unoverse didn't load packages      | Check `docker compose logs unoverse`, then re-run `unoverse deploy packages` (or `unoverse update`) |
+| Nodes registered: 0    | unoverse didn't load packages      | Check `docker compose logs unoverse`, then re-run `unoverse update` |
 | Component bundles 404  | Unoverse can't find design-system  | Verify the `packages/` mount (`/app/host_packages`) contains `design-system/components/` |
 | **Canvas** 404             | Container not started              | `docker compose up -d canvas`                             |
 

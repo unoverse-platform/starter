@@ -25,20 +25,14 @@ cd infra/digitalocean && terraform apply     # or infra/aws
 terraform output -raw env_production > ../../.env.production
 cd ../..
 
-# 2. Deploy core services
+# 2. First-time setup, end to end: install + database + hardening + verify
+unoverse deploy init
+```
+
+After that, every deploy is one command:
+
+```bash
 unoverse deploy
-
-# 3. Set up database
-unoverse deploy db
-
-# 4. Deploy AI model (optional)
-unoverse deploy umap
-
-# 5. TLS with Caddy (optional)
-unoverse deploy caddy
-
-# 6. Verify
-unoverse deploy test
 ```
 
 ## What `.env.production` Contains
@@ -56,7 +50,7 @@ REDIS_PORT=25061
 REDIS_PASSWORD=your-password
 REDIS_TLS=true
 
-# Domain (enables HTTPS via Caddy)
+# Domain (TLS terminates at your ground's load balancer)
 DOMAIN=yourdomain.com
 ```
 
@@ -70,24 +64,30 @@ For detailed step-by-step guides, see the [Runbooks](../runbooks/overview.md):
 | --------------------------------------------------- | ------------------------------ |
 | [01-core](../runbooks/01-core.md)                   | Deploy core app services       |
 | [02-database](../runbooks/02-database.md)           | Set up database tables         |
-| [03-ai-model](../runbooks/03-ai-model.md)           | Deploy UMAP AI service         |
 | [04-harden](../runbooks/04-harden.md)               | Security hardening             |
-| [05-caddy](../runbooks/05-caddy.md)                 | TLS + reverse proxy            |
 | [06-test](../runbooks/06-test.md)                   | Verify connectivity and health |
-| [07-observability](../runbooks/07-observability.md) | Dozzle log viewer (POC only)   |
-| [08-deploy-packages](../runbooks/08-deploy-packages.md) | Deploy packages to server  |
 
-## Deploying Custom Code
+## Deploying Your Own Work
 
-After deploying the platform, push your custom nodes and components:
+Content does not ride `unoverse deploy` (that moves platform images only). Your work reaches the server three ways:
 
-```bash
-unoverse deploy packages
-```
+- **The carve-out** (nodes, `rx/`, prompts in your repo): `unoverse update` on the server pulls your git repo and rebuilds.
+- **Marketplace items**: installed per item from Studio's Marketplace tab; database-driven, no restart.
+- **Studio publish**: publishes straight to the universe over the API (publish key via `unoverse key`).
 
-## Advanced: Multi-VM Enterprise
+## Start on a Test Domain, Swap Later
 
-For multi-VM setups (separate app VMs + ML VMs), use `ansible/inventory/production.yml` directly. See `ansible/inventory/production.yml.example` for the template.
+The domain is a Terraform input, not a commitment. Deploy today under any domain you control (even a delegated subdomain like `acme-poc.yourcompany.com`) and move to the real one when it exists. Nothing in the universe's data references the hostname.
+
+The swap:
+
+1. Change `domain` in `terraform.tfvars`, then `terraform apply`. A new certificate and DNS records are created; the VM, database, Redis, and everything in them are untouched.
+2. Re-render and redeploy: `terraform output -raw env_production > ../../.env.production`, then `unoverse deploy`.
+3. Update your IdP: add the new origins and callback URLs in Auth0 or Cognito. This is the only manual step, and the one people forget.
+
+Swap before handing URLs to real users: browser sessions and shared links reference the old hostname, and that is the entire cost of the move.
+
+Working with no domain at all also gets you surprisingly far: `http://IP:3001` and `http://IP:4105` prove a deployment is healthy. You just cannot log in until HTTPS exists, because OIDC providers refuse plain-IP redirect flows.
 
 ## ✅ Challenge Complete
 

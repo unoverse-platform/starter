@@ -190,19 +190,14 @@
             "pages": [
               "runbooks/overview",
               "runbooks/01-core",
-              "runbooks/02-database",
-              "runbooks/03-ai-model",
-              "runbooks/08-deploy-packages",
-              "runbooks/10-deploy-design"
+              "runbooks/02-database"
             ]
           },
           {
             "group": "Operate",
             "pages": [
               "runbooks/04-harden",
-              "runbooks/05-caddy",
               "runbooks/06-test",
-              "runbooks/07-observability",
               "runbooks/09-restart-rebuild"
             ]
           }

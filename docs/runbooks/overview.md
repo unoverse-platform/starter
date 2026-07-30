@@ -3,131 +3,84 @@ sidebarTitle: "Overview"
 title: "Runbooks"
 ---
 
-Modular runbooks for deploying and managing Gravity Platform VMs.
+Running a universe is three phases. Terraform owns the first, the `unoverse` CLI the second, and these runbooks cover the third:
+
+1. **Provision** — your ground (`infra/digitalocean` or `infra/aws`) creates the VM, load balancer, TLS certificate, firewall, Postgres, and Redis, and renders the complete `.env.production`. `./unoverse ground` prefills its input file from your cloud CLI.
+2. **Deploy** — `unoverse deploy init` the first time, `unoverse deploy` after that.
+3. **Operate** — database, hardening, health, restarts: the runbooks below.
 
 ---
 
-## Infrastructure Requirements
+## Provision (Terraform)
 
-### VM Specifications
+```bash
+./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
+# fill the FILL_ME lines (domain, IdP, keys), then:
+cd infra/digitalocean && terraform init && terraform apply     # or infra/aws
+terraform output -raw env_production > ../../.env.production
+cd ../..
+```
 
-| VM Role    | Cores | RAM   | Storage    | Count             | Services                                                   |
-| ---------- | ----- | ----- | ---------- | ----------------- | ---------------------------------------------------------- |
-| **POC**    | 4     | 8 GB  | 100 GB SSD | 1                 | All services                                               |
-| **App VM** | 8     | 32 GB | 200 GB SSD | 2 (Active/Active) | unoverse, memory, **Canvas** |
-| **ML VM**  | 4     | 16 GB | 100 GB SSD | 1 (Dedicated)     | umap-service                                               |
+Everything infrastructure is the ground's job and never a runbook's: TLS (DO managed Let's Encrypt / AWS ACM at the load balancer — no proxy software on the VM), DNS records, the cloud firewall (SSH and Dozzle admin-IP-only), Postgres (fresh, adopted, or BYO — see [02-database](./02-database.md)), and Redis (always provisioned, TLS).
+
+### Sizes
+
+`size` in terraform.tfvars scales the box and the stores, never the topology (all sizes are single-VM):
+
+| Size | Guide |
+| --- | --- |
+| `small` | POC / first deployment |
+| `medium` | Growing usage |
+| `large` | Heavy usage |
 
 ### External Dependencies
 
 | Component      | Requirement                 | Notes                                                                |
 | -------------- | --------------------------- | -------------------------------------------------------------------- |
-| **PostgreSQL** | 14+                         | Customer-managed (DO Managed, AWS RDS, or self-hosted)               |
-| **Redis**      | 7+                          | Customer-managed (DO Managed Redis, AWS ElastiCache, or self-hosted) |
-| **Domain**     | DNS A records               | Point to VM IP or Load Balancer IP                                   |
-| **TLS**        | Caddy (auto) or customer LB | Caddy auto-provisions Let's Encrypt certs                            |
+| **PostgreSQL** | 14+                         | Terraform-provisioned by default; adopt or BYO via terraform.tfvars  |
+| **Redis**      | 7+                          | Always Terraform-provisioned (managed, TLS)                          |
+| **Domain**     | DNS A records               | `api.<domain>` → the load balancer IP (Terraform prints it; can create the records too) |
+| **TLS**        | The ground's load balancer  | DO managed Let's Encrypt / AWS ACM; on-prem brings its own terminator (443 → :4105, idle ≥ 3600s) |
 
 ### Supported Platforms
 
-- **Cloud:** DigitalOcean, AWS, Azure, GCP
-- **On-prem:** VMware, Proxmox, bare metal
-- **OS:** Ubuntu 22.04 LTS (recommended), Debian 12
+- **Cloud grounds:** DigitalOcean (`infra/digitalocean`), AWS (`infra/aws`)
+- **On-prem:** any Ubuntu 22.04+ / Debian 12 VM — you own firewall and TLS, then Deploy and Operate are identical
 
 ---
 
-## Runbook Modules
+## Deploy (the CLI)
 
-| Runbook                                                                                                              | Description                                                                      | Ansible Playbook            |
+```bash
+# First time — everything: install, database, hardening, verify
+unoverse deploy init
+
+# Every deploy after that
+unoverse deploy          # pull latest platform images + restart
+```
+
+Each phase of `init` stays available on its own for re-runs: `deploy db`, `deploy harden`, `deploy test`.
+
+The CLI generates a temporary Ansible inventory from `.env.production` on every run (`DEPLOY_HOST`/`DEPLOY_USER`), so there is no inventory file to maintain.
+
+Your own work (nodes, design, prompts) never rides a deploy: it arrives via `unoverse update` (git), the Marketplace (per item, database-driven), or Studio publish.
+
+---
+
+## Operate (the runbooks)
+
+| Runbook                                                                                                              | Description                                                                      | Command                     |
 | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------- |
-| [01-core](./01-core.md)                                                                                              | Deploy core app services                                                         | `install.yml`               |
-| [02-database](./02-database.md)                                                                                      | Set up database tables                                                           | `db-setup.yml`              |
-| [03-ai-model](./03-ai-model.md)                                                                                      | Deploy UMAP AI service                                                           | `install-umap.yml`          |
-| [04-harden](./04-harden.md)                                                                                          | Security hardening                                                               | `harden.yml`                |
-| [05-caddy](./05-caddy.md)                                                                                            | TLS + reverse proxy (optional)                                                   | `install-caddy.yml`         |
-| [06-test](./06-test.md)                                                                                              | Verify connectivity and health                                                   | `test-connectivity.yml`     |
-| [07-observability](./07-observability.md)                                                                            | Dozzle log viewer (POC only)                                                     | `install-observability.yml` |
-| [08-deploy-packages](./08-deploy-packages.md)                                                                        | Deploy customer packages to server                                               | `deploy-packages.yml`       |
-| [09-restart-rebuild](./09-restart-rebuild.md)                                                                        | Local restart & rebuild decision table                                           | —                           |
-| [10-deploy-design](./10-deploy-design.md)                                                                            | Deploy design (rx/) only: rsync + restart, no build                              | `deploy-design.yml`         |
+| [01-core](./01-core.md)                                                                                              | Deploy core app services                                                         | `unoverse deploy init` / `deploy` |
+| [02-database](./02-database.md)                                                                                      | Database modes, tables, relocation                                               | `unoverse deploy db`        |
+| [04-harden](./04-harden.md)                                                                                          | Security hardening                                                               | `unoverse deploy harden`    |
+| [06-test](./06-test.md)                                                                                              | Verify connectivity and health                                                   | `unoverse deploy test`      |
+| [09-restart-rebuild](./09-restart-rebuild.md)                                                                        | Restart & rebuild decision table                                                 | —                           |
 | [Architecture Diagrams](https://unoverse-platform.github.io/starter/docs/runbooks/architecture-diagrams/index.html) | Interactive system architecture diagrams ([local](./architecture-diagrams/index.html)) | —                           |
 
+**Logs** need no runbook: Dozzle runs by default at `http://<VM_IP>:8080` (admin-IP-only via the cloud firewall), streams straight from the Docker socket, and stores nothing. Log growth is capped by `json-file` rotation (10 MB × 3 per service) in `docker-compose.yml`. Enterprise ships logs to its own SIEM by pointing the Docker logging driver there instead.
+
 ---
-
-## VM Deployment Recipes
-
-### POC (Single VM - All Services)
-
-**Simple path (recommended):**
-
-```bash
-# 1. Render .env.production from your Terraform ground (never write it by hand)
-./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
-cd infra/digitalocean && terraform apply     # or infra/aws
-terraform output -raw env_production > ../../.env.production
-cd ../..
-
-# 2. Deploy everything
-unoverse deploy
-
-# 3. Database tables
-unoverse deploy db
-
-# 4. AI model
-unoverse deploy umap
-
-# 5. TLS
-unoverse deploy caddy
-
-# 6. Security hardening
-unoverse deploy harden
-
-# 7. Verify
-unoverse deploy test
-```
-
-**Manual path (direct Ansible):**
-
-```bash
-cd ansible
-
-# 1. Core services (Docker, Node.js, DOCR images)
-ansible-playbook -i inventory/production.yml playbooks/install.yml
-
-# 2. Database tables
-ansible-playbook -i inventory/production.yml playbooks/db-setup.yml
-
-# 3. Customer packages (rsyncs from local, builds on server)
-ansible-playbook -i inventory/production.yml playbooks/deploy-packages.yml
-
-# 4. AI model
-ansible-playbook -i inventory/production.yml playbooks/install-umap.yml
-
-# 5. Security hardening
-ansible-playbook -i inventory/production.yml playbooks/harden.yml
-
-# 6. TLS (optional - if no external LB)
-ansible-playbook -i inventory/production.yml playbooks/install-caddy.yml \
-  -e "domain=yourdomain.com" -e "include_umap=true"
-
-# 7. Verify
-ansible-playbook -i inventory/production.yml playbooks/test-connectivity.yml
-```
-
-### Enterprise App VM
-
-```bash
-ansible-playbook -i inventory/production.yml playbooks/install.yml -l app_vms
-ansible-playbook -i inventory/production.yml playbooks/db-setup.yml -l app_vms
-ansible-playbook -i inventory/production.yml playbooks/deploy-packages.yml -l app_vms
-ansible-playbook -i inventory/production.yml playbooks/harden.yml -l app_vms
-ansible-playbook -i inventory/production.yml playbooks/test-connectivity.yml -l app_vms
-```
-
-### Enterprise ML VM
-
-```bash
-ansible-playbook -i inventory/production.yml playbooks/install-umap.yml -l ml_vms
-ansible-playbook -i inventory/production.yml playbooks/harden.yml -l ml_vms
-```
 
 ## Environment Files — Two `.env` Files, Two Purposes
 
@@ -154,19 +107,11 @@ Both files live at the project root:
 │  .env.production  (project root)                                 │
 │                                                                  │
 │  Purpose: PRODUCTION DEPLOYMENT                                  │
+│  Written by: Terraform (terraform output -raw env_production)    │
 │  Read by: unoverse deploy / Ansible                               │
 │  Deployed to: /opt/gravity/.env on the server                    │
-│  Contains: VM target, real Redis, real DB, TLS enabled, DOMAIN   │
-│                                                                  │
-│  Example values:                                                 │
-│    DEPLOY_HOST=134.209.106.203                                   │
-│    DEPLOY_USER=root                                              │
-│    REDIS_HOST=your-redis.db.ondigitalocean.com                   │
-│    REDIS_PORT=25061                                              │
-│    REDIS_PASSWORD=your-password                                  │
-│    REDIS_TLS=true                                                │
-│    DATABASE_URL=postgresql://user:pass@db-host:25060/defaultdb   │
-│    DOMAIN=yourdomain.com                                         │
+│  Contains: VM target, real Redis, real DB, TLS enabled, DOMAIN,  │
+│            and the master CREDENTIAL_ENCRYPTION_KEY              │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -174,7 +119,7 @@ Both files live at the project root:
 
 - Both files are **gitignored** — they contain secrets and are never committed
 - `.env.example` is the template for local dev
-- `.env.production` has no template: Terraform renders it complete (`terraform output -raw env_production`), and it carries the master `CREDENTIAL_ENCRYPTION_KEY` — back it up with the database
+- `.env.production` has no template: Terraform renders it complete, and it carries the master `CREDENTIAL_ENCRYPTION_KEY` — back it up with the database, never hand-edit it (change terraform.tfvars and re-render)
 - On the server, `unoverse deploy` places `.env.production` at `/opt/gravity/.env` where `docker compose` reads it
 - `DEPLOY_HOST` and `DEPLOY_USER` are deployment-only — they tell Ansible where to SSH
 
@@ -190,7 +135,6 @@ When `DOMAIN` is unset (local dev), set `API_URL=http://localhost:4105` in `.env
 
 ## Prerequisites
 
-- SSH access to target VMs
+- Terraform 1.5+ and your cloud CLI (doctl or aws) on your machine
 - Ansible installed locally (`pip install ansible`)
-- DOCR token for pulling images
-- PostgreSQL instance provisioned (customer-managed)
+- DOCR token for pulling images (from your Unoverse admin)

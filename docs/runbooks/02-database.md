@@ -7,70 +7,25 @@ Create database tables and schema.
 
 ## Overview
 
-Gravity Platform requires a PostgreSQL database. The database is **always customer-managed** — it is never bundled with the platform.
+Postgres is provisioned by your Terraform ground, in one of three modes chosen in `terraform.tfvars`:
 
-The `DATABASE_URL` is configured in `.env.production` and deployed to the server with `unoverse deploy`. This runbook creates the required database tables.
+| Mode | tfvars | What Terraform does |
+| --- | --- | --- |
+| Fresh (default) | nothing set | Provisions a managed cluster, creates the universe's db, user, and connection pool |
+| Adopt existing | `existing_pg_cluster_name` | Adds the universe's own db/user/pool to YOUR cluster, touching nothing else |
+| Bring your own | `byo_postgres_url` | Uses your URL verbatim; you own pooling and extensions |
 
-## Prerequisites
-
-- [ ] Core services deployed ([01-core.md](./01-core.md))
-- [ ] `DATABASE_URL` configured in `.env.production`
-- [ ] PostgreSQL instance accessible from VM (firewall allows database port — typically 25060 for DO Managed, 5432 for self-hosted)
-- [ ] **Required extensions enabled** (see Step 1 below)
-
-## Database Requirements
-
-| Requirement        | Value                          |
-| ------------------ | ------------------------------ |
-| PostgreSQL version | 14+                            |
-| Database name      | `gravity`                      |
-| SSL                | Required for managed databases |
-| Min connections    | 20                             |
+Either way the rendered `.env.production` arrives complete: `DATABASE_URL` (pooled, for the services) and `DATABASE_URL_DIRECT` (for migrations). You never write a connection string by hand.
 
 ## Steps
 
-### 1. Enable Required PostgreSQL Extensions
-
-**You must enable these extensions before running db-setup.** The playbook cannot install them — they must be enabled at the database provider level.
-
-| Extension            | Required By               | Purpose                      |
-| -------------------- | ------------------------- | ---------------------------- |
-| `vector`             | GravityMemory, Dictionary | Vector embeddings (pgvector) |
-| `pg_stat_statements` | Executions                | Query performance monitoring |
-
-#### DigitalOcean Managed Database
-
-1. Go to **DigitalOcean Dashboard** → **Databases** → select your database
-2. Click **Settings** tab
-3. Scroll to **Allowed Extensions** (or **Extensions**)
-4. Search and enable: `vector`, `pg_stat_statements`
-5. Wait for the database to apply changes (~1 minute)
-
-#### AWS RDS
-
-Connect to your database and run:
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-```
-
-#### Self-hosted
+### 1. Run Database Setup
 
 ```bash
-sudo apt install postgresql-14-pgvector
-sudo -u postgres psql -d gravity -c 'CREATE EXTENSION IF NOT EXISTS vector;'
-sudo -u postgres psql -d gravity -c 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;'
+unoverse deploy db
 ```
 
-### 2. Run Database Setup
-
-```bash
-cd ansible
-ansible-playbook -i inventory/production.yml playbooks/db-setup.yml
-```
-
-This creates all required tables:
+This applies the baseline migration (idempotent, safe to re-run): it enables the `vector` and `pg_stat_statements` extensions and creates all required tables:
 
 - **workflows** — workflow definitions
 - **executions** — workflow execution history and node traces
@@ -79,61 +34,40 @@ This creates all required tables:
 - **gravity_memory** — vector memory store
 - **dictionary** — dictionary with UMAP coordinates
 
-### 3. Verify
+### 2. Verify
 
 ```bash
-# Check service health
-curl https://your-domain.com/api/health
-
-# Or via Ansible
-ansible-playbook -i inventory/production.yml playbooks/health-check.yml
-
-# Full connectivity test (includes DB, Redis, API endpoints)
-ansible-playbook -i inventory/production.yml playbooks/test-connectivity.yml
+unoverse deploy test    # includes DB, Redis, and API endpoint checks
 ```
 
-## Expected Output
+## BYO Postgres Only
 
-```
-DATABASE MIGRATION
-============================================
-Host: gravity-prod (<YOUR_VM_IP>)
-Extensions: OK
-Migration: OK
+With `byo_postgres_url`, the ground manages nothing about your database, so the requirements are yours to meet:
 
-Tables created:
-  - Workflows: OK
-  - Executions: OK
-  - Credentials: OK
-  - TokenUsage: OK
-  - GravityMemory: OK
-  - Dictionary: OK
-```
+| Requirement | Value |
+| --- | --- |
+| PostgreSQL version | 14+ |
+| Extensions | `vector`, `pg_stat_statements` must be allowed (managed providers gate them; self-hosted: `apt install postgresql-14-pgvector`) |
+| SSL | `?sslmode=require` on the URL |
+| Connections | Budget for ~20; front with PgBouncer (transaction mode) if the ceiling is tight |
+| Network | The VM's IP allowed at your database's firewall |
 
 ## Troubleshooting
 
 | Issue              | Cause                      | Fix                                        |
 | ------------------ | -------------------------- | ------------------------------------------ |
-| Connection refused | Firewall blocking          | Add VM IP to database trusted sources      |
-| SSL required       | Missing `?sslmode=require` | Add SSL mode to connection string          |
-| Auth failed        | Wrong credentials          | Verify username/password in DO/AWS console |
-| Database not found | DB not created             | Create `gravity` database manually         |
+| Connection refused | Firewall blocking          | Managed modes: `terraform apply` maintains trusted sources. BYO: add the VM IP yourself |
+| SSL required       | Missing `?sslmode=require` | BYO only — add SSL mode to your URL        |
+| Auth failed        | Wrong credentials          | Re-render: `terraform output -raw env_production > ../../.env.production` |
+| Extension denied   | Provider gates extensions  | BYO only — allow `vector` in your provider's console |
 
-## Creating Database Manually
+## Relocating Data Between Databases
 
-If the database doesn't exist:
-
-```sql
-CREATE DATABASE gravity;
-```
-
-## Database Migration
-
-To migrate data between database providers (e.g., Timescale → DigitalOcean):
+To move data between database providers (e.g., Timescale → DigitalOcean):
 
 ```bash
 cd ansible
-ansible-playbook -i inventory/production.yml playbooks/migrate-db.yml \
+ansible-playbook playbooks/relocate-db.yml \
   -e 'source_db=postgres://user:pass@source-host:port/db?sslmode=require' \
   -e 'target_db=postgres://user:pass@target-host:port/db?sslmode=require'
 ```
@@ -149,13 +83,9 @@ This will:
 
 **Note:** Timescale-specific errors (continuous_agg, bgw_job) during restore are expected and harmless — all application tables migrate correctly.
 
-After migration, verify with:
-
-```bash
-ansible-playbook -i inventory/production.yml playbooks/test-connectivity.yml
-```
+After relocating, verify with `unoverse deploy test`.
 
 ## Next Steps
 
-- [03-ai-model.md](./03-ai-model.md) - Deploy UMAP AI service
 - [04-harden.md](./04-harden.md) - Security hardening
+- [06-test.md](./06-test.md) - Verify connectivity

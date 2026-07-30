@@ -17,18 +17,13 @@ Deploy the core Gravity Platform services to a VM.
 
 ## VM Requirements
 
-| Tier                  | Cores | RAM   | Storage    | Notes                      |
-| --------------------- | ----- | ----- | ---------- | -------------------------- |
-| **POC**               | 4     | 8 GB  | 100 GB SSD | All services on one VM     |
-| **Enterprise App VM** | 8     | 32 GB | 200 GB SSD | 2 VMs for Active/Active HA |
+Sized by `size` in terraform.tfvars (`small` | `medium` | `large`). All sizes are single-VM: the size scales the box and the stores, never the topology.
 
 ## Prerequisites
 
-- [ ] VM provisioned (Ubuntu 22.04 LTS recommended)
-- [ ] SSH access configured (key-based)
-- [ ] PostgreSQL database provisioned (see [02-database.md](./02-database.md))
-- [ ] Redis provisioned (managed Redis recommended for enterprise)
-- [ ] DOCR token for pulling Gravity Docker images (from your Gravity admin)
+- [ ] Terraform ground applied (VM, load balancer + TLS, firewall, Postgres, Redis — see the [overview](./overview.md))
+- [ ] `.env.production` rendered (`terraform output -raw env_production > .env.production`)
+- [ ] DOCR token in your terraform.tfvars (from your Unoverse admin)
 
 ## Steps
 
@@ -70,44 +65,21 @@ DOMAIN=yourdomain.com
 ### 2. Run Core Platform Installation
 
 ```bash
+unoverse deploy init
+```
+
+One command, four phases: installs Docker, pulls DOCR images, and starts every service (unoverse, memory, **Canvas**, umap, Dozzle); sets up the database; applies security hardening; and verifies connectivity. The CLI generates a temporary Ansible inventory from `.env.production` on every run, so there is no inventory file to maintain.
+
+Every deploy after the first is just:
+
+```bash
 unoverse deploy
 ```
 
-Or manually via Ansible:
-
-```bash
-cd ansible
-ansible-playbook -i inventory/production.yml playbooks/install.yml
-```
-
-This installs Docker, Node.js, pulls DOCR images, and starts **core platform** (unoverse, memory, **Canvas**).
-
-### 3. Deploy Customer Packages
-
-Rsyncs packages from your local machine to the server, builds them, and restarts unoverse:
-
-```bash
-unoverse deploy packages
-```
-
-Or manually:
-
-```bash
-cd ansible
-ansible-playbook -i inventory/production.yml playbooks/deploy-packages.yml
-```
-
-### 4. Verify
+### 3. Verify (re-run any time)
 
 ```bash
 unoverse deploy test
-```
-
-Or manually:
-
-```bash
-cd ansible
-ansible-playbook -i inventory/production.yml playbooks/test-connectivity.yml
 ```
 
 ## Expected Output
@@ -130,7 +102,7 @@ Internal Only (SSH tunnel required):
   - Memory:  http://localhost:4104/dashboard
 ```
 
-> **Memory dashboard is internal-only.** Access via SSH tunnel: `ssh -L 4104:localhost:4104 root@<VM_IP>` then open `http://localhost:4104/dashboard`. It is NOT exposed via Caddy.
+> **Memory dashboard is internal-only.** Access via SSH tunnel: `ssh -L 4104:localhost:4104 root@<VM_IP>` then open `http://localhost:4104/dashboard`. It is never exposed through the load balancer.
 
 ## Troubleshooting
 
@@ -144,4 +116,4 @@ Internal Only (SSH tunnel required):
 ## Next Steps
 
 - [02-database.md](./02-database.md) - Configure database connection
-- Run `deploy-packages.yml` to deploy custom nodes and design system
+- Your own nodes, design, and prompts arrive via `unoverse update`, the Marketplace, or Studio publish (never via deploy)
