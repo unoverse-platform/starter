@@ -49,7 +49,7 @@ Everything an Agent draws on lives here: content, images, skills, tools, and app
 
 The customer states what they want, and the brand assembles the answer. A client sends the message over MCP or WebSocket. The engine runs your workflow: nodes call models, query **Spatial**, and execute your logic, streaming progress as they go. Components render the results in your interface, on whatever platform the conversation is happening.
 
-The [architecture overview](./architecture.md) covers the runtime, the security model, and how the same stack scales from a laptop to a distributed deployment.
+[How it fits together](./onboarding/00-how-it-fits-together.md) is the quick map, and the [Architecture](./architecture/overview.md) section carries the full detail: deployment, networking, data and the security posture.
 
 ---
 
@@ -61,4 +61,4 @@ The [architecture overview](./architecture.md) covers the runtime, the security 
 | [Design](./design/overview.md) | Components, templates, tokens, and the state model |
 | [Nodes](./nodes/overview.md) | Custom node development: types, patterns, credentials, testing |
 | [Runbooks](./runbooks/overview.md) | Operations: deployment, database, TLS, hardening |
-| [Architecture](./architecture.md) | The runtime, code separation, deployment tiers, security |
+| [Architecture](./architecture/overview.md) | Deployment options, provisioning, networking, data, security |

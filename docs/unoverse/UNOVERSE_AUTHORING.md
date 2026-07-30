@@ -175,7 +175,7 @@ The manifest carries only discovery meta:
   ("Find the right card for me — which card should I get…") — never selector-shaped
   dev framing ("Pick when the user asks to…", guard-rejected). When present it
   replaces `description` in the embedded text. Full contract:
-  `docs-starter/nodes/14-node-discoverability.md` (the templates/skills section
+  `packages/docs/nodes/14-node-discoverability.md` (the templates/skills section
   applies to components verbatim).
 - The manifest is the **single home** for this meta — the envelope must not
   duplicate `description`/`whenToUse` (guard-enforced). The server merges the
@@ -546,7 +546,7 @@ conversation go, using two template-only primitives.
 Templates are added to spatial and discovered by intent (`findIntent`), exactly like MCP
 tools and nodes. Discovery embeds `` `${title}. ${whenToUse || description} [${category}]` ``
 — the **same contract as the node catalog**, so the same writing rules apply
-(`docs-starter/nodes/14-node-discoverability.md`):
+(`packages/docs/nodes/14-node-discoverability.md`):
 
 - **`whenToUse` is the selection text** — when present it *replaces* `description` in the
   embedding. Write it **outcome-first in the user's vocabulary** ("Transfer or send money —

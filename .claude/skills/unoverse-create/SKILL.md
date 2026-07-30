@@ -83,5 +83,5 @@ Verify with `./unoverse check` (services, node catalog, bundles). Preview compon
 Studio: run `unoverse-studio` from the project folder, which opens on :4108.
 
 > In the platform monorepo (not the starter), the node docs live at
-> `docs-starter/nodes/`, the design journey at `docs-starter/design/`, and the dev loop
+> `packages/docs/nodes/`, the design journey at `packages/docs/design/`, and the dev loop
 > is just `npm run dev` — component nodes synthesize from rx/ definitions at boot.

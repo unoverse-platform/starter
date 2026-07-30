@@ -1,0 +1,16 @@
+{
+  "name": "@unoverse-platform/docs",
+  "version": "2.0.0",
+  "private": true,
+  "description": "The unoverse developer documentation. Published as its own repository; the website deploys from it on push.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unoverse-platform/docs.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "mint dev --port 3400",
+    "diagrams": "python3 scripts/diagrams/aws.py && python3 scripts/diagrams/digitalocean.py && python3 scripts/diagrams/vm.py",
+    "check": "mint broken-links"
+  }
+}

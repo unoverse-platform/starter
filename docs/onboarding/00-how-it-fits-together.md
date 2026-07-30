@@ -12,7 +12,7 @@ MCP app, and every MCP app is powered by a workflow and the nodes behind it. The
 implementation is native MCP rather than an adapter, so any MCP client works: ChatGPT,
 Claude, or your own apps through the SDKs.
 
-![The unoverse runtime](./images/architecture-runtime.png)
+![The unoverse runtime](../images/architecture-runtime.png)
 
 - **unoverse** is the engine. Your Agents run here, your workflows execute here, and the MCP
   surface is served from here. It is the only service the internet reaches, and every
@@ -32,7 +32,7 @@ All state lives in Postgres and Redis.
 The platform runs on the VM as Docker images, pulled from the registry by tag. Everything
 you author lives in your universe's database and arrives by publishing.
 
-![Your code and the platform](./images/architecture-code-separation.png)
+![Your code and the platform](../images/architecture-code-separation.png)
 
 You never fork the platform, and the platform never writes to your folders. Upgrading is an
 image pull, and it cannot disturb your content.
@@ -50,8 +50,8 @@ account and hands the deploy a complete environment file.
 
 | | |
 | --- | --- |
-| [Architecture](./architecture/overview.md) | What runs, and what it talks to |
-| [Deployment Options](./architecture/deployment-options.md) | The three sizes, and what is deliberately not offered |
-| [Provisioning](./architecture/terraform.md) | Five inputs, one command |
-| [Security Posture](./architecture/security.md) | Written for the review |
-| [Runbooks](./runbooks/overview.md) | Deploying and operating a universe |
+| [Architecture](../architecture/overview.md) | What runs, and what it talks to |
+| [Deployment Options](../architecture/deployment-options.md) | The three sizes, and what is deliberately not offered |
+| [Provisioning](../architecture/terraform.md) | Five inputs, one command |
+| [Security Posture](../architecture/security.md) | Written for the review |
+| [Runbooks](../runbooks/overview.md) | Deploying and operating a universe |

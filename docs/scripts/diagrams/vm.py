@@ -1,4 +1,4 @@
-"""Regenerates images/architecture-vm.svg. Run from docs-starter."""
+"""Regenerates images/architecture-vm.svg. Run from packages/docs."""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from arch import *

@@ -1,4 +1,4 @@
-"""Regenerates images/architecture-aws.svg. Run from docs-starter: python3 scripts/diagrams/aws.py"""
+"""Regenerates images/architecture-aws.svg. Run from packages/docs: python3 scripts/diagrams/aws.py"""
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from arch import *

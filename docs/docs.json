@@ -56,7 +56,7 @@
             "group": "Start Here",
             "pages": [
               "index",
-              "architecture",
+              "onboarding/00-how-it-fits-together",
               "onboarding/00a-studio",
               "onboarding/00b-platform",
               "onboarding/00c-cli"
