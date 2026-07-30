@@ -65,12 +65,20 @@ You'll confirm it's working the first time you author a node ([Create Your First
 <Steps>
 <Step title="Create your repository">
 
-On [`unoverse-platform/starter`](https://github.com/unoverse-platform/starter), click **Use this template → Create a new repository**. This gives you a clean, independent copy. Then clone it:
+One line — the CLI scaffolds your universe:
 
-```bash Clone your copy
-git clone https://github.com/YOUR_USERNAME/starter.git ~/unoverse
-cd ~/unoverse
+```bash Create your universe
+npm create unoverse@latest
 ```
+
+Choose **"A universe"**. The wizard asks for your **registry access token** (from your Unoverse admin) and validates it against the registry before anything downloads — the platform is licensed through that token, so there is nothing to run without it.
+
+Most people don't need this page at all: authoring happens in a **Studio project** (the wizard's default — see [Studio](./00a-studio.md)). The universe kit is for operators running the full platform.
+
+<details><summary>Prefer GitHub?</summary>
+
+The kit is also a template repo: on [`unoverse-platform/starter`](https://github.com/unoverse-platform/starter), **Use this template → Create a new repository**, then clone your copy. You'll enter the same registry token at `./unoverse init`.
+</details>
 
 <Tip>
 Clone before opening the folder in your editor. Opening it first can create a `.claude/` directory that blocks the clone.

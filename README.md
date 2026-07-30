@@ -15,16 +15,23 @@ universe** — authoring (components, templates, nodes, skills) happens in
 
 ## Get your copy
 
-This repo is a **template**: click **Use this template → Create a new
-repository** on GitHub, then clone YOUR copy:
+One line — the CLI asks what you're building and scaffolds it:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/starter.git ~/unoverse
-cd ~/unoverse
+npm create unoverse@latest
 ```
 
-No GitHub credentials are needed beyond your own repo — the only credential
-the platform needs is a read-only registry token from your Unoverse admin.
+**Most people want a Studio project** (authoring components, nodes, and agent
+skills) — the wizard's default, no credentials needed. This universe kit is the
+**operator tier**: the wizard asks for your registry access token (from your
+Unoverse admin) and validates it before downloading — the platform's images
+only pull with it, so there is nothing to run without one.
+
+<details><summary>Prefer GitHub?</summary>
+
+This repo is also a template: **Use this template → Create a new repository**,
+then clone your copy. You'll enter the same registry token at `./unoverse init`.
+</details>
 
 ## Prerequisites
 

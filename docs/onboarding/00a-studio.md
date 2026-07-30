@@ -23,7 +23,13 @@ project up for you.
 <Steps>
 <Step title="Install it">
 
-```bash Install Studio
+```bash Launch Studio
+npm create unoverse@latest    # choose "A Studio project" (the default)
+```
+
+Or install it directly — same thing:
+
+```bash
 npm install -g @unoverse-platform/studio
 ```
 

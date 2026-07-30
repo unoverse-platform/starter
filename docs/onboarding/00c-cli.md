@@ -25,6 +25,7 @@ The complete path from a fresh clone to a running universe:
 When you're ready for a server, three more:
 
 ```bash
+# (got here without a universe? npm create unoverse@latest scaffolds one — token required)
 ./unoverse ground        # prefills terraform.tfvars from your cloud CLI (doctl or aws)
 # fill the FILL_ME lines, then in infra/<ground>: terraform init && terraform apply
 ./unoverse deploy init   # first time: install + db + verify
