@@ -17,7 +17,7 @@ The connection between components and templates is **one rule**:
 ## 📁 The anatomy — manifest-only
 
 ```
-rx/orgs/<org>/templates/acmechatlayout/
+rx/<project>/templates/acmechatlayout/
 ├── manifest.json        # THE ENVELOPE — everything about the app (below)
 ├── layouts/             # the ARRANGEMENTS — one per component view, + the default
 │   ├── standard.json    #   the default (manifest.layout): the core chat alone
@@ -180,7 +180,7 @@ one plain line about what it is? Does the category name the domain, not the buil
 - [ ] `binding.workflow` + `binding.trigger` real (the app owns them); `stateOrder` lists states + layouts in picker order; `preview` seeds each layout's mock
 - [ ] Flow slot generic (`select: {}`); surfaces select by `where`, never `type`
 - [ ] `whenToUse` utterance-shaped; `description` ≤120 chars
-- [ ] `./unoverse lint` 0 errors, then preview in **Studio** — layout pills × local states, then live ([07](./07-studio.md))
+- [ ] Preview in **Studio** — layout pills × local states, then live ([07](./07-studio.md)); publish passes lint with 0 errors
 
 ---
 

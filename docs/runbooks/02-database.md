@@ -15,7 +15,7 @@ Postgres is provisioned by your Terraform ground, in one of three modes chosen i
 | Adopt existing | `existing_pg_cluster_name` | Adds the universe's own db/user/pool to YOUR cluster, touching nothing else |
 | Bring your own | `byo_postgres_url` | Uses your URL verbatim; you own pooling and extensions |
 
-Either way the rendered `.env.production` arrives complete: `DATABASE_URL` (pooled, for the services) and `DATABASE_URL_DIRECT` (for migrations). You never write a connection string by hand.
+Either way the rendered production configuration arrives complete: `DATABASE_URL` (pooled, for the services) and `DATABASE_URL_DIRECT` (for migrations). You never write a connection string by hand.
 
 ## Steps
 
@@ -25,14 +25,16 @@ Either way the rendered `.env.production` arrives complete: `DATABASE_URL` (pool
 unoverse deploy db
 ```
 
-This applies the baseline migration (idempotent, safe to re-run): it enables the `vector` and `pg_stat_statements` extensions and creates all required tables:
+This applies the baseline migration (idempotent, safe to re-run): it enables the `vector` and `pg_stat_statements` extensions and creates the complete schema — 26 tables covering:
 
-- **workflows** — workflow definitions
-- **executions** — workflow execution history and node traces
-- **credentials** — encrypted credential storage
-- **token_usage** — LLM token tracking
-- **gravity_memory** — vector memory store
-- **dictionary** — dictionary with UMAP coordinates
+- **Workflows** — `workflows`, `workflow_executions`, `workflow_snapshots`, `node_traces`
+- **Nodes and marketplace** — `node_definitions`, `service_definitions`, `installed_plugins`, `items`, `publish_keys`
+- **Credentials and usage** — `credentials` (encrypted at rest with the master key), `token_usage`, `analytics_events`
+- **Memory and profiles** — `memories`, `user_profiles`, `goals`, `raw_messages`, `knowledge_docs`
+- **Spatial and content** — the `dictionary_*` family (chunks, ingestion, need states), `content_sources`
+- **Evaluation and security** — `eval_runs`, `security_attack_corpus`, `security_run_results`
+
+The migration file itself is the authoritative list: `engine/migrations/001_baseline.sql`.
 
 ### 2. Verify
 
@@ -58,7 +60,7 @@ With `byo_postgres_url`, the ground manages nothing about your database, so the 
 | ------------------ | -------------------------- | ------------------------------------------ |
 | Connection refused | Firewall blocking          | Managed modes: `terraform apply` maintains trusted sources. BYO: add the VM IP yourself |
 | SSL required       | Missing `?sslmode=require` | BYO only — add SSL mode to your URL        |
-| Auth failed        | Wrong credentials          | Re-render: `terraform output -raw env_production > ../../.env.production` |
+| Auth failed        | Wrong credentials          | `terraform apply`, delete `.env.production`, redeploy (deploy re-renders it) |
 | Extension denied   | Provider gates extensions  | BYO only — allow `vector` in your provider's console |
 
 ## Relocating Data Between Databases

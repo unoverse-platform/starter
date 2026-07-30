@@ -28,7 +28,7 @@ A **flat component** (a simple card, a chart) is the reduced form: just `<name>.
 | Tier | Home | Scope | URI |
 |---|---|---|---|
 | **Design system** | `rx/components/<name>/` | generic, org-neutral — any org can use it (cards, charts, markdown, media) | `unoverse://components/<name>` |
-| **Org** | `rx/orgs/<org>/components/<name>/` | **org-private** — that client's own components/microapps, usable and discoverable only inside that org's apps and conversations | `unoverse://components/<org>/<name>` |
+| **Org** | `rx/<project>/components/<name>/` | **org-private** — that client's own components/microapps, usable and discoverable only inside that org's apps and conversations | `unoverse://components/<org>/<name>` |
 
 Names are **unique across the design system and every org** — a collision is a lint error (no shadowing). Both address forms are first-class — the bare URI is the canonical address for a design-system component, the org URI for an org component; uniqueness means a bare ref also resolves an org component unambiguously. Direction rule: org things may reference design-system things; **design-system things never reference org things** (lint-enforced, including template preview lists).
 
@@ -195,7 +195,7 @@ Inside a step, an option list is **hardcoded** `items` on an `Each`; picking an 
 - [ ] Root = `Switch on defaultState` → `layouts/<state>` (filename = state name); `default` case → inline
 - [ ] Three homes respected: content hardcoded · `state` block scalar view-state only · `props` all `input: true`
 - [ ] `stateOrder` names exactly the `states/` files
-- [ ] `./unoverse lint` 0 errors — every rule above is enforced
+- [ ] Publish from Studio passes lint with 0 errors — every rule above is enforced
 
 ---
 

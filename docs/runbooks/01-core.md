@@ -26,38 +26,15 @@ Sized by `size` in terraform.tfvars (`small` | `medium` | `large`). All sizes ar
 
 ## Steps
 
-### 1. Configure Production Environment
+### 1. Provision
 
-There is nothing to write. Terraform renders `.env.production`, complete, from your `terraform.tfvars`, and `unoverse deploy` renders it from the applied ground automatically if the file is missing:
+Your applied ground IS the configuration — there is nothing to write:
 
 ```bash
 ./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
 cd infra/digitalocean && terraform apply     # or infra/aws
 cd ../..
 ```
-
-The rendered file contains:
-
-```bash
-# Deploy target
-DEPLOY_HOST=<YOUR_VM_IP>
-DEPLOY_USER=root              # Azure: azureuser, AWS: ubuntu, GCP: debian
-
-# DOCR - DigitalOcean Container Registry
-DOCR_TOKEN=dop_v1_your_token_here
-
-# Database and Redis
-DATABASE_URL=postgresql://user:pass@host:5432/gravity
-REDIS_HOST=your-redis-host
-REDIS_PORT=25061              # DO Managed Redis uses 25061; local Redis uses 6379
-REDIS_PASSWORD=your-redis-password
-REDIS_TLS=true
-
-# Domain (for HTTPS)
-DOMAIN=yourdomain.com
-```
-
-> **Note:** `.env.production` is gitignored — it will not be overwritten when you run `unoverse update`. Only the `.example` file is tracked in git.
 
 > **Do not set `ansible_become_password` or `ansible_become_flags`** for cloud VMs. Their default users already have passwordless sudo configured by the cloud provider.
 
@@ -67,7 +44,7 @@ DOMAIN=yourdomain.com
 unoverse deploy init
 ```
 
-One command, four phases: installs Docker, pulls DOCR images, and starts every service (unoverse, memory, **Canvas**, umap, Dozzle); sets up the database; applies security hardening; and verifies connectivity. The CLI generates a temporary Ansible inventory from `.env.production` on every run, so there is no inventory file to maintain.
+One command, three phases: installs Docker, pulls DOCR images, and starts every service (unoverse, memory, **Canvas**, umap, Dozzle); sets up the database; and verifies connectivity. Hardening is a deliberate follow-up (`unoverse deploy harden`, [04-harden](./04-harden.md)) when a universe graduates from POC. The CLI reads the deploy target from your ground's rendered configuration and generates a temporary Ansible inventory on every run, so there is no inventory file to maintain.
 
 Every deploy after the first is just:
 
@@ -108,7 +85,7 @@ Internal Only (SSH tunnel required):
 | Issue               | Cause            | Fix                                            |
 | ------------------- | ---------------- | ---------------------------------------------- |
 | DOCR login failed   | Invalid token    | Get a new DOCR token from your Gravity admin   |
-| Service unhealthy   | Missing env vars | Check `.env.production` and `/opt/gravity/.env` on VM |
+| Service unhealthy   | Missing env vars | Check `/opt/gravity/.env` on the VM (placed there by deploy) |
 | Port already in use | Previous install | Run `docker compose down` first                |
 | `Timeout (12s) waiting for privilege escalation prompt` | `ansible_become_password` set to empty string in inventory | Remove `ansible_become_password` and `ansible_become_flags` from inventory entirely — cloud default users (azureuser, ubuntu) have passwordless sudo and need no password |
 

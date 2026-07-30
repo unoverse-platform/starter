@@ -14,7 +14,7 @@ title: "Troubleshooting"
 | Component renders blank / shows defaults while data clearly streams | a `bind` doesn't match the streamed field name, or the prop has no default so partial data blanks it | check the **stream log** for the actual `COMPONENT_DATA` keys; align `bind`; give every prop a default |
 | Definition edits do nothing | the change touched the component's **node** contract (props/meta), which needs a restart | `./unoverse build`, then re-check |
 | Unknown type / element missing entirely | primitive typo, or an invented primitive | schema should have flagged it — wire the schema ([01](./01-quick-start.md)); compose from the closed set ([02](./02-sdui-and-mcp-apps.md)) |
-| Style silently ignored | raw value (`12px`, `#fff`) or a token name that doesn't exist in the org's semantic set | tokens only; check `rx/orgs/<org>/styles/semantic/` for the real name; `./unoverse lint` catches raw values |
+| Style silently ignored | raw value (`12px`, `#fff`) or a token name that doesn't exist in the org's semantic set | tokens only; check `rx/<project>/styles/semantic/` for the real name; Studio's publish lint catches raw values |
 | Looks right in one theme, broken in another | definition references a **base** palette entry, or the theme is missing a token | reference **semantic** names only; run the theme-contract guard |
 
 ## State & interactivity

@@ -20,7 +20,8 @@ A `PriceCard` component: a card that shows a product name, a price, and a short 
 > Throughout these docs, `rx/` means the design folder in your repo: **`apps/unoverse/rx/`**. It is mounted straight into the running platform.
 
 ```bash
-./unoverse new org acme    # then author components in rx/orgs/acme/components/
+# In Studio: New Project → "acme" — scaffolds rx/acme/ (components/, templates/,
+# and a complete copy of the default token set in styles/)
 ```
 
 This creates `rx/components/pricecard/pricecard.json`, already passing the linter — you fill the TODOs and shape the tree. Edited for our card:
@@ -76,7 +77,7 @@ The JSON Schema at `rx/_schema/unoverse.schema.json` catches structural mistakes
 {
   "json.schemas": [
     {
-      "fileMatch": ["**/rx/components/**/*.json", "**/rx/orgs/**/components/**/*.json", "**/rx/orgs/**/templates/**/*.json", "**/rx/atoms/*.json"],
+      "fileMatch": ["**/rx/**/components/**/*.json", "**/rx/**/templates/**/*.json", "**/rx/**/atoms/*.json"],
       "url": "./apps/unoverse/rx/_schema/unoverse.schema.json"
     }
   ]
@@ -99,7 +100,8 @@ Two mechanisms, both already in your file:
 ## Step 4 — Lint, then deploy
 
 ```bash
-./unoverse lint         # authoring-time checks: schema rules, tokens, state rules — with doc-cited messages
+# Validation is Studio's job: the schema checks as you type; the full lint
+# (tokens, state rules, structure) runs at publish and blocks on any error
 ./unoverse build    # nodes synthesize from your definitions at boot
 ```
 
@@ -124,12 +126,12 @@ If it looks right in **Studio**, it looks right in production — **Studio** is 
 
 ## 📋 Quick-Start Checklist
 
-- [ ] Org created with `./unoverse new org <name>`; component authored in the org with a full envelope
+- [ ] Project created in Studio (New Project); component authored in it with a full envelope
 - [ ] `whenToUse` written outcome-first (the AI picks components by it)
 - [ ] Every `bind` has a matching prop **with a default**, workflow-fed props marked `input: true`
 - [ ] Zero raw values — token names only in every `style`
 - [ ] Prop defaults realistic (they ARE the mock); multi-layer components enumerate `states/`
-- [ ] `./unoverse lint` clean, then `./unoverse build`
+- [ ] Studio preview clean (mock, then live); publish passes lint with 0 errors
 - [ ] Previewed in **Studio** (mock states, then live)
 
 ---

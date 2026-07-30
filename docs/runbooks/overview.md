@@ -5,7 +5,7 @@ title: "Runbooks"
 
 Running a universe is three phases. Terraform owns the first, the `unoverse` CLI the second, and these runbooks cover the third:
 
-1. **Provision** — your ground (`infra/digitalocean` or `infra/aws`) creates the VM, load balancer, TLS certificate, firewall, Postgres, and Redis, and renders the complete `.env.production`. `./unoverse ground` prefills its input file from your cloud CLI.
+1. **Provision** — your ground (`infra/digitalocean` or `infra/aws`) creates the VM, load balancer, TLS certificate, firewall, Postgres, and Redis, and renders the complete production configuration. `./unoverse ground` prefills its input file from your cloud CLI.
 2. **Deploy** — `unoverse deploy init` the first time, `unoverse deploy` after that.
 3. **Operate** — database, hardening, health, restarts: the runbooks below.
 
@@ -18,8 +18,6 @@ Running a universe is three phases. Terraform owns the first, the `unoverse` CLI
 # fill the FILL_ME lines (domain, IdP, keys), then:
 cd infra/digitalocean && terraform init && terraform apply     # or infra/aws
 cd ../..
-# .env.production renders itself on first deploy (or by hand:
-# terraform output -raw env_production > ../../.env.production)
 ```
 
 Everything infrastructure is the ground's job and never a runbook's: TLS (DO managed Let's Encrypt / AWS ACM at the load balancer — no proxy software on the VM), DNS records, the cloud firewall (SSH and Dozzle admin-IP-only), Postgres (fresh, adopted, or BYO — see [02-database](./02-database.md)), and Redis (always provisioned, TLS).
@@ -53,16 +51,19 @@ Everything infrastructure is the ground's job and never a runbook's: TLS (DO man
 ## Deploy (the CLI)
 
 ```bash
-# First time — everything: install, database, hardening, verify
+# First time — install, database, verify
 unoverse deploy init
 
 # Every deploy after that
 unoverse deploy          # pull latest platform images + restart
+
+# When a universe graduates from POC — deliberate, never a default
+unoverse deploy harden   # SSH keys-only, fail2ban, auto security updates
 ```
 
-Each phase of `init` stays available on its own for re-runs: `deploy db`, `deploy harden`, `deploy test`.
+Each phase of `init` stays available on its own for re-runs: `deploy db`, `deploy test`.
 
-The CLI generates a temporary Ansible inventory from `.env.production` on every run (`DEPLOY_HOST`/`DEPLOY_USER`), so there is no inventory file to maintain.
+The CLI reads the deploy target from your ground's rendered configuration and generates a temporary Ansible inventory on every run, so there is no inventory file to maintain.
 
 Your own work (nodes, design, prompts) never rides a deploy: it arrives via `unoverse update` (git), the Marketplace (per item, database-driven), or Studio publish.
 

@@ -5,13 +5,7 @@ title: "Validate & Ship"
 
 **Three enforcement layers catch mistakes for you; one checklist covers what only you can judge.**
 
-The one command to remember:
-
-```bash
-./unoverse lint
-```
-
-It runs the schema rules, the token law, and the state/structure rules over every definition, with each message citing the doc that owns the rule. Errors fail; warnings flag judgment calls (e.g. an untyped global slot); hints suggest niceties (a missing states fixture). Run it before every restart/deploy.
+Validation lives in **Studio**, because Studio is the only thing that publishes: the lint rules below run automatically when you publish, and nothing with errors ships. Errors block; warnings flag judgment calls (e.g. an untyped global slot); hints suggest niceties (a missing states fixture). Each message cites the doc that owns the rule.
 
 ---
 
@@ -26,22 +20,22 @@ It runs the schema rules, the token law, and the state/structure rules over ever
 
 It validates two shapes: **envelope** files (with the `unoverse` field) and **bare node** partials (`layouts/`, `states/`, `components/`, atoms).
 
-One-off sweep of everything from the CLI (needs `ajv` once: `npm i -D ajv` at the repo root):
+One-off sweep of everything from the CLI, if you want it (needs `ajv` once: `npm i -D ajv` at the repo root; Studio runs the same schema as you type):
 
 ```bash
 # from the repo root — validate every definition against the schema
 node -e 'const A=require("ajv");const fs=require("fs"),p=require("path");
 const v=new A({allErrors:true,strict:false}).compile(JSON.parse(fs.readFileSync("apps/unoverse/rx/_schema/unoverse.schema.json")));
 const w=d=>fs.existsSync(d)?fs.readdirSync(d).flatMap(f=>{const q=p.join(d,f);return fs.statSync(q).isDirectory()?w(q):(f.endsWith(".json")&&f!=="manifest.json"&&!f.endsWith(".states.json")?[q]:[])}):[];
-let bad=0;for(const d of["apps/unoverse/rx/components","apps/unoverse/rx/atoms","apps/unoverse/rx/orgs"])for(const f of w(d))if(!v(JSON.parse(fs.readFileSync(f)))){bad++;console.log("✗",f,v.errors[0].instancePath,v.errors[0].message)}
+let bad=0;for(const d of["rx/marketplace/components","rx/atoms","rx"])for(const f of w(d))if(!v(JSON.parse(fs.readFileSync(f)))){bad++;console.log("✗",f,v.errors[0].instancePath,v.errors[0].message)}
 console.log(bad?bad+" invalid":"clean ✓")'
 ```
 
 ---
 
-## 🛡️ Layer 2 — `./unoverse lint` (authoring time)
+## 🛡️ Layer 2 — The lint rules (Studio, at publish)
 
-The same rules the platform's guard tests enforce in CI, runnable in seconds from your repo:
+The same rules the platform's guard tests enforce in CI, run by Studio before anything publishes:
 
 | Rule | Enforces | Level |
 |---|---|---|
@@ -60,7 +54,7 @@ The same rules the platform's guard tests enforce in CI, runnable in seconds fro
 | **global slots** | `from: "all"` with no `where` and no `type` — a reaction surface selects by state ([05](./05-templates.md)) | warn |
 | **states picker** | a definition with layers (a `Switch`) but no `states/` folder ([07](./07-studio.md)) | hint |
 
-The platform's own CI additionally runs the **theme-contract** and **discoverability-meta** guards, and the SDK build enforces the **closed set** at the renderer level — you can't drift past them even if you skip lint.
+The platform's own CI additionally runs the **theme-contract** and **discoverability-meta** guards, and the SDK build enforces the **closed set** at the renderer level — you can't drift past them even if a rule were missed at publish.
 
 ---
 
@@ -92,13 +86,11 @@ What no linter can decide — audit every artifact against this before calling i
 
 ## 🚢 Ship
 
-```bash
-./unoverse lint          # clean?
-./unoverse build    # component nodes re-synthesize from rx/ (no codegen)
-./unoverse check         # health check: services, endpoints, node catalog
-```
+Publishing happens in **Studio** and nowhere else — assets never deploy through the core platform:
 
-Then the final gate — **Studio, live mode** ([07](./07-studio.md)): stream real data through it, exercise every state fixture, watch the stream log stay clean. That preview runs the production path, so it is the release test.
+1. **Preview, mock** — prop defaults + the state picker; exercise every state fixture.
+2. **Preview, live** ([07](./07-studio.md)) — stream real data through it, watch the stream log stay clean. The preview runs the production path, so it is the release test.
+3. **Publish** — Studio lints (Layer 2 blocks on any error) and publishes to your universe over the API, authenticated by a publish key (`unoverse key`). The item is live in every canvas immediately: no build, no restart, no deploy.
 
 ---
 

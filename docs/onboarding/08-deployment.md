@@ -7,7 +7,7 @@ Deploy Unoverse to production VMs.
 
 ## Overview
 
-Production deployment uses `unoverse deploy` which reads your `.env.production` file and runs Ansible playbooks to install and configure services on your VM.
+Production deployment uses `unoverse deploy`, which reads your ground's rendered configuration and runs Ansible playbooks to install and configure services on your VM.
 
 ## Prerequisites
 
@@ -24,8 +24,7 @@ Production deployment uses `unoverse deploy` which reads your `.env.production` 
 cd infra/digitalocean && terraform apply     # or infra/aws
 cd ../..
 
-# 2. First-time setup, end to end: install + database + hardening + verify
-# (renders .env.production from the applied ground automatically)
+# 2. First-time setup: install + database + verify
 unoverse deploy init
 ```
 
@@ -35,9 +34,9 @@ After that, every deploy is one command:
 unoverse deploy
 ```
 
-## What `.env.production` Contains
+## What the Rendered Configuration Contains
 
-Same format as `.env` (local dev), plus:
+You never write it (Terraform renders it; deploy places it on the server), but for the curious it is the same format as `.env`, plus:
 
 ```bash
 # Deploy target (where to SSH)
@@ -82,7 +81,7 @@ The domain is a Terraform input, not a commitment. Deploy today under any domain
 The swap:
 
 1. Change `domain` in `terraform.tfvars`, then `terraform apply`. A new certificate and DNS records are created; the VM, database, Redis, and everything in them are untouched.
-2. Re-render and redeploy: `terraform output -raw env_production > ../../.env.production`, then `unoverse deploy`.
+2. Redeploy: delete `.env.production` at the repo root and run `unoverse deploy` — it re-renders from the applied ground.
 3. Update your IdP: add the new origins and callback URLs in Auth0 or Cognito. This is the only manual step, and the one people forget.
 
 Swap before handing URLs to real users: browser sessions and shared links reference the old hostname, and that is the entire cost of the move.

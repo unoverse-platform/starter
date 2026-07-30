@@ -147,12 +147,12 @@ Your project has two environment files, both at the root and both gitignored:
 | File | Purpose | Used by |
 | --- | --- | --- |
 | `.env` | Local development | `docker compose` on your machine |
-| `.env.production` | Production deployment | `unoverse deploy`, copied to your server |
+| Production configuration | Machine-managed | Rendered by your Terraform ground; `unoverse deploy` places it on your server |
 
 Each file has a template in the repo: copy it and fill in your values. The production file also names the server to deploy to. At deploy time, `unoverse deploy` reads it and runs the platform's Ansible playbooks against that server, following the [Runbooks](../runbooks/overview.md).
 
 <Warning>
-Don't mix them up. `.env` is local development on your laptop; `.env.production` is your production server.
+Don't mix them up. `.env` is local development on your laptop; production configuration comes from your Terraform ground and is never written by hand.
 </Warning>
 
 ## Where your code lives

@@ -104,35 +104,31 @@ EOF
         -e "env_file=$env_prod"
       ;;
     init|full)
-      # FIRST-TIME setup, END TO END: install → db → harden → verify. One
-      # command after `terraform apply`, not four in the right order. Each
-      # piece stays available as its own subcommand for re-runs.
-      info "First-time setup: install → database → harden → verify"
+      # FIRST-TIME setup, END TO END: install → db → verify. One command after
+      # `terraform apply`. Hardening is a deliberate follow-up choice, never a
+      # default (POCs get verified first; harden when you decide to keep it).
+      info "First-time setup: install → database → verify"
       echo ""
-      info "[1/4] Provisioning (Docker, services, mounts)..."
+      info "[1/3] Provisioning (Docker, services, mounts)..."
       ansible-playbook \
         -i "$tmp_inventory" \
         "$ansible_dir/playbooks/install.yml" \
         -e "env_file=$env_prod" || { rm -f "$tmp_inventory"; fail "install failed — fix and re-run: unoverse deploy init"; exit 1; }
       echo ""
-      info "[2/4] Database setup..."
+      info "[2/3] Database setup..."
       ansible-playbook \
         -i "$tmp_inventory" \
         "$ansible_dir/playbooks/db-setup.yml" \
         -e "env_file=$env_prod" || { rm -f "$tmp_inventory"; fail "db setup failed — fix and re-run: unoverse deploy db"; exit 1; }
       echo ""
-      info "[3/4] Security hardening..."
-      ansible-playbook \
-        -i "$tmp_inventory" \
-        "$ansible_dir/playbooks/harden.yml" || { rm -f "$tmp_inventory"; fail "hardening failed — fix and re-run: unoverse deploy harden"; exit 1; }
-      echo ""
-      info "[4/4] Verifying..."
+      info "[3/3] Verifying..."
       ansible-playbook \
         -i "$tmp_inventory" \
         "$ansible_dir/playbooks/test-connectivity.yml" \
         -e "env_file=$env_prod" || { rm -f "$tmp_inventory"; fail "verification failed — inspect and re-run: unoverse deploy test"; exit 1; }
       echo ""
       ok "Your universe is up. From now on, deploys are just: unoverse deploy"
+      info "Keeping it? Harden the VM when you're ready: unoverse deploy harden"
       ;;
     db)
       info "Running database setup..."
@@ -161,12 +157,12 @@ EOF
       echo "Usage: unoverse deploy [command]"
       echo ""
       echo "  (none)       Deploy: pull latest platform images + restart"
-      echo "  init         First-time setup, end to end: install + db + harden + verify"
+      echo "  init         First-time setup, end to end: install + db + verify"
       echo ""
-      echo "Re-run one piece:"
-      echo "  db           Database setup"
-      echo "  harden       Security hardening (SSH, fail2ban, auto-updates)"
-      echo "  test         Connectivity test"
+      echo "More:"
+      echo "  db           Re-run database setup"
+      echo "  harden       Security hardening (SSH, fail2ban, auto-updates) — run it when a universe graduates from POC"
+      echo "  test         Re-run the connectivity test"
       rm -f "$tmp_inventory"
       exit 1
       ;;

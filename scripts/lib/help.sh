@@ -27,7 +27,7 @@ cmd_help() {
   echo -e "  ${BOLD}Deployment${NC}"
   echo -e "    ${GREEN}ground${NC}                  Prefill terraform.tfvars from your cloud CLI ${DIM}(./unoverse ground do|aws)${NC}"
   echo -e "    ${GREEN}deploy${NC}                  Deploy your platform: images + your work → your server"
-  echo -e "    ${GREEN}deploy init${NC}             First-time setup, end to end: install + db + harden + verify"
+  echo -e "    ${GREEN}deploy init${NC}             First-time setup: install + db + verify (harden is your call, after)"
   echo -e "    ${GREEN}deploy db${NC}               Re-run database setup on server"
   echo -e "    ${GREEN}deploy harden${NC}           Re-run security hardening"
   # Owner-only lane. Printed ONLY when publish.sh is present, so a starter kit never

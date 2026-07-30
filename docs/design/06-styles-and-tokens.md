@@ -19,15 +19,15 @@ The SDK renderer owns no styles either — it only *resolves* token names agains
 { "style": { "padding": "4", "color": "text.primary", "font": "headline.sm" } }
 ```
 
-- No `px` / `rem` / `em` / `#hex` anywhere under `rx/components/`, `rx/atoms/`, `rx/orgs/**/components/`, or `rx/orgs/**/templates/`. `./unoverse lint` scans for exactly this and fails ([08](./08-validate-and-ship.md)).
-- Sizes use the **space scale** (`"width": "8"` = 2rem, Tailwind-style: step N = N × 0.25rem) — and only **real steps**: `0 1 1.5 2 3 4 5 6 7 8 10 12 16 20 24 28 40 50 75 90 100 120 140 160 180 200` (+ `full`/`auto`). An invented step (`"26"`, `"3.5"`) is NOT rounded — it falls through as broken CSS and the element silently reverts to auto sizing. `./unoverse lint` rejects off-scale values.
+- No `px` / `rem` / `em` / `#hex` anywhere in any component, atom, or template definition. Studio's publish lint scans for exactly this and blocks ([08](./08-validate-and-ship.md)).
+- Sizes use the **space scale** (`"width": "8"` = 2rem, Tailwind-style: step N = N × 0.25rem) — and only **real steps**: `0 1 1.5 2 3 4 5 6 7 8 10 12 16 20 24 28 40 50 75 90 100 120 140 160 180 200` (+ `full`/`auto`). An invented step (`"26"`, `"3.5"`) is NOT rounded — it falls through as broken CSS and the element silently reverts to auto sizing. Studio's publish lint rejects off-scale values.
 - ❌ No invented component-named tokens (`cardMin`, `wizardWidth`) — use the generic scale steps. If the scale genuinely lacks a step, extend the scale in `styles/`, don't smuggle a value into a definition.
 
 ## 🔒 Style KEYS are closed too — the cross-platform contract
 
 It's not just values: the set of style **keys** (`padding`, `direction`, `radius`, `hover`, …) is a closed vocabulary — exactly the neutral intents the SDK style interpreter maps, and the contract every renderer (web today; iOS, Android, React Native, Flutter as they land) implements. An unknown key is ignored by **every** renderer, so it is always a typo (`colour`) or a web-ism that would never port (`backdropFilter`, `gridTemplateColumns`).
 
-Both the schema (editor squiggle) and `./unoverse lint` (error) enforce the key set, including inside `hover`/`active` and `when[].apply`. If a design genuinely needs an intent the vocabulary lacks, that's a platform conversation (a new key every renderer must implement) — never a definition-side workaround.
+Both the schema (editor squiggle) and Studio's publish lint (error) enforce the key set, including inside `hover`/`active` and `when[].apply`. If a design genuinely needs an intent the vocabulary lacks, that's a platform conversation (a new key every renderer must implement) — never a definition-side workaround.
 
 **Why so strict:** brand and dark-mode swaps must touch `styles/` only. One raw hex in one definition breaks that guarantee for the whole org.
 
@@ -36,7 +36,7 @@ Both the schema (editor squiggle) and `./unoverse lint` (error) enforce the key 
 ## 🗂️ The token layers
 
 ```
-rx/orgs/<org>/styles/
+rx/<project>/styles/
 ├── base/        # raw scales — the only place raw values EXIST
 │   ├── color.json        # palettes
 │   ├── spacing.json      # the space scale (the closed step set — see LAW above)
@@ -79,17 +79,17 @@ Names are **optional** — raw CSS in `appWidth` is always valid — but prefer 
 
 ## 🏢 Org scoping
 
-- **Components live in TWO tiers.** The design system (`rx/components/` — generic, universal: cards, charts, media) is shared by every org and references token *names* only. An **org component** (`rx/orgs/<org>/components/` — the client's own microapp: their finder, their page) is **org-private**: it belongs to that client and is served under their org. Names are unique across all tiers (lint-enforced), so a bare reference is unambiguous.
+- **Components live in TWO tiers.** The design system (the installed marketplace package — generic, universal: cards, charts, media) is shared by every org and references token *names* only. An **org component** (`rx/<project>/components/` — the client's own microapp: their finder, their page) is **org-private**: it belongs to that client and is served under their org. Names are unique across all tiers (lint-enforced), so a bare reference is unambiguous.
 - **Atoms are universal and authoring-time only** — `rx/atoms/`, one copy; the server expands every `Ref` before serving (atoms are never served or enumerable).
-- **Templates and styles are org-scoped** — `rx/orgs/<org>/`. Each org gets its own complete token set and templates. There are **no overlays**: if two orgs need different looks from the *same* universal component, that difference is 100% in their `styles/`. A component only becomes an org component when it IS the client's product, not to restyle a shared one.
+- **Templates and styles are org-scoped** — `rx/<project>/`. Each org gets its own complete token set and templates. There are **no overlays**: if two orgs need different looks from the *same* universal component, that difference is 100% in their `styles/`. A component only becomes an org component when it IS the client's product, not to restyle a shared one.
 
 Starting a new org: copy the neutral baseline and re-token it —
 
 ```bash
-cp -r rx/orgs/default/styles rx/orgs/<org>/styles
+# Studio: New Project — the scaffold includes a complete copy of the default token set
 ```
 
-(`rx/orgs/default` is the starter set kept for exactly this purpose; in the platform monorepo `npm run new-org -- <org>` does the same.)
+(Every project starts from the same default set, so rebranding is editing values, never inventing structure.)
 
 ---
 

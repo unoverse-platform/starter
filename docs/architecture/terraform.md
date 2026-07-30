@@ -18,7 +18,7 @@ every resource, every firewall rule and every secret the platform needs.
 flowchart LR
   T["<b>terraform apply</b>"]
   G["<b>The ground</b><br/>VM · Postgres · Redis<br/>load balancer · firewall · IdP"]
-  E["<b>.env.production</b><br/>rendered, complete"]
+  E["<b>Production configuration</b><br/>rendered, complete"]
   D["<b>unoverse deploy</b>"]
   S["<b>Four platform images</b>"]
 
@@ -97,11 +97,9 @@ needs to pull images and call AI providers. Then:
 
 ```bash
 terraform apply
-terraform output -raw env_production > .env.production
 ```
 
-The universe exists at this point but is empty. Deployment is separate, and it is covered in
-the [Runbooks](../runbooks/overview.md).
+The universe exists at this point but is empty. Deployment is separate (`unoverse deploy init` — it reads the rendered configuration from your applied ground itself), and it is covered in the [Runbooks](../runbooks/overview.md).
 
 There is no wrapper command around any of this. `terraform apply` is the interface, because
 a customer's platform team already knows what it does and can review what it will change

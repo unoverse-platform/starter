@@ -3,7 +3,7 @@ sidebarTitle: "Security Hardening"
 title: "Runbook: Security Hardening"
 ---
 
-Apply security hardening to Gravity Platform VMs.
+Apply security hardening to Gravity Platform VMs. Deliberately NOT part of `deploy init`: verify your POC first, then harden when you decide to keep it.
 
 ## Overview
 

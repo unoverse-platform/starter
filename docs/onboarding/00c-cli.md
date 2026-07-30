@@ -27,9 +27,8 @@ When you're ready for a server, three more:
 ```bash
 ./unoverse ground        # prefills terraform.tfvars from your cloud CLI (doctl or aws)
 # fill the FILL_ME lines, then in infra/<ground>: terraform init && terraform apply
-./unoverse deploy init   # first time, end to end: install + db + harden + verify
+./unoverse deploy init   # first time: install + db + verify
 ./unoverse deploy        # every deploy after that
-# (.env.production renders itself from the applied ground on first deploy)
 ```
 
 If anything misbehaves at any point: `./unoverse doctor`.
@@ -82,9 +81,9 @@ From your laptop to your server. Provision with Terraform first (`ground` writes
 | --- | --- |
 | `unoverse ground` | Prefills `terraform.tfvars` from your cloud CLI: your IP, SSH keys, existing Postgres clusters (doctl), or region, key pairs, and the Route53 zone (aws). `ground do` / `ground aws` picks explicitly. |
 | `unoverse deploy` | Deploys the platform to your server: pulls the latest images and restarts. |
-| `unoverse deploy init` | First-time setup, end to end: install, database, hardening, verify. One command after `terraform apply`. |
+| `unoverse deploy init` | First-time setup: install, database, verify. One command after `terraform apply`. |
 | `unoverse deploy db` | Re-runs database setup on the server. |
 | `unoverse deploy test` | Runs a connectivity test against the deployed platform. |
-| `unoverse deploy harden` | Applies security hardening: SSH keys-only, fail2ban, automatic security updates. Never touches app ports or key-based root SSH, so future deploys and MCP clients keep working. |
+| `unoverse deploy harden` | Security hardening, when a universe graduates from POC: SSH keys-only, fail2ban, automatic security updates. Never touches app ports or key-based root SSH, so future deploys and MCP clients keep working. |
 
 TLS and the firewall are not CLI jobs: your ground's Terraform owns them (load balancer certificate, cloud firewall). See [Deployment](./08-deployment.md) and the [Runbooks](../runbooks/overview.md).

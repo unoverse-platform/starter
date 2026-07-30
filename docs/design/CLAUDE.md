@@ -19,7 +19,7 @@ UI is **data**: neutral JSON in `rx/`, rendered natively per platform by a dumb,
 | Local partials | `components/` (earned: 2+ states share a shape); cross-component shapes = atoms in `rx/atoms/` (`Ref`; authoring-time only — the server expands before serving) | `components/` (header, composer-bar, turns) |
 | Flat form | just `<name>.json` + `root` — one face, no manifest/layouts/states. Structure is EARNED | — |
 
-**Two component tiers:** design system = `rx/components/` (generic, org-neutral — any org); org = `rx/orgs/<org>/components/` (**org-private** — that client's own, discoverable only in their apps). Names UNIQUE across all tiers (lint error on collision); org may reference design-system, design-system NEVER references org (lint). URIs: `unoverse://components/<org>/<name>` (org) · `unoverse://components/<name>` (design system; bare also resolves any unique name).
+**Two component tiers:** design system = the installed marketplace package (generic, org-neutral — any org); org = `rx/<project>/components/` (**org-private** — that client's own, discoverable only in their apps). Names UNIQUE across all tiers (lint error on collision); org may reference design-system, design-system NEVER references org (lint). URIs: `unoverse://components/<org>/<name>` (org) · `unoverse://components/<name>` (design system; bare also resolves any unique name).
 
 ## 3. Three homes — everything a component shows (slop rule)
 
@@ -63,8 +63,8 @@ Arrival `defaultState` lives in the **manifest**, not the state block.
 
 1. Read the matching journey doc ([03](./03-components.md) component / [05](./05-templates.md) template / [06](./06-styles-and-tokens.md) styles); study the exemplars: `productfinder`/`planfinder` (components), `acmechatlayout` (template).
 2. Author to the anatomy in §2; put every shown thing in its ONE home (§3).
-3. **`./unoverse lint` — 0 errors required**; it enforces §2–§5 with doc-cited messages. Justify any warning.
-4. Restart: `./unoverse build`; then **Studio** — mock (prop defaults + state picker + Inline/Focused toggle), then live. Debug order: stream log → state inspector → definition. Never edit on a guess.
+3. **Publish from Studio — lint 0 errors required**; it enforces §2–§5 with doc-cited messages. Justify any warning.
+4. Preview in **Studio** — mock (prop defaults + state picker + Inline/Focused toggle), then live. Debug order: stream log → state inspector → definition. Never edit on a guess.
 
 ## 7. Error → fix quick table
 
@@ -77,7 +77,7 @@ Arrival `defaultState` lives in the **manifest**, not the state block.
 | Component invisible in a template | unknown state name + no matching surface = inline is where it went — check the flow slot exists |
 | Card shows mock image/tagline while title streams | prop name isn't the source's field name (hydration is by-name, no mapping) — rename to the writer vocabulary (§3) |
 | Style ignored / element auto-sizes | raw value, unknown style key, or off-scale step — lint tells you which |
-| Edit does nothing | node contract changed → `./unoverse build` |
+| Edit does nothing | node contract changed (props/structure) → re-publish from Studio |
 | AI never picks it | manifest `whenToUse` is selector-shaped or missing — write the user's words |
 
 Full table: [09 — Troubleshooting](./09-troubleshooting.md).
