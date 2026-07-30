@@ -83,46 +83,22 @@ Your own work (nodes, design, prompts) never rides a deploy: it arrives via `uno
 
 ---
 
-## Environment Files — Two `.env` Files, Two Purposes
+## Environment: One File You Write, One You Don't
 
-Both files live at the project root:
+**`.env` is yours** — local development only. Copy `.env.example`, set localhost Postgres, Redis, your OpenAI key, and your OIDC values (or `AUTH_ENABLED=false`). Docker compose reads it automatically. Gitignored.
+
+**Production configuration is not a file you touch.** Your terraform.tfvars is the single input; everything downstream is machine-managed:
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  .env  (project root)                                            │
-│                                                                  │
-│  Purpose: LOCAL DEVELOPMENT                                      │
-│  Read by: docker compose (automatically reads root .env)         │
-│  Contains: localhost Redis, local DB, no TLS, no DOMAIN          │
-│                                                                  │
-│  Example values:                                                 │
-│    REDIS_HOST=host.docker.internal                               │
-│    REDIS_PORT=6379                                               │
-│    REDIS_PASSWORD=                                               │
-│    REDIS_TLS=false                                               │
-│    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/... │
-│    # DOMAIN is unset — API_URL points Canvas at localhost:4105   │
-└──────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────┐
-│  .env.production  (project root)                                 │
-│                                                                  │
-│  Purpose: PRODUCTION DEPLOYMENT                                  │
-│  Written by: Terraform (terraform output -raw env_production)    │
-│  Read by: unoverse deploy / Ansible                               │
-│  Deployed to: /opt/gravity/.env on the server                    │
-│  Contains: VM target, real Redis, real DB, TLS enabled, DOMAIN,  │
-│            and the master CREDENTIAL_ENCRYPTION_KEY              │
-└──────────────────────────────────────────────────────────────────┘
+terraform.tfvars  ──apply──▶  ground (VM, LB+TLS, firewall, Postgres, Redis)
+                                 │
+                                 └─▶  rendered env  ──unoverse deploy──▶  /opt/gravity/.env on the server
 ```
 
-**Key rules:**
+The rendered env lands at `.env.production` (gitignored) as a deploy artifact — `unoverse deploy` re-renders it from your applied ground whenever it's missing. Two things are worth knowing about it, and only two:
 
-- Both files are **gitignored** — they contain secrets and are never committed
-- `.env.example` is the template for local dev
-- `.env.production` has no template and is never typed: `unoverse deploy` renders it from your applied ground when missing, and it carries the master `CREDENTIAL_ENCRYPTION_KEY` — back it up with the database, never hand-edit it (change terraform.tfvars, re-apply, delete the file, redeploy)
-- On the server, `unoverse deploy` places `.env.production` at `/opt/gravity/.env` where `docker compose` reads it
-- `DEPLOY_HOST` and `DEPLOY_USER` are deployment-only — they tell Ansible where to SSH
+- **It holds the master `CREDENTIAL_ENCRYPTION_KEY`.** Keep a safe copy with your database backups: a database backup is unreadable without it.
+- **Never edit it.** To change any production value, edit terraform.tfvars, `terraform apply`, delete the file, and redeploy.
 
 **How `DOMAIN` drives **Canvas** URLs:**
 When `DOMAIN=yourdomain.com` is set, `docker-compose.yml` automatically derives:
