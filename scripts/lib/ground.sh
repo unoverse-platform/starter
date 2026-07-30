@@ -66,6 +66,11 @@ $(echo "$keys" | tail -n +2 | sed 's/^/# ssh_key_name alternative: /')
 domain       = "FILL_ME"                 # api.<domain> → the LB
 manage_dns   = false                     # true only if the domain's DNS is on DO
 
+# ⚠ The managed Let's Encrypt certificate requires the domain's DNS to be HOSTED
+# on DigitalOcean (registrar can stay GoDaddy etc. — point the nameservers at
+# ns1/ns2/ns3.digitalocean.com and add the domain under Networking). Then
+# manage_dns = true also creates the records for you.
+
 # POC ONLY: public Canvas at https://api.<domain>:3001 (a second port on the ONE LB).
 # Add that URL to the IdP's allowed origins. Default false = admin-only.
 canvas_public = true

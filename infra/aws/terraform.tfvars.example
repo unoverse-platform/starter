@@ -14,6 +14,8 @@ domain       = "yourdomain.com"        # api.yourdomain.com → the ALB
 # DNS records AND auto-validates the certificate. Empty = you add the printed
 # CNAMEs/aliases yourself (outputs: acm_validation_records, alb_dns_name).
 # route53_zone_id = "Z0123456789ABC"
+# (Domain hosted elsewhere — GoDaddy etc.? That's fine on AWS: leave this unset
+#  and paste the printed CNAMEs into your DNS panel. No Route53 required.)
 
 # POC ONLY: public Canvas at https://unoverse.<domain> — a host rule on the ONE
 # ALB (no second LB; ALBs host-route, unlike DO). Add the URL to oauth origins.
