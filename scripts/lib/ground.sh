@@ -225,8 +225,7 @@ cmd_ground() {
       echo ""
       info "Next: fill every FILL_ME in infra/digitalocean/terraform.tfvars, then"
       info "  cd infra/digitalocean && terraform init && terraform apply"
-      info "  terraform output -raw env_production > ../../.env.production"
-      info "  cd ../.. && ./unoverse deploy"
+      info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
       ;;
     aws)
       banner "Prefill your AWS ground"
@@ -235,8 +234,7 @@ cmd_ground() {
       echo ""
       info "Next: fill every FILL_ME in infra/aws/terraform.tfvars, then"
       info "  cd infra/aws && terraform init && terraform apply"
-      info "  terraform output -raw env_production > ../../.env.production"
-      info "  cd ../.. && ./unoverse deploy"
+      info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
       ;;
     *)
       fail "unknown ground: $which (use: do | aws)"

@@ -17,15 +17,16 @@ Running a universe is three phases. Terraform owns the first, the `unoverse` CLI
 ./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
 # fill the FILL_ME lines (domain, IdP, keys), then:
 cd infra/digitalocean && terraform init && terraform apply     # or infra/aws
-terraform output -raw env_production > ../../.env.production
 cd ../..
+# .env.production renders itself on first deploy (or by hand:
+# terraform output -raw env_production > ../../.env.production)
 ```
 
 Everything infrastructure is the ground's job and never a runbook's: TLS (DO managed Let's Encrypt / AWS ACM at the load balancer — no proxy software on the VM), DNS records, the cloud firewall (SSH and Dozzle admin-IP-only), Postgres (fresh, adopted, or BYO — see [02-database](./02-database.md)), and Redis (always provisioned, TLS).
 
 ### Sizes
 
-`size` in terraform.tfvars scales the box and the stores, never the topology (all sizes are single-VM):
+`size` in terraform.tfvars scales the box and the stores, never the topology (all sizes are single-VM). When multi-VM Active-Active arrives it will scale the app tier only: UMAP stays one shared service (`UMAP_SERVICE_URL`), because spatial coordinates are only comparable through the same trained model instance.
 
 | Size | Guide |
 | --- | --- |
@@ -119,7 +120,7 @@ Both files live at the project root:
 
 - Both files are **gitignored** — they contain secrets and are never committed
 - `.env.example` is the template for local dev
-- `.env.production` has no template: Terraform renders it complete, and it carries the master `CREDENTIAL_ENCRYPTION_KEY` — back it up with the database, never hand-edit it (change terraform.tfvars and re-render)
+- `.env.production` has no template and is never typed: `unoverse deploy` renders it from your applied ground when missing, and it carries the master `CREDENTIAL_ENCRYPTION_KEY` — back it up with the database, never hand-edit it (change terraform.tfvars, re-apply, delete the file, redeploy)
 - On the server, `unoverse deploy` places `.env.production` at `/opt/gravity/.env` where `docker compose` reads it
 - `DEPLOY_HOST` and `DEPLOY_USER` are deployment-only — they tell Ansible where to SSH
 

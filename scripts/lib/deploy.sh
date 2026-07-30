@@ -5,13 +5,31 @@ cmd_deploy() {
 
   local env_prod="$ROOT/.env.production"
 
+  # Missing .env.production is not an error if a ground has been applied — the
+  # file is just a Terraform output, so render it ourselves. Reading state is
+  # not wrapping terraform: apply stays the developer's explicit act.
+  if [ ! -f "$env_prod" ] && command -v terraform >/dev/null 2>&1; then
+    local g
+    for g in digitalocean aws; do
+      [ -d "$ROOT/infra/$g" ] || continue
+      if terraform -chdir="$ROOT/infra/$g" output -raw env_production > "$env_prod.tmp" 2>/dev/null \
+         && grep -q '^DEPLOY_HOST=' "$env_prod.tmp"; then
+        mv "$env_prod.tmp" "$env_prod"
+        ok "Rendered .env.production from your $g ground"
+        info "It holds CREDENTIAL_ENCRYPTION_KEY — back it up with the DB, never commit it."
+        break
+      fi
+      rm -f "$env_prod.tmp"
+    done
+  fi
+
   if [ ! -f "$env_prod" ]; then
-    fail ".env.production not found"
+    fail ".env.production not found, and no applied Terraform ground to render it from"
     echo ""
-    info "Terraform renders it, complete (never write it by hand):"
-    info "  cd infra/digitalocean && terraform apply    # or infra/aws"
-    info "  terraform output -raw env_production > ../../.env.production"
-    info "The rendered file holds CREDENTIAL_ENCRYPTION_KEY — back it up with the DB, never commit it."
+    info "Provision first — then deploy renders the env itself:"
+    info "  ./unoverse ground                          # prefill terraform.tfvars"
+    info "  cd infra/digitalocean && terraform init && terraform apply    # or infra/aws"
+    info "  cd ../.. && ./unoverse deploy init"
     echo ""
     exit 1
   fi

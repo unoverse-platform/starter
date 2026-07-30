@@ -22,19 +22,18 @@ Sized by `size` in terraform.tfvars (`small` | `medium` | `large`). All sizes ar
 ## Prerequisites
 
 - [ ] Terraform ground applied (VM, load balancer + TLS, firewall, Postgres, Redis — see the [overview](./overview.md))
-- [ ] `.env.production` rendered (`terraform output -raw env_production > .env.production`)
 - [ ] DOCR token in your terraform.tfvars (from your Unoverse admin)
 
 ## Steps
 
 ### 1. Configure Production Environment
 
-Terraform renders it, complete, from your `terraform.tfvars` (never write it by hand):
+There is nothing to write. Terraform renders `.env.production`, complete, from your `terraform.tfvars`, and `unoverse deploy` renders it from the applied ground automatically if the file is missing:
 
 ```bash
 ./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
 cd infra/digitalocean && terraform apply     # or infra/aws
-terraform output -raw env_production > ../../.env.production
+cd ../..
 ```
 
 The rendered file contains:

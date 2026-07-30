@@ -27,9 +27,9 @@ When you're ready for a server, three more:
 ```bash
 ./unoverse ground        # prefills terraform.tfvars from your cloud CLI (doctl or aws)
 # fill the FILL_ME lines, then in infra/<ground>: terraform init && terraform apply
-# render the env:  terraform output -raw env_production > ../../.env.production
 ./unoverse deploy init   # first time, end to end: install + db + harden + verify
 ./unoverse deploy        # every deploy after that
+# (.env.production renders itself from the applied ground on first deploy)
 ```
 
 If anything misbehaves at any point: `./unoverse doctor`.
