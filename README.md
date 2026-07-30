@@ -13,14 +13,27 @@ The platform services run as Docker images; **you edit only the three folders
 under `apps/unoverse/`** (see [What you build](#what-you-build)) and they are
 mounted straight into the running platform.
 
+## Get your copy
+
+This repo is a **template**: click **Use this template → Create a new
+repository** on GitHub, then clone YOUR copy:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/starter.git ~/unoverse
+cd ~/unoverse
+```
+
+No GitHub credentials are needed beyond your own repo — the only credential
+the platform needs is a read-only registry token from your Unoverse admin.
+
 ## Prerequisites
 
 - **Docker** + Docker Compose
-- **Node.js 20+** and npm (for building custom nodes)
+- **Node.js 20+** and npm
 - A **read-only registry token** from your platform admin (for pulling the
   platform's Docker images)
-- A **Postgres** database, **Redis**, and an **Auth0 (OIDC)** app. All
-  configured in `.env` (`.env.example` documents every variable)
+- A **Postgres** database, **Redis**, and an **OIDC** app (Auth0 or similar).
+  All configured in `.env` (`.env.example` documents every variable)
 
 ## Quick start
 
@@ -29,23 +42,23 @@ mounted straight into the running platform.
 ./unoverse start       # start the platform
 ./unoverse db-setup    # apply database migrations
 ./unoverse check       # verify: services, health, node catalog, bundles
-npm install            # dev dependencies (for building custom nodes)
 ```
 
 Then open:
 
-| Surface | URL | |
-|---|---|---|
-| **Canvas**. Visual workflow builder | http://localhost:3001 | |
-| **API**. The platform's public listener | http://localhost:4105 | |
-| **Logs** (Dozzle, live container logs) | http://localhost:8080 | `docker compose --profile observability up -d dozzle` |
+| Surface | URL |
+|---|---|
+| **Canvas**. Visual workflow builder | http://localhost:3001 |
+| **API**. The platform's public listener | http://localhost:4105 |
+| **Logs** (Dozzle, live container logs) | http://localhost:8080 |
 
 ## New here? Follow the onboarding
 
 **[`docs/onboarding/`](docs/onboarding/README.md)** walks you from zero to
-shipped, in order: getting started → your first agent → your first node →
-ingesting content → components & templates → MCPs → a client app → deployment.
-Start at [`01-getting-started.md`](docs/onboarding/01-getting-started.md).
+shipped, in order: Studio → the platform → the CLI, then the numbered
+challenges: your first agent → your first node → ingesting content →
+components & templates → MCPs → a client app → deployment.
+Start at [`00a-studio.md`](docs/onboarding/00a-studio.md).
 
 ## What you build
 
@@ -53,9 +66,9 @@ Three developer-editable folders are mounted into the running platform:
 
 | Folder | What it is | To see changes live |
 |--------|------------|---------------------|
-| `apps/unoverse/rx/`      | **Design**. Components, atoms, org templates + styles (JSON definitions) | restart (`docker compose restart unoverse`) — nodes synthesize from definitions; restyles apply live. Deploy: `unoverse deploy design` |
+| `apps/unoverse/rx/`      | **Design**. Your projects: components, templates, styles (definitions, not code) | restyles apply live; new components/props: `docker compose restart unoverse` (nodes synthesize from definitions) |
 | `apps/unoverse/prompts/` | **Behavior**. Agent skills (`skills/`) + prompt blocks (`blocks/`) | `docker compose restart unoverse` |
-| `apps/unoverse/nodes/`   | **Logic**. Custom workflow node packages (TypeScript) | `./unoverse build @unoverse-platform/<pkg>` |
+| `apps/unoverse/nodes/`   | **Logic**. Custom workflow nodes — YAML manifests, no build | `docker compose restart unoverse` |
 
 ### Build with Claude Code
 
@@ -91,14 +104,14 @@ and approve the `unoverse-builder` server the first time Claude Code asks.
 |---------|---------|
 | `unoverse init` | Interactive setup wizard |
 | `unoverse start` / `unoverse stop` | Start / stop the platform |
-| `unoverse status` | Show service health |
 | `unoverse check` | Health check: services, endpoints, node catalog, bundles |
 | `unoverse logs [service]` | Stream logs |
-| `unoverse build [pkg]` | Build node packages + restart (all, or one) |
-| `unoverse deploy design` | Deploy `rx/` design definitions to the server (rsync + restart, no build) |
 | `unoverse update` | Full update: git sync + pull images + rebuild + restart |
 | `unoverse doctor` | Diagnose issues |
 | `unoverse db-setup` | Apply database migrations |
+| `unoverse key` | Publish keys for Studio |
+| `unoverse ground` | Prefill terraform.tfvars from your cloud CLI (deployment) |
+| `unoverse deploy init` / `deploy` | First server setup / every deploy after |
 
 ## Something wrong?
 
@@ -110,6 +123,15 @@ and approve the `unoverse-builder` server the first time Claude Code asks.
 
 ## Production
 
-Deploy to a server with the `ansible/` playbooks and `docs/runbooks/`
-(TLS at the provider load balancer, hardening, observability). Update a running server with
-`./unoverse update`. See [`docs/onboarding/08-deployment.md`](docs/onboarding/08-deployment.md).
+Terraform provisions everything (`infra/digitalocean` or `infra/aws` — VM,
+load balancer + TLS, firewall, Postgres, Redis), then two commands:
+
+```bash
+./unoverse ground        # prefill terraform.tfvars from your cloud CLI
+# fill the FILL_ME lines, terraform apply, then:
+./unoverse deploy init   # install + database + verify
+```
+
+Update a running server with `./unoverse update`. See
+[`docs/onboarding/08-deployment.md`](docs/onboarding/08-deployment.md) and
+[`docs/runbooks/`](docs/runbooks/overview.md).
