@@ -1,4 +1,6 @@
-# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+# Copy to terraform.tfvars and fill in — or let `./unoverse ground aws` write it
+# for you, prefilled from the AWS CLI (region, key pair, Route53 zone, your IP).
+# terraform.tfvars is gitignored.
 
 region       = "us-east-1"
 name         = "universe-poc"

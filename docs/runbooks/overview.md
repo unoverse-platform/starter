@@ -60,6 +60,7 @@ Modular runbooks for deploying and managing Gravity Platform VMs.
 
 ```bash
 # 1. Render .env.production from your Terraform ground (never write it by hand)
+./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
 cd infra/digitalocean && terraform apply     # or infra/aws
 terraform output -raw env_production > ../../.env.production
 cd ../..

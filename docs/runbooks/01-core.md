@@ -37,6 +37,7 @@ Deploy the core Gravity Platform services to a VM.
 Terraform renders it, complete, from your `terraform.tfvars` (never write it by hand):
 
 ```bash
+./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
 cd infra/digitalocean && terraform apply     # or infra/aws
 terraform output -raw env_production > ../../.env.production
 ```

@@ -18,6 +18,7 @@
 #   ./unoverse doctor    Diagnose issues
 #   ./unoverse dev       Install deps, start dev environment
 #   ./unoverse key       Issue / list / revoke publish keys for this universe
+#   ./unoverse ground    Prefill terraform.tfvars from your cloud CLI (do|aws)
 # =============================================================================
 
 # Resolve lib/ directory relative to this script
@@ -49,6 +50,7 @@ source "$GRAVITY_LIB/help.sh"
 source "$GRAVITY_LIB/db-setup.sh"
 source "$GRAVITY_LIB/db-verify.sh"
 source "$GRAVITY_LIB/deploy.sh"
+source "$GRAVITY_LIB/ground.sh"
 source "$GRAVITY_LIB/key.sh"
 # Authoring tools (lint, new, node test/hash, studio) moved to _legacy/scripts-lib
 # 2026-07-28 — authoring lives in Studio now. The CLI is the OPERATOR tool.
@@ -77,6 +79,7 @@ case "${1:-}" in
   db-setup)  cmd_db_setup ;;
   db-verify) cmd_db_verify ;;
   key)       shift; cmd_key "$@" ;;
+  ground)    shift; cmd_ground "$@" ;;
   deploy)
     # `deploy marketplace` is PLATFORM-OWNER only: it publishes the marketplace package
     # to npm, which a starter developer never does (they INSTALL from the marketplace).

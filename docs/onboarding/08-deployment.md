@@ -20,6 +20,7 @@ Production deployment uses `unoverse deploy` which reads your `.env.production` 
 
 ```bash
 # 1. Render the production environment from your Terraform ground
+./unoverse ground                            # prefills terraform.tfvars from your cloud CLI
 cd infra/digitalocean && terraform apply     # or infra/aws
 terraform output -raw env_production > ../../.env.production
 cd ../..

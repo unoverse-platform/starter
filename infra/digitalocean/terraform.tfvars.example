@@ -1,4 +1,6 @@
-# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+# Copy to terraform.tfvars and fill in — or let `./unoverse ground do` write it
+# for you, prefilled from doctl (your IP, SSH key, existing Postgres clusters).
+# terraform.tfvars is gitignored.
 # Token: set DIGITALOCEAN_TOKEN in the environment (preferred) or do_token here.
 
 region       = "lon1"
