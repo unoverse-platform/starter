@@ -139,134 +139,13 @@ docker stats
 
 ## Local Development Verification
 
-Run these checks after `unoverse dev` or `unoverse update` to verify everything is working.
-
-### Quick Check (copy-paste this block)
+Locally, the whole checklist is one command:
 
 ```bash
-echo "=== Gravity Platform Health Check ==="
-echo ""
-
-# 1. Services running
-echo "1. Services"
-for svc in unoverse canvas umap memory; do
-  status=$(docker compose ps --format '{{.Status}}' $svc 2>/dev/null | head -1)
-  if echo "$status" | grep -q "Up"; then
-    echo "   ✓ $svc — $status"
-  else
-    echo "   ✗ $svc — NOT RUNNING"
-  fi
-done
-echo ""
-
-# 2. Health endpoints
-echo "2. Health Endpoints"
-for url in http://localhost:4105/health http://localhost:4101/health http://localhost:4104/health http://localhost:5001/health; do
-  code=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null)
-  name=$(echo "$url" | grep -oE '[0-9]+' | head -1)
-  if [ "$code" = "200" ]; then
-    echo "   ✓ :$name — 200 OK"
-  else
-    echo "   ✗ :$name — $code"
-  fi
-done
-echo ""
-
-# 3. Packages built
-echo "3. Packages (dist/index.js)"
-built=0; total=0
-for pkg in packages/*/; do
-  [ -f "$pkg/package.json" ] || continue
-  name=$(basename "$pkg")
-  # Skip non-plugin packages
-  case "$name" in design-system|gravity-client|plugin-base|skills|prompt-blocks) continue;; esac
-  total=$((total + 1))
-  if [ -f "$pkg/dist/index.js" ]; then
-    built=$((built + 1))
-  else
-    echo "   ✗ $name — missing dist/index.js"
-  fi
-done
-echo "   ✓ $built/$total packages built"
-echo ""
-
-# 4. Unoverse node catalog
-# The internal :4106 runtime is Docker-network-only and :4105 /plugins is
-# JWT-gated, so count nodes from INSIDE the container.
-echo "4. Unoverse Nodes"
-node_count=$(docker compose exec -T unoverse node -e \
-  "fetch('http://127.0.0.1:4106/nodes').then(r=>r.json()).then(d=>console.log((d.nodes||[]).length)).catch(()=>console.log(0))" 2>/dev/null | tr -d ' \r')
-echo "   Nodes registered: $node_count"
-echo ""
-
-# 5. Component bundles served
-echo "5. Component Bundles (unoverse → Canvas)"
-for comp in StreamingText.js Card.js ChatInput.js; do
-  code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:4105/components/$comp" 2>/dev/null)
-  if [ "$code" = "200" ]; then
-    echo "   ✓ /components/$comp — 200"
-  else
-    echo "   ✗ /components/$comp — $code"
-  fi
-done
-echo ""
-
-# 6. Canvas accessible
-echo "6. Canvas UI"
-code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001 2>/dev/null)
-if [ "$code" = "200" ]; then
-  echo "   ✓ http://localhost:3001 — 200 OK"
-else
-  echo "   ✗ http://localhost:3001 — $code"
-fi
-echo ""
-echo "=== Done ==="
+./unoverse check
 ```
 
-### Expected Output (all passing)
-
-```
-=== Gravity Platform Health Check ===
-
-1. Services
-   ✓ unoverse — Up 2 minutes
-   ✓ canvas — Up 2 minutes
-   ✓ umap — Up 2 minutes
-   ✓ memory — Up 2 minutes
-
-2. Health Endpoints
-   ✓ :4105 — 200 OK
-   ✓ :4101 — 200 OK
-   ✓ :4104 — 200 OK
-   ✓ :5001 — 200 OK
-
-3. Packages (dist/index.js)
-   ✓ 12/12 packages built
-
-4. Unoverse Nodes
-   Nodes registered: 45
-
-5. Component Bundles (unoverse → Canvas)
-   ✓ /components/StreamingText.js — 200
-   ✓ /components/Card.js — 200
-   ✓ /components/ChatInput.js — 200
-
-6. Canvas UI
-   ✓ http://localhost:3001 — 200 OK
-
-=== Done ===
-```
-
-### Troubleshooting Failures
-
-| Check                  | Failure                            | Fix                                                       |
-| ---------------------- | ---------------------------------- | --------------------------------------------------------- |
-| Services not running   | Container crashed                  | `docker compose logs <service>` then `unoverse update`     |
-| Health endpoint failed | Missing `.env` vars                | Check `.env` has `REDIS_HOST`, `DATABASE_URL`, auth vars  |
-| Packages not built     | No `dist/` directory               | `unoverse update` (builds all packages)                    |
-| Nodes registered: 0    | unoverse didn't load packages      | Check `docker compose logs unoverse`, then re-run `unoverse update` |
-| Component bundles 404  | Unoverse can't find design-system  | Verify the `packages/` mount (`/app/host_packages`) contains `design-system/components/` |
-| **Canvas** 404             | Container not started              | `docker compose up -d canvas`                             |
+It verifies containers, health endpoints (`:4105`, `:4101`, `:4104`, `:5001`), the loaded node catalog, component bundles, and **Canvas** reachability — the same checks `unoverse deploy test` runs against a server. If something is off, `./unoverse doctor` diagnoses the environment.
 
 ## Next Steps
 
@@ -274,6 +153,6 @@ If all tests pass, your deployment is complete!
 
 For ongoing operations:
 
-- **Upgrades:** `ansible-playbook playbooks/install.yml` (re-run to pull latest images)
-- **Backups:** `ansible-playbook playbooks/backup.yml`
-- **Rollback:** `ansible-playbook playbooks/rollback.yml`
+- **Upgrades:** `unoverse deploy` (pull latest images + restart)
+- **Backups:** `cd ansible && ansible-playbook playbooks/backup.yml`
+- **Rollback:** `cd ansible && ansible-playbook playbooks/rollback.yml`

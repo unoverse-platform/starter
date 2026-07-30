@@ -30,9 +30,9 @@ This pulls the latest Docker images, rebuilds packages, and restarts all service
 
 > **⚠️ Local changes to tracked files will be discarded.**
 >
-> `unoverse update` runs `git checkout -- .` before pulling to ensure a clean merge. This means any uncommitted edits to tracked files (e.g. `docker-compose.yml`, `gravity`, files in `packages/`) will be lost.
+> `unoverse update` runs `git checkout -- .` before pulling to ensure a clean merge. This means any uncommitted edits to tracked files (e.g. `docker-compose.yml`, files in `nodes/` or `rx/`) will be lost.
 >
-> **Safe (never touched):** `.env`, `.env.production`, `ansible/inventory/production.yml`, `node_modules/`, `package-lock.json` — these are gitignored.
+> **Safe (never touched):** `.env`, `.env.production`, `node_modules/`, `package-lock.json` — these are gitignored.
 >
 > **If you have local changes you want to keep**, commit them to a branch first:
 >
