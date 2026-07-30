@@ -9,9 +9,9 @@ platform where you compose agent-powered apps out of three kinds of things:
   (no React, no CSS), rendered live by the platform's SDK
 - **Behavior**. Agent skills and prompt blocks in plain markdown
 
-The platform services run as Docker images; **you edit only the three folders
-under `apps/unoverse/`** (see [What you build](#what-you-build)) and they are
-mounted straight into the running platform.
+The platform services run as Docker images. **This repo operates your
+universe** — authoring (components, templates, nodes, skills) happens in
+**Studio**, which manages its own projects and publishes to the universe.
 
 ## Get your copy
 
@@ -60,15 +60,16 @@ challenges: your first agent → your first node → ingesting content →
 components & templates → MCPs → a client app → deployment.
 Start at [`00a-studio.md`](docs/onboarding/00a-studio.md).
 
-## What you build
+## What you build — and where
 
-Three developer-editable folders are mounted into the running platform:
+Nothing you author lives in this repo. The split:
 
-| Folder | What it is | To see changes live |
-|--------|------------|---------------------|
-| `apps/unoverse/rx/`      | **Design**. Your projects: components, templates, styles (definitions, not code) | restyles apply live; new components/props: `docker compose restart unoverse` (nodes synthesize from definitions) |
-| `apps/unoverse/prompts/` | **Behavior**. Agent skills (`skills/`) + prompt blocks (`blocks/`) | `docker compose restart unoverse` |
-| `apps/unoverse/nodes/`   | **Logic**. Custom workflow nodes — YAML manifests, no build | `docker compose restart unoverse` |
+| You want to | Where | How it reaches the universe |
+|---|---|---|
+| Build workflows | **Canvas** (running platform) | saved live |
+| Author components, templates, styles, nodes, skills | **Studio** (its own app + projects) | publish from Studio (publish key: `unoverse key`) |
+| Install the design system & first-party nodes | **Studio → Marketplace** | per item, database-driven, no restart |
+| Operate and deploy the platform | **this repo** (`unoverse` CLI, `infra/`, `ansible/`) | `unoverse deploy` / `update` |
 
 ### Build with Claude Code
 

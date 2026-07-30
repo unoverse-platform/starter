@@ -1,7 +1,0 @@
-title: Restaurant Card
-description: One restaurant as a compact card — cuisine, story and pictures, expandable to full detail and a table booking form.
-whenToUse: Show one restaurant a guest could eat at — a compact card that expands to full detail and books a table. Stream one card per restaurant so options build up as the conversation continues. Not a list container (one restaurant per card), and not for activities or attractions.
-category: Travel
-version: 1.0.0
-defaultState: list
-lifecycle: [ onStart ]

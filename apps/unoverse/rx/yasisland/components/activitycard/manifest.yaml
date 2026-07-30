@@ -1,6 +1,0 @@
-title: Activity Card
-description: One activity or attraction as a compact card, expandable to full detail and ticket selection.
-whenToUse: Show one activity, attraction or experience a guest could do — a compact card that expands to full detail and gets tickets. Stream one card per activity so options build up as the conversation continues. Not a list container (one activity per card), and not for restaurants or dining.
-category: Travel
-version: 1.0.0
-defaultState: list

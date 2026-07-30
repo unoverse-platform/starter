@@ -52,13 +52,13 @@ This works out of the box for `.json` files. YAML files need one extension:
 | --- | --- | --- |
 | **YAML** | `redhat.vscode-yaml` | Schema validation for node manifests and design definitions |
 
-The repo ships a `.vscode/extensions.json`, so VS Code, Cursor and Windsurf all prompt you to install it the first time you open the folder. Accept the prompt. The schema wiring in `.vscode/settings.json` is already there and needs no changes.
+Install it from your editor's extensions panel by searching for `redhat.vscode-yaml`.
 
 <Warning>
-Without the extension, YAML files get **no validation at all**. Nothing warns you: they simply stop being checked, and mistakes surface later instead. If you skipped the prompt, install it from your editor's extensions panel by searching for `redhat.vscode-yaml`.
+Without the extension, YAML files get **no validation at all**. Nothing warns you: they simply stop being checked, and mistakes surface later instead.
 </Warning>
 
-To confirm it's working, open any `.yaml` file under `apps/unoverse/nodes/` and delete a required field such as `type`. You should see a red underline within a second. Undo, and it clears.
+You'll confirm it's working the first time you author a node ([Create Your First Node](./03-create-your-first-node.md)): delete a required field such as `type` from its `node.yaml` and a red underline appears within a second. Undo, and it clears.
 
 ## Set up the platform
 
@@ -157,15 +157,15 @@ Don't mix them up. `.env` is local development on your laptop; production config
 
 ## Where your code lives
 
-Three folders are mounted into the running platform. Everything you build goes in one of them, and **Studio** is the workbench for all three: it is where you build your custom nodes and services, your design components and templates, and your Agent skills and prompt blocks.
+**Not in this repo.** This repo operates the universe; everything you author lives in a **Studio project** — Studio scaffolds it (`rx/`, `prompts/`, `nodes/` in the project folder), validates it as you work, and publishes it to your universe over the API.
 
-| Folder | What | Guide |
+| You build | In | Guide |
 | --- | --- | --- |
-| `apps/unoverse/nodes/` | **Logic**: custom workflow node packages | [Create Your First Node](./03-create-your-first-node.md) |
-| `apps/unoverse/rx/` | **Design**: components, templates, styles | [Components and Templates](./05-components-and-templates.md) |
-| `apps/unoverse/prompts/` | **Behavior**: Agent skills and prompt blocks | [Create Your First Agent](./02-create-your-first-agent.md) |
+| **Logic**: custom workflow nodes (YAML manifests) | Studio project `nodes/` | [Create Your First Node](./03-create-your-first-node.md) |
+| **Design**: components, templates, styles | Studio project `rx/` | [Components and Templates](./05-components-and-templates.md) |
+| **Behavior**: Agent skills and prompt blocks | Studio project `prompts/` | [Create Your First Agent](./02-create-your-first-agent.md) |
 
-You don't have to build everything yourself. The **marketplace** offers ready-made nodes and services to install into your platform.
+You don't have to build everything yourself. The **marketplace** offers the design system and ready-made nodes and services to install into your universe, per item.
 
 ## Daily workflow
 

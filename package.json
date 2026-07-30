@@ -3,15 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "Unoverse Starter Template",
-  "workspaces": [
-    "apps/unoverse/nodes/*"
-  ],
-  "scripts": {
-    "dev": "turbo run dev --concurrency 20",
-    "build": "turbo run build"
-  },
-  "devDependencies": {
-    "turbo": "^2.0.0"
-  },
+  "scripts": {},
   "packageManager": "npm@10.2.0"
 }

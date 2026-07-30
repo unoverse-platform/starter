@@ -6,12 +6,13 @@
 #   - unoverse (the platform runtime — engine in-process + node plane + native MCP),
 #     canvas, umap, memory. Code protected, pulled as images.
 #
-# LAYER 2: DEVELOPER CARVE-OUT (mounted over the unoverse image, dev-editable)
-#   - apps/unoverse/nodes    — node logic
+# LAYER 2: PLATFORM-DEV MOUNTS (monorepo only — sync-starter strips them)
+#   - apps/unoverse/nodes    — node manifests
 #   - apps/unoverse/rx       — design (components, templates, styles)
 #   - apps/unoverse/prompts  — behavior (skills + blocks)
-#   Everything else under apps/unoverse (engine, server, web, tools, plugin-base)
-#   stays image-only. Marketplace nodes install from npm at runtime (Canvas storefront).
+#   In a STARTER/customer universe these folders do not exist: authoring is
+#   Studio's (publish over the API) and content is DB-driven (marketplace).
+#   Everything else under apps/unoverse (engine, server, web, tools) is image-only.
 #
 # OBSERVABILITY (runs by default):
 #   - Dozzle — single-container live log viewer (http://localhost:8080)
@@ -110,7 +111,7 @@ services:
       # SAME :4105 backend as api.<domain>, so default to the api host (one public entry,
       # one cert, no extra DNS). UNOVERSE_URL can still override for a dedicated MCP host.
       - VITE_UNOVERSE_SERVICE_URL=${UNOVERSE_URL:-${DOMAIN:+https://api.${DOMAIN}}}
-      - MEMORY_SERVICE_URL=http://memory:4104
+      - MEMORY_SERVICE_URL=http://memory:4114
     depends_on:
       - unoverse
     logging: *default-logging
@@ -201,7 +202,7 @@ services:
       # Without this the code falls back to http://localhost:4104 — nothing inside THIS
       # container — so every ingest silently fails (fire-and-forget) and memory never
       # updates on deployed envs. The memory server is the sibling `memory` container.
-      - MEMORY_SERVICE_URL=http://memory:4104
+      - MEMORY_SERVICE_URL=http://memory:4114
       # Marketplace installs node packages here at runtime (npm) — nodes are NOT baked
       # into the image; only the core workflow nodes ship with the platform (in the
       # workflow image). This volume persists installs across restarts.
@@ -215,13 +216,9 @@ services:
       - NODE_PATH=/app/host_node_modules:/app/plugins/node_modules
     volumes:
       - unoverse_plugins:/app/plugins
-      # ── Dev carve-out: the three developer-editable asset folders. Mounted over
-      # the image so local edits are picked up on restart (nodes need `dist/` built
-      # — `unoverse build`; rx/prompts are read as data, no build). Everything else
-      # under apps/unoverse (engine, server, web, tools, plugin-base) stays image-only.
-      - ./apps/unoverse/nodes:/app/apps/unoverse/nodes # node logic
-      - ./apps/unoverse/rx:/app/apps/unoverse/rx # design (components, templates, styles)
-      - ./apps/unoverse/prompts:/app/apps/unoverse/prompts # behavior (skills + blocks)
+      # ── Platform-dev mounts (monorepo only; sync-starter strips these three
+      # lines from the starter's copy — a customer universe serves what the DB
+      # says). Local edits are picked up on restart; rx/prompts are data, no build.
       - ./node_modules:/app/host_node_modules # Hoisted deps for locally-built nodes
     healthcheck:
       # Ready = internal runtime port up (nodes are loaded into memory BEFORE it binds).
