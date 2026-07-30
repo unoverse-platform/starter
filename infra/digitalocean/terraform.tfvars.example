@@ -33,3 +33,9 @@ openai_api_key       = "sk-..."       # memory server + OpenAI nodes
 # byo_postgres_url = "postgresql://user:pass@host:5432/db?sslmode=require"
 
 # Redis: always provisioned by Terraform (Managed Redis, TLS). Not configurable.
+
+# The rendered output (terraform output -raw env_production > ../../.env.production)
+# IS your universe's secrets, including the MASTER KEY (CREDENTIAL_ENCRYPTION_KEY)
+# that locks every credential users save in the platform. If it's lost, no backup
+# can bring them back. Never commit it; keep a safe copy with your database backups.
+# To change any value: edit this file and re-render. Never hand-edit the output.

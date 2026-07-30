@@ -34,13 +34,14 @@ Deploy the core Gravity Platform services to a VM.
 
 ### 1. Configure Production Environment
 
-Copy the example and fill in your values:
+Terraform renders it, complete, from your `terraform.tfvars` (never write it by hand):
 
 ```bash
-cp .env.production.example .env.production
+cd infra/digitalocean && terraform apply     # or infra/aws
+terraform output -raw env_production > ../../.env.production
 ```
 
-Edit `.env.production` with your credentials:
+The rendered file contains:
 
 ```bash
 # Deploy target

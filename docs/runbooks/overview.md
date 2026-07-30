@@ -59,8 +59,10 @@ Modular runbooks for deploying and managing Gravity Platform VMs.
 **Simple path (recommended):**
 
 ```bash
-# 1. Configure .env.production (set DEPLOY_HOST, DEPLOY_USER, Redis, DOMAIN, etc.)
-cp .env.production.example .env.production
+# 1. Render .env.production from your Terraform ground (never write it by hand)
+cd infra/digitalocean && terraform apply     # or infra/aws
+terraform output -raw env_production > ../../.env.production
+cd ../..
 
 # 2. Deploy everything
 unoverse deploy
@@ -171,7 +173,7 @@ Both files live at the project root:
 
 - Both files are **gitignored** — they contain secrets and are never committed
 - `.env.example` is the template for local dev
-- `.env.production.example` is the template for production
+- `.env.production` has no template: Terraform renders it complete (`terraform output -raw env_production`), and it carries the master `CREDENTIAL_ENCRYPTION_KEY` — back it up with the database
 - On the server, `unoverse deploy` places `.env.production` at `/opt/gravity/.env` where `docker compose` reads it
 - `DEPLOY_HOST` and `DEPLOY_USER` are deployment-only — they tell Ansible where to SSH
 

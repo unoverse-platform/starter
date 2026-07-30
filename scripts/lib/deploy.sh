@@ -8,9 +8,10 @@ cmd_deploy() {
   if [ ! -f "$env_prod" ]; then
     fail ".env.production not found"
     echo ""
-    info "Terraform renders it, complete (see .env.production.example):"
-    info "  cd infra/digitalocean && terraform apply"
+    info "Terraform renders it, complete (never write it by hand):"
+    info "  cd infra/digitalocean && terraform apply    # or infra/aws"
     info "  terraform output -raw env_production > ../../.env.production"
+    info "The rendered file holds CREDENTIAL_ENCRYPTION_KEY — back it up with the DB, never commit it."
     echo ""
     exit 1
   fi
