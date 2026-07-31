@@ -232,7 +232,7 @@ cmd_ground() {
       info "Next: fill every FILL_ME in infra/digitalocean/terraform.tfvars, then"
       info "  cd infra/digitalocean && terraform init && terraform apply"
       info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
-      info "  npx unoverse urls                    # every deployed URL, probed live"
+      info "  npx unoverse where                   # every deployed URL, probed live"
       ;;
     aws)
       banner "Prefill your AWS ground"
@@ -242,7 +242,7 @@ cmd_ground() {
       info "Next: fill every FILL_ME in infra/aws/terraform.tfvars, then"
       info "  cd infra/aws && terraform init && terraform apply"
       info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
-      info "  npx unoverse urls                    # every deployed URL, probed live"
+      info "  npx unoverse where                   # every deployed URL, probed live"
       ;;
     *)
       fail "unknown ground: $which (use: do | aws)"
