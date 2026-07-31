@@ -50,13 +50,13 @@ services:
   #     - NODE_ENV=production
   #     - PORT=4100
   #     - DESIGN_SYSTEM_PATH=/app/packages/design-system
-  #     - REDIS_HOST=${REDIS_HOST}
-  #     - REDIS_PORT=${REDIS_PORT}
-  #     - REDIS_PASSWORD=${REDIS_PASSWORD}
-  #     - REDIS_TLS=${REDIS_TLS}
-  #     - REDIS_NAMESPACE=${REDIS_NAMESPACE}
-  #     - AUTH_ISSUER=${AUTH_ISSUER}
-  #     - AUTH_AUDIENCE=${AUTH_AUDIENCE}
+  #     - REDIS_HOST=${REDIS_HOST:-}
+  #     - REDIS_PORT=${REDIS_PORT:-}
+  #     - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+  #     - REDIS_TLS=${REDIS_TLS:-}
+  #     - REDIS_NAMESPACE=${REDIS_NAMESPACE:-}
+  #     - AUTH_ISSUER=${AUTH_ISSUER:-}
+  #     - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
   #     - WORKFLOW_SERVICE_URL=http://unoverse:4101
   #     - UNOVERSE_SERVICE_URL=http://unoverse:4106
   #   labels:
@@ -78,12 +78,12 @@ services:
   #   environment:
   #     - NODE_ENV=production
   #     - PORT=4101
-  #     - REDIS_HOST=${REDIS_HOST}
-  #     - REDIS_PORT=${REDIS_PORT}
-  #     - REDIS_PASSWORD=${REDIS_PASSWORD}
-  #     - REDIS_TLS=${REDIS_TLS}
-  #     - REDIS_NAMESPACE=${REDIS_NAMESPACE}
-  #     - DATABASE_URL=${DATABASE_URL}
+  #     - REDIS_HOST=${REDIS_HOST:-}
+  #     - REDIS_PORT=${REDIS_PORT:-}
+  #     - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+  #     - REDIS_TLS=${REDIS_TLS:-}
+  #     - REDIS_NAMESPACE=${REDIS_NAMESPACE:-}
+  #     - DATABASE_URL=${DATABASE_URL:-}
   #     - SERVER_WS_URL=ws://server:4100
   #     - UMAP_SERVICE_URL=http://umap:5001
   #     - UNOVERSE_SERVICE_URL=http://unoverse:4106
@@ -101,16 +101,16 @@ services:
     ports:
       - "3001:80"
     environment:
-      - VITE_API_URL=${API_URL:-${DOMAIN:+https://api.${DOMAIN}}}
-      - VITE_SERVER_WS_URL=${VITE_SERVER_WS_URL:-${DOMAIN:+wss://api.${DOMAIN}}}
-      - VITE_AUTH_ISSUER=${AUTH_ISSUER}
-      - VITE_AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
-      - VITE_AUTH_AUDIENCE=${AUTH_AUDIENCE}
+      - VITE_API_URL=${API_URL:-${DOMAIN:+https://api.${DOMAIN:-}}}
+      - VITE_SERVER_WS_URL=${VITE_SERVER_WS_URL:-${DOMAIN:+wss://api.${DOMAIN:-}}}
+      - VITE_AUTH_ISSUER=${AUTH_ISSUER:-}
+      - VITE_AUTH_CLIENT_ID=${AUTH_CLIENT_ID:-}
+      - VITE_AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
       # Unoverse public URL (JWT-gated :4105) — the browser calls it directly for
       # component/template defs (MCP), prompt-blocks, and plugin management. This is the
       # SAME :4105 backend as api.<domain>, so default to the api host (one public entry,
       # one cert, no extra DNS). UNOVERSE_URL can still override for a dedicated MCP host.
-      - VITE_UNOVERSE_SERVICE_URL=${UNOVERSE_URL:-${DOMAIN:+https://api.${DOMAIN}}}
+      - VITE_UNOVERSE_SERVICE_URL=${UNOVERSE_URL:-${DOMAIN:+https://api.${DOMAIN:-}}}
       - MEMORY_SERVICE_URL=http://memory:4114
     depends_on:
       - unoverse
@@ -162,41 +162,41 @@ services:
       # the widget (running in ChatGPT's iframe) is CSP-blocked from calling back and renders
       # blank. Derived from DOMAIN like every other HTTPS URL (set DOMAIN only); empty in dev,
       # where the code falls back to localhost:4105.
-      - UNOVERSE_PUBLIC_URL=${DOMAIN:+https://api.${DOMAIN}}
+      - UNOVERSE_PUBLIC_URL=${DOMAIN:+https://api.${DOMAIN:-}}
       - UNOVERSE_RUNTIME_PORT=4106
       # The internal listeners (:4106 runtime, :4101 engine) bind LOOPBACK by default in
       # code. Inside the container they must bind all interfaces (docker-proxy and sibling
       # containers connect to the container IP); the loopback-only port mappings above and
       # the Docker network are the boundary here.
       - UNOVERSE_INTERNAL_BIND=0.0.0.0
-      - AUTH_ISSUER=${AUTH_ISSUER}
-      - AUTH_AUDIENCE=${AUTH_AUDIENCE}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AUTH_ISSUER=${AUTH_ISSUER:-}
+      - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       # Optional: page-intelligence features (promote-page extraction).
-      - HYPERBROWSER_API_KEY=${HYPERBROWSER_API_KEY}
+      - HYPERBROWSER_API_KEY=${HYPERBROWSER_API_KEY:-}
       # TEMP test shim: SearchPlaces/SearchAPI env fallback when no credential is stored.
-      - SEARCHAPI_KEY=${SEARCHAPI_KEY}
+      - SEARCHAPI_KEY=${SEARCHAPI_KEY:-}
       - SERVER_WS_URL=ws://server:4100
       # In-process loopback: the engine runs IN THIS container and binds :4101.
       - WORKFLOW_SERVICE_URL=http://127.0.0.1:4101
       # Lifecycle bridge: subscribes gravity:client:* and projects WORKFLOW_STATE
       # onto MCP /stream sessions (lifecycleBridge.ts).
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_TLS=${REDIS_TLS}
+      - REDIS_HOST=${REDIS_HOST:-}
+      - REDIS_PORT=${REDIS_PORT:-}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_TLS=${REDIS_TLS:-}
       # ── ONE_ENGINE CUTOVER ACTIVE: DATABASE_URL is the capability gate that boots
       # the in-process engine (the retired workflow block above is the rollback).
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-}
       # Connection budget (INFRASTRUCTURE.md, Postgres law) — per-size values
       # rendered by the infra Terraform; unset in local dev = code defaults (10).
-      - DB_POOL_ENGINE=${DB_POOL_ENGINE}
-      - DB_POOL_ENGINE_LEGACY=${DB_POOL_ENGINE_LEGACY}
+      - DB_POOL_ENGINE=${DB_POOL_ENGINE:-}
+      - DB_POOL_ENGINE_LEGACY=${DB_POOL_ENGINE_LEGACY:-}
       # Encrypts stored credentials at rest. WITHOUT this the engine falls back to a
       # key committed in source (SECURITY.md § Credential encryption at rest) — set it
       # in every deployment: openssl rand -base64 32
-      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY}
-      - REDIS_NAMESPACE=${REDIS_NAMESPACE}
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:-}
+      - REDIS_NAMESPACE=${REDIS_NAMESPACE:-}
       - UMAP_SERVICE_URL=http://umap:5001
       # Agent nodes POST conversation turns to the memory server (ingestConversationTurn).
       # Without this the code falls back to http://localhost:4104 — nothing inside THIS
@@ -245,10 +245,10 @@ services:
   #     - "4103:4103"
   #   environment:
   #     - NODE_ENV=production
-  #     - DOMAIN=${DOMAIN}
+  #     - DOMAIN=${DOMAIN:-}
   #     - WORKFLOW_SERVICE_URL=http://unoverse:4101
-  #     - AUTH_ISSUER=${AUTH_ISSUER}
-  #     - AUTH_AUDIENCE=${AUTH_AUDIENCE}
+  #     - AUTH_ISSUER=${AUTH_ISSUER:-}
+  #     - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
   #   labels:
   #     - "com.docker.compose.service=mcp-server"
   #   depends_on:
@@ -264,17 +264,17 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4104
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-}
       # Connection budget (INFRASTRUCTURE.md) — Terraform-rendered per size.
-      - DB_POOL_MEMORY=${DB_POOL_MEMORY}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_TLS=${REDIS_TLS}
-      - REDIS_NAMESPACE=${REDIS_NAMESPACE}
-      - AUTH_ISSUER=${AUTH_ISSUER}
-      - AUTH_AUDIENCE=${AUTH_AUDIENCE}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DB_POOL_MEMORY=${DB_POOL_MEMORY:-}
+      - REDIS_HOST=${REDIS_HOST:-}
+      - REDIS_PORT=${REDIS_PORT:-}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_TLS=${REDIS_TLS:-}
+      - REDIS_NAMESPACE=${REDIS_NAMESPACE:-}
+      - AUTH_ISSUER=${AUTH_ISSUER:-}
+      - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - WORKFLOW_SERVICE_URL=http://unoverse:4101
     labels:
       - "com.docker.compose.service=memory"
