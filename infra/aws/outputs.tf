@@ -14,17 +14,22 @@ output "alb_dns_name" {
 }
 
 output "acm_validation_records" {
-  description = "External DNS only (route53_zone_id empty): create these CNAMEs so the certificate can issue."
-  value = local.dns_auto ? [] : [
-    for dvo in aws_acm_certificate.public.domain_validation_options : {
+  description = "External DNS only (domain set, route53_zone_id empty): create these CNAMEs so the certificate can issue."
+  value = (local.has_domain && !local.dns_auto) ? [
+    for dvo in aws_acm_certificate.public[0].domain_validation_options : {
       name = dvo.resource_record_name, type = dvo.resource_record_type, value = dvo.resource_record_value
     }
-  ]
+  ] : []
 }
 
 output "canvas_url" {
   description = "Public Canvas URL (canvas_public = true only) — add it to the client origins."
-  value       = var.canvas_public ? "https://unoverse.${var.domain}" : "canvas is admin-only (direct http://<instance-ip>:3001 from admin_cidr)"
+  value       = var.canvas_public ? (local.has_domain ? "https://unoverse.${var.domain}" : "http://${aws_lb.public.dns_name}:3001") : "canvas is admin-only (direct http://<instance-ip>:3001 from admin_cidr)"
+}
+
+output "api_url" {
+  description = "The API base URL as deployed — https://api.<domain> with a domain, http://<alb-dns> without one."
+  value       = local.has_domain ? "https://${local.api_host}" : "http://${aws_lb.public.dns_name}"
 }
 
 output "database_url" {
@@ -121,7 +126,14 @@ output "env_production" {
     OPENAI_API_KEY=${var.openai_api_key}
     HYPERBROWSER_API_KEY=${var.hyperbrowser_api_key}
 
-    # Domain (api.${var.domain} → the ALB, TLS terminated there)
+    # Ingress. With a domain: DOMAIN drives every URL (compose derives
+    # https://api.<domain>). Without one (POC): DOMAIN stays empty and the
+    # explicit URLs below point at the ALB's DNS name over plain HTTP.
+    # To upgrade later: set domain in terraform.tfvars, terraform apply,
+    # re-render this file, unoverse deploy. Nothing is destroyed.
     DOMAIN=${var.domain}
+    ${local.has_domain ? "" : "API_URL=http://${aws_lb.public.dns_name}"}
+    ${local.has_domain ? "" : "VITE_SERVER_WS_URL=ws://${aws_lb.public.dns_name}"}
+    ${local.has_domain ? "" : "UNOVERSE_URL=http://${aws_lb.public.dns_name}"}
   ENV
 }

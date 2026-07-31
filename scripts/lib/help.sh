@@ -35,6 +35,7 @@ cmd_help() {
   if type cmd_deploy_marketplace >/dev/null 2>&1; then
     echo -e "    ${GREEN}deploy marketplace${NC}      Publish the marketplace: design system, skills, blocks, nodes"
     echo -e "    ${GREEN}publish base${NC}            Publish the node runtime open source: npm + github"
+    echo -e "    ${GREEN}publish tools${NC}           Publish the CLI + Studio to npm, drifted ones only"
   fi
   echo -e "    ${GREEN}deploy test${NC}             Run connectivity test"
   echo ""

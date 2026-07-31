@@ -1,7 +1,7 @@
 # Playbook — Templates (MCP apps)
 
-**Read first:** `docs/design/05-templates.md` (layouts + manifest-as-envelope) +
-`docs/design/04-state.md` (the reaction contract + name-sync). Deep law:
+**Read first:** `docs/design/templates.md` (layouts + manifest-as-envelope) +
+`docs/design/state.md` (the reaction contract + name-sync). Deep law:
 `UNOVERSE_STATE_MODEL.md` §5b, `UNOVERSE_LAYERS.md`. Everything in the component
 playbook (closed vocabulary, tokens, scale steps) applies here too.
 

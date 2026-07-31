@@ -53,8 +53,9 @@ variable "size" {
 }
 
 variable "domain" {
-  description = "The universe's domain: api.<domain> (and unoverse.<domain> when canvas_public) resolve to the ALB. Required for the ACM certificate."
+  description = "OPTIONAL — the same law on every ground. Empty (the default) = no certificate and no hostnames: the ALB serves plain HTTP on its DNS name (terraform output api_url) — the zero-friction first apply. Set it later and re-apply to upgrade IN PLACE to TLS at api.<domain> (and unoverse.<domain> when canvas_public). Nothing is destroyed by the upgrade."
   type        = string
+  default     = ""
 }
 
 variable "route53_zone_id" {

@@ -8,13 +8,17 @@ name         = "universe-poc"
 size         = "small"                  # small (POC) | medium | large
 admin_cidr   = "203.0.113.7/32"         # YOUR IP — SSH + Dozzle only
 ssh_key_name = "your-do-ssh-key-name"   # must already exist in the DO account
-domain       = "yourdomain.com"         # api.yourdomain.com → the LB
+# Domain is OPTIONAL. Leave it empty and the universe comes up on the load
+# balancer's IP over plain HTTP (POC mode) — `terraform output api_url` tells
+# you the address. When you have a domain, fill it in and `terraform apply`
+# again: the SAME deployment upgrades in place to TLS at api.<domain>.
+domain       = ""                       # empty = HTTP on the LB IP; "yourdomain.com" = TLS at api.yourdomain.com
 manage_dns   = false                    # true only if the domain's DNS is on DO
 
-# ⚠ The managed Let's Encrypt certificate requires the domain's DNS to be HOSTED
-# on DigitalOcean (registrar can stay GoDaddy etc. — point the nameservers at
-# ns1/ns2/ns3.digitalocean.com and add the domain under Networking). Then
-# manage_dns = true also creates the records for you.
+# ⚠ With a domain set, the managed Let's Encrypt certificate requires the
+# domain's DNS to be HOSTED on DigitalOcean (registrar can stay GoDaddy etc. —
+# point the nameservers at ns1/ns2/ns3.digitalocean.com and add the domain
+# under Networking). Then manage_dns = true also creates the records for you.
 
 # POC ONLY: public Canvas at https://api.<domain>:3001 (a second port on the ONE LB).
 # Add that URL to the IdP's allowed origins. Default false = admin-only.

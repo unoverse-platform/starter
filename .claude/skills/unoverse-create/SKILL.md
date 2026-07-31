@@ -37,7 +37,7 @@ If it's ambiguous (e.g. "add a card that shows weather"), it's usually a **compo
 (the UI) plus possibly a **node** (the data source) — confirm the scope with the user.
 
 **New to design artifacts?** The guided learning journey at `docs/design/` (README →
-01-quick-start → … → 09-troubleshooting) teaches components, templates, the state model
+quick-start → … → troubleshooting) teaches components, templates, the state model
 (incl. locked voice/native state), tokens, Studio, and validation in order;
 `docs/design/CLAUDE.md` is the condensed agent rulebook. The playbooks here assume that
 material.
@@ -60,7 +60,7 @@ material.
    component or template with a manifest, an agent skill, a node — is selected by
    embedding `title`/`name` + `whenToUse`/`description` + `category` against the user's
    own words (or the planner's task). The strict contract is
-   `docs/nodes/14-node-discoverability.md`: outcome-first, utterance-shaped, opening
+   `docs/nodes/node-discoverability.md`: outcome-first, utterance-shaped, opening
    words dominate, disqualify by property (never name a sibling). Each playbook carries
    the summary; read doc 14 before writing any meta.
 

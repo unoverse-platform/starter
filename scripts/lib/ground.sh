@@ -63,13 +63,16 @@ size         = "small"                   # small (POC) | medium | large
 admin_cidr   = "${ip:-FILL_ME}${ip:+/32}"        # YOUR IP — SSH + Dozzle only
 ssh_key_name = "${first_key:-FILL_ME}"   # must already exist in the DO account
 $(echo "$keys" | tail -n +2 | sed 's/^/# ssh_key_name alternative: /')
-domain       = "FILL_ME"                 # api.<domain> → the LB
+# Domain is OPTIONAL — empty brings the universe up on the LB's IP over plain
+# HTTP (terraform output api_url shows the address). Fill it in later and
+# re-apply to upgrade in place to TLS at api.<domain>.
+domain       = ""                        # empty = HTTP on the LB IP; "yourdomain.com" = TLS at api.yourdomain.com
 manage_dns   = false                     # true only if the domain's DNS is on DO
 
-# ⚠ The managed Let's Encrypt certificate requires the domain's DNS to be HOSTED
-# on DigitalOcean (registrar can stay GoDaddy etc. — point the nameservers at
-# ns1/ns2/ns3.digitalocean.com and add the domain under Networking). Then
-# manage_dns = true also creates the records for you.
+# ⚠ With a domain set, the managed Let's Encrypt certificate requires the
+# domain's DNS to be HOSTED on DigitalOcean (registrar can stay GoDaddy etc. —
+# point the nameservers at ns1/ns2/ns3.digitalocean.com and add the domain
+# under Networking). Then manage_dns = true also creates the records for you.
 
 # POC ONLY: public Canvas at https://api.<domain>:3001 (a second port on the ONE LB).
 # Add that URL to the IdP's allowed origins. Default false = admin-only.
@@ -156,7 +159,10 @@ admin_cidr   = "${ip:-FILL_ME}${ip:+/32}"       # YOUR IP — the only SSH sourc
 ssh_key_name = "${first_key:-FILL_ME}"  # must already exist in the region
 admin_email  = "FILL_ME"                # initial admin (Cognito user, all roles; invite emailed)
 size         = "small"                  # small (POC) | medium | large
-domain       = "${zone_domain:-FILL_ME}"        # api.<domain> → the ALB
+# Domain is OPTIONAL — empty brings the universe up on the ALB's DNS name over
+# plain HTTP (terraform output api_url shows the address). Fill it in later and
+# re-apply to upgrade in place to TLS at api.<domain>.
+domain       = "${zone_domain:-}"        # empty = HTTP on the ALB DNS name; discovered from Route53 when present
 
 # OPTIONAL: the domain's Route53 hosted zone id — set and Terraform creates the
 # DNS records AND auto-validates the certificate.
@@ -226,6 +232,7 @@ cmd_ground() {
       info "Next: fill every FILL_ME in infra/digitalocean/terraform.tfvars, then"
       info "  cd infra/digitalocean && terraform init && terraform apply"
       info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
+      info "  npx unoverse urls                    # every deployed URL, probed live"
       ;;
     aws)
       banner "Prefill your AWS ground"
@@ -235,6 +242,7 @@ cmd_ground() {
       info "Next: fill every FILL_ME in infra/aws/terraform.tfvars, then"
       info "  cd infra/aws && terraform init && terraform apply"
       info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
+      info "  npx unoverse urls                    # every deployed URL, probed live"
       ;;
     *)
       fail "unknown ground: $which (use: do | aws)"

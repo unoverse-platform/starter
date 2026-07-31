@@ -1,6 +1,6 @@
 # Playbook — Components & Atoms (rx data)
 
-**Read first:** `docs/design/03-components.md` (the microapp anatomy) + `docs/design/04-state.md`
+**Read first:** `docs/design/components.md` (the microapp anatomy) + `docs/design/state.md`
 (the reaction contract). Deep law: `docs/unoverse/UNOVERSE_AUTHORING.md` §3 (three homes),
 `UNOVERSE_STATE_MODEL.md` §5b. **Study the exemplars before writing**: `rx/components/journeyfinder`
 and cardfinder — mirror them exactly.
@@ -119,7 +119,7 @@ no folders. Structure is EARNED; start flat.
    }
    ```
 
-## Discovery meta — write it to RANK (docs/nodes/14-node-discoverability.md)
+## Discovery meta — write it to RANK (docs/nodes/node-discoverability.md)
 
 A component with a manifest is an **MCP app**: spatial embeds `` `title. whenToUse||description
 [category]` `` and ranks it against the USER'S OWN WORDS (`findIntent`). The meta is the

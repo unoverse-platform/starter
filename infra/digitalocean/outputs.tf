@@ -31,7 +31,12 @@ output "lb_ip" {
 
 output "canvas_url" {
   description = "Public Canvas URL (canvas_public = true only) — add it to the IdP's allowed origins."
-  value       = var.canvas_public ? "https://canvas.${var.domain}:3001" : "canvas is admin-only (direct http://<droplet-ip>:3001 from admin_cidr)"
+  value       = var.canvas_public ? (local.has_domain ? "https://canvas.${var.domain}:3001" : "http://${digitalocean_loadbalancer.public.ip}:3001") : "canvas is admin-only (direct http://<droplet-ip>:3001 from admin_cidr)"
+}
+
+output "api_url" {
+  description = "The API base URL as deployed — https://api.<domain> with a domain, http://<lb-ip> without one."
+  value       = local.has_domain ? "https://${local.api_host}" : "http://${digitalocean_loadbalancer.public.ip}"
 }
 
 output "env_production" {
@@ -78,7 +83,14 @@ output "env_production" {
     OPENAI_API_KEY=${var.openai_api_key}
     HYPERBROWSER_API_KEY=${var.hyperbrowser_api_key}
 
-    # Domain (api.${var.domain} → the load balancer, TLS terminated there)
+    # Ingress. With a domain: DOMAIN drives every URL (compose derives
+    # https://api.<domain>). Without one (POC): DOMAIN stays empty and the
+    # explicit URLs below point at the load balancer's IP over plain HTTP.
+    # To upgrade later: set domain in terraform.tfvars, terraform apply,
+    # re-render this file, unoverse deploy. Nothing is destroyed.
     DOMAIN=${var.domain}
+    ${local.has_domain ? "" : "API_URL=http://${digitalocean_loadbalancer.public.ip}"}
+    ${local.has_domain ? "" : "VITE_SERVER_WS_URL=ws://${digitalocean_loadbalancer.public.ip}"}
+    ${local.has_domain ? "" : "UNOVERSE_URL=http://${digitalocean_loadbalancer.public.ip}"}
   ENV
 }

@@ -65,8 +65,12 @@ locals {
     }
   }
   s        = local.sizes[var.size]
-  api_host = "api.${var.domain}"
-  dns_auto = var.route53_zone_id != ""
+  # Domainless-first (DECIDED 2026-07-31, universal across grounds): no domain =
+  # no cert, the ALB speaks plain HTTP on its DNS name. Setting domain later and
+  # re-applying upgrades the SAME ALB in place — ACM cert, HTTPS listener, redirect.
+  has_domain = var.domain != ""
+  api_host   = "api.${var.domain}"
+  dns_auto   = local.has_domain && var.route53_zone_id != ""
 }
 
 # The ALB is the ONLY public surface (native ingress, 2026-07-29 — Caddy retired;
@@ -87,6 +91,16 @@ resource "aws_security_group" "alb" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+  # Domainless canvas_public rides a second port (no hostname to host-route by).
+  dynamic "ingress" {
+    for_each = var.canvas_public && var.domain == "" ? [1] : []
+    content {
+      from_port   = 3001
+      to_port     = 3001
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
   egress {
     from_port   = 0
@@ -444,6 +458,7 @@ resource "aws_iam_access_key" "bedrock" {
 # default of 60s severs them (INFRASTRUCTURE.md § Ingress).
 
 resource "aws_acm_certificate" "public" {
+  count                     = local.has_domain ? 1 : 0
   domain_name               = local.api_host
   subject_alternative_names = var.canvas_public ? ["unoverse.${var.domain}"] : []
   validation_method         = "DNS"
@@ -457,7 +472,7 @@ resource "aws_acm_certificate" "public" {
 # (the records to create are printed by the acm_validation_records output).
 resource "aws_route53_record" "acm_validation" {
   for_each = local.dns_auto ? {
-    for dvo in aws_acm_certificate.public.domain_validation_options : dvo.domain_name => {
+    for dvo in aws_acm_certificate.public[0].domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       type   = dvo.resource_record_type
       record = dvo.resource_record_value
@@ -473,7 +488,7 @@ resource "aws_route53_record" "acm_validation" {
 
 resource "aws_acm_certificate_validation" "public" {
   count                   = local.dns_auto ? 1 : 0
-  certificate_arn         = aws_acm_certificate.public.arn
+  certificate_arn         = aws_acm_certificate.public[0].arn
   validation_record_fqdns = [for r in aws_route53_record.acm_validation : r.fqdn]
 }
 
@@ -523,27 +538,40 @@ resource "aws_lb_target_group_attachment" "canvas" {
   port             = 3001
 }
 
+# :80 — with a domain it redirects to HTTPS; domainless it IS the front door
+# (plain HTTP straight to the platform on the ALB's DNS name).
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.public.arn
   port              = 80
   protocol          = "HTTP"
 
-  default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+  dynamic "default_action" {
+    for_each = local.has_domain ? [1] : []
+    content {
+      type = "redirect"
+      redirect {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  }
+  dynamic "default_action" {
+    for_each = local.has_domain ? [] : [1]
+    content {
+      type             = "forward"
+      target_group_arn = aws_lb_target_group.app.arn
     }
   }
 }
 
 resource "aws_lb_listener" "https" {
+  count             = local.has_domain ? 1 : 0
   load_balancer_arn = aws_lb.public.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = local.dns_auto ? aws_acm_certificate_validation.public[0].certificate_arn : aws_acm_certificate.public.arn
+  certificate_arn   = local.dns_auto ? aws_acm_certificate_validation.public[0].certificate_arn : aws_acm_certificate.public[0].arn
 
   # Default: the platform. An unknown Host lands here too, and the JWT gate is
   # in-app, so the ALB is never load-bearing for auth (the contract's rule 3).
@@ -554,8 +582,8 @@ resource "aws_lb_listener" "https" {
 }
 
 resource "aws_lb_listener_rule" "canvas" {
-  count        = var.canvas_public ? 1 : 0
-  listener_arn = aws_lb_listener.https.arn
+  count        = local.has_domain && var.canvas_public ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
   priority     = 10
 
   action {
@@ -566,6 +594,20 @@ resource "aws_lb_listener_rule" "canvas" {
     host_header {
       values = ["unoverse.${var.domain}"]
     }
+  }
+}
+
+# Domainless canvas_public: no hostname to host-route by, so Canvas takes a
+# second PORT instead — http://<alb-dns>:3001, the same shape as the DO ground.
+resource "aws_lb_listener" "canvas_http" {
+  count             = !local.has_domain && var.canvas_public ? 1 : 0
+  load_balancer_arn = aws_lb.public.arn
+  port              = 3001
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.canvas[0].arn
   }
 }
 

@@ -60,7 +60,11 @@ locals {
   provision_pg = !local.pg_external && !local.pg_adopt
   pg_managed   = local.pg_adopt || local.provision_pg # any DO-managed mode
 
-  api_host = "api.${var.domain}"
+  # Domainless-first (DECIDED 2026-07-31): no domain = no cert, the LB speaks
+  # plain HTTP on its IP. Setting domain later and re-applying upgrades the SAME
+  # LB in place — cert issued, HTTPS rules swap in, HTTP redirect on.
+  has_domain = var.domain != ""
+  api_host   = "api.${var.domain}"
 }
 
 # The adopted cluster's facts (id/host/port) when reusing an existing one.
@@ -141,6 +145,7 @@ resource "digitalocean_firewall" "app" {
 # NOTE (INFRASTRUCTURE.md § Ingress): DO caps http idle timeout at 600s — set to
 # the cap; long-quiet SSE/WS sessions must survive a reconnect (smoke-test item).
 resource "digitalocean_certificate" "api" {
+  count   = local.has_domain ? 1 : 0
   name    = "${var.name}-api"
   type    = "lets_encrypt"
   # canvas.<domain> rides the SAME certificate as a SAN (and the same LB): the
@@ -153,29 +158,43 @@ resource "digitalocean_loadbalancer" "public" {
   name                     = "${var.name}-lb"
   region                   = var.region
   droplet_ids              = [digitalocean_droplet.app.id]
-  redirect_http_to_https   = true
+  redirect_http_to_https   = local.has_domain # domainless serves HTTP itself, nothing to redirect to
   http_idle_timeout_seconds = 600 # DO's maximum
 
-  forwarding_rule {
-    entry_port       = 443
-    entry_protocol   = "https"
-    target_port      = 4105
-    target_protocol  = "http"
-    certificate_name = digitalocean_certificate.api.name
+  # With a domain: HTTPS 443 with the managed cert. Without: plain HTTP 80 on
+  # the LB IP. Same port meanings for the developer either way (API on the root).
+  dynamic "forwarding_rule" {
+    for_each = local.has_domain ? [1] : []
+    content {
+      entry_port       = 443
+      entry_protocol   = "https"
+      target_port      = 4105
+      target_protocol  = "http"
+      certificate_name = one(digitalocean_certificate.api[*].name)
+    }
+  }
+  dynamic "forwarding_rule" {
+    for_each = local.has_domain ? [] : [1]
+    content {
+      entry_port      = 80
+      entry_protocol  = "http"
+      target_port     = 4105
+      target_protocol = "http"
+    }
   }
 
   # POC (canvas_public = true, DECIDED 2026-07-29): Canvas rides the SAME LB on a
   # second port — https://canvas.<domain>:3001 (a SAN on the api certificate, an A record to this same LB). ONE load balancer total: DO LBs can't
   # host-route, and a clean second hostname would cost a second LB; the POC takes
-  # the port in the URL instead.
+  # the port in the URL instead. Domainless: same second port, plain HTTP.
   dynamic "forwarding_rule" {
     for_each = var.canvas_public ? [1] : []
     content {
       entry_port       = 3001
-      entry_protocol   = "https"
+      entry_protocol   = local.has_domain ? "https" : "http"
       target_port      = 3001
       target_protocol  = "http"
-      certificate_name = digitalocean_certificate.api.name
+      certificate_name = one(digitalocean_certificate.api[*].name)
     }
   }
 
@@ -188,7 +207,7 @@ resource "digitalocean_loadbalancer" "public" {
 }
 
 resource "digitalocean_record" "canvas" {
-  count  = var.canvas_public && var.manage_dns ? 1 : 0
+  count  = local.has_domain && var.canvas_public && var.manage_dns ? 1 : 0
   domain = var.domain
   type   = "A"
   name   = "canvas"
@@ -198,7 +217,7 @@ resource "digitalocean_record" "canvas" {
 
 # Optional DNS (manage_dns = true and the domain hosted on DO).
 resource "digitalocean_record" "api" {
-  count  = var.manage_dns ? 1 : 0
+  count  = local.has_domain && var.manage_dns ? 1 : 0
   domain = var.domain
   type   = "A"
   name   = "api"

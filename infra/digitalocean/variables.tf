@@ -38,8 +38,9 @@ variable "ssh_key_name" {
 }
 
 variable "domain" {
-  description = "The universe's domain (api.<domain> resolves to the load balancer). Required for the LB's Let's Encrypt certificate; the DNS A record is created only when manage_dns = true."
+  description = "OPTIONAL. Empty (the default) = no certificate and no hostnames: the LB serves plain HTTP on its IP — the zero-friction first apply. Set it later and re-apply to upgrade IN PLACE to TLS at api.<domain> (the DNS A record is created only when manage_dns = true). Nothing is destroyed by the upgrade."
   type        = string
+  default     = ""
 }
 
 variable "manage_dns" {
@@ -70,7 +71,7 @@ variable "auth_audience" {
 # ── Postgres: three modes, first match wins ───────────────────────────────────
 #   1. byo_postgres_url      — fully external DB, URL used verbatim (you own
 #                              pooling, backups, reachability).
-#   2. existing_pg_cluster_id — an EXISTING DO managed cluster (the usual case:
+#   2. existing_pg_cluster_name — an EXISTING DO managed cluster (the usual case:
 #                              "I already have Postgres in DO"): Terraform creates
 #                              the universe's OWN database, user, transaction
 #                              pool, and firewall rule ON that cluster. Your

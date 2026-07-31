@@ -4,10 +4,10 @@
 
 1. `docs/nodes/CLAUDE.md`: the authoritative agent guide. The folder, the eight
    non-negotiable rules, every file with an example, and the lint-error-to-fix table.
-2. `docs/nodes/00-manifest-nodes.md`: the format in full, including the run context.
-3. `docs/nodes/14-node-discoverability.md`: **read before writing `whenToUse`**.
-4. As needed: `04-credentials.md`, `15-who-can-run-it.md`, `06-config-schema.md`, `07-service-connectors.md`,
-   `08-mcp-services.md`, `09-signal-routing.md`, `13-testing-nodes.md`.
+2. `docs/nodes/manifest-nodes.md`: the format in full, including the run context.
+3. `docs/nodes/node-discoverability.md`: **read before writing `whenToUse`**.
+4. As needed: `credentials.md`, `who-can-run-it.md`, `config-schema.md`, `service-connectors.md`,
+   `mcp-services.md`, `signal-routing.md`, `testing-nodes.md`.
 
 This playbook adds the workflow around those docs. It never overrides them.
 
@@ -79,7 +79,7 @@ package only for a new integration.
    ```
 
    `required: false` is right for almost every node: the trigger already decided who was let
-   in. See `docs/nodes/15-who-can-run-it.md`.
+   in. See `docs/nodes/who-can-run-it.md`.
 3. **Write `interface.yaml`.** Name outputs for what they carry, because those names become
    what someone types in a template.
 4. **Write `config.yaml`.** Every value the workflow supplies needs `ui:field: template`. A
@@ -107,7 +107,7 @@ package only for a new integration.
 5. **Write `api/run.yaml`.** A list, each entry named. Include `error` wherever the service
    can answer 200 with a failure body. Where one call is really many, name the capability on
    the call rather than trying to express a loop: `paginate`, `chunk`, `poll` or `state`.
-   See `docs/nodes/12-calls-that-loop.md`, and declare each one in `requires`. A call
+   See `docs/nodes/calls-that-loop.md`, and declare each one in `requires`. A call
    authenticates with `credential: { scheme, token }`, which is OUTBOUND: how the node proves
    itself to the vendor. It is not `node.yaml`'s `auth`, which is who may run the node.
 6. **Write `api/events.yaml`.** One row per output connector, in the order `interface.yaml`

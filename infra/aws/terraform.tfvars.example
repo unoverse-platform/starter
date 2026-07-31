@@ -8,9 +8,13 @@ admin_cidr   = "203.0.113.7/32"        # YOUR IP — the only SSH source
 ssh_key_name = "your-ec2-keypair-name" # must already exist in the region
 admin_email  = "you@example.com"       # initial admin (Cognito user, all roles; invite emailed)
 size         = "small"                 # small (POC) | medium | large
-domain       = "yourdomain.com"        # api.yourdomain.com → the ALB
+# Domain is OPTIONAL — the same law on every ground. Leave it empty and the
+# universe comes up on the ALB's DNS name over plain HTTP (terraform output
+# api_url shows the address). Fill it in later and `terraform apply` again:
+# the SAME deployment upgrades in place to TLS at api.<domain>.
+domain       = ""                      # empty = HTTP on the ALB DNS name; "yourdomain.com" = TLS at api.yourdomain.com
 
-# OPTIONAL: the domain's Route53 hosted zone id — set it and Terraform creates the
+# OPTIONAL (with a domain): the domain's Route53 hosted zone id — set it and Terraform creates the
 # DNS records AND auto-validates the certificate. Empty = you add the printed
 # CNAMEs/aliases yourself (outputs: acm_validation_records, alb_dns_name).
 # route53_zone_id = "Z0123456789ABC"
