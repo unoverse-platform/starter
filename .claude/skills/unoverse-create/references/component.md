@@ -1,7 +1,7 @@
 # Playbook — Components & Atoms (rx data)
 
 **Read first:** `docs/design/components.md` (the microapp anatomy) + `docs/design/state.md`
-(the reaction contract). Deep law: `docs/unoverse/UNOVERSE_AUTHORING.md` §3 (three homes),
+(the reaction contract). Deep law: `UNOVERSE_AUTHORING` §3 (three homes),
 `UNOVERSE_STATE_MODEL.md` §5b. **Study the exemplars before writing**: `rx/components/journeyfinder`
 and cardfinder — mirror them exactly.
 
@@ -72,7 +72,7 @@ no folders. Structure is EARNED; start flat.
    key becomes a hardcoded attribute, a truthy `with` key drops a matching `visibleWhen`
    guard (unprovided ⇒ that piece stays hidden), `{{key}}` style bindings take the value.
    ⚠ Icon: literal = `icon: "phone"`; bound = `bind: { name: field }`.
-6. **Briefs — components an AI fills** (docs/design/03 §Briefed components; deep law: `docs/unoverse/UNOVERSE_AUTHORING.md` §3b). A `brief`
+6. **Briefs — components an AI fills** (docs/design/03 §Briefed components; deep law: `UNOVERSE_AUTHORING` §3b). A `brief`
    sits ON the node that renders what it describes, next to its `bind` — never in the
    manifest, never a separate file:
    - bound element → `"brief": { "description": "…", "maxLength": 60 }`
@@ -91,7 +91,7 @@ no folders. Structure is EARNED; start flat.
 7. **Tokens only** (LAW 1) + closed style keys + real space-scale steps
    (`docs/design/06`) — an invented step is silently broken CSS.
 8. **Lifecycle handlers — a component's own server-side code** (deep law:
-   `docs/unoverse/UNOVERSE_AUTHORING.md` §3c). When a component needs live data from an
+   `UNOVERSE_AUTHORING` §3c). When a component needs live data from an
    API or a computation (not from an AI = brief, not from the workflow = `input` props), it
    may bring a small server-side script that runs when the component renders. It's for DATA,
    not styling or logic-in-the-def.

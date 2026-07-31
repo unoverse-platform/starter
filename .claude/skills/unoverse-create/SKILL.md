@@ -47,15 +47,16 @@ material.
 1. **Only edit the three carve-out folders.** Never touch, vendor, or work around the
    SDK, engine, or server — they are not yours to change. If a task seems to require an
    SDK change, the answer is almost always "express it as data" — re-read the playbook.
-2. **Docs are the source of truth.** The playbooks point at `docs/design/` (the design
-   journey), `docs/unoverse/` (deep reference), and `docs/nodes/` in this repo. When the
-   user's request goes beyond the playbook, read the pointed doc section — do not
-   improvise conventions.
+2. **Docs are the source of truth.** The playbooks name the design journey and the deep
+   references (`UNOVERSE_AUTHORING`, `UNOVERSE_STATE_MODEL`, `UNOVERSE_LAYERS`,
+   `UNOVERSE_CONFORMANCE`). They are published on the docs site, not carried in your
+   repo. When the user's request goes beyond the playbook, read the named section rather
+   than improvising conventions.
 3. **UI is data.** No pixels, hex colors, or CSS anywhere — token names only. No logic
    in definitions — anything computed (totals, formatting, chosen colors) is computed in
    the node and sent as a plain field.
 4. **Audit before you're done.** Every component/template must pass the conformance
-   checklist (`docs/unoverse/UNOVERSE_AUTHORING.md` §9). Walk it item by item.
+   checklist (`UNOVERSE_AUTHORING` §9). Walk it item by item.
 5. **Discovery meta is ranked, not read.** Any spatially-discoverable artifact — a
    component or template with a manifest, an agent skill, a node — is selected by
    embedding `title`/`name` + `whenToUse`/`description` + `category` against the user's
