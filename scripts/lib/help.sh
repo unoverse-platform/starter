@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# unoverse help — the OPERATOR half.
+# unoverse help, the OPERATOR half.
 #
 # Printed by the npm CLI when you are standing in a universe folder. It lists what you
 # can do to a universe, and nothing else. Commands that still exist but are not for
@@ -12,9 +12,9 @@ cmd_help() {
   echo -e "  ${BOLD}${CYAN}⬡ unoverse${NC} ${DIM}v${GRAVITY_VERSION}${NC}"
   echo ""
   echo -e "  ${BOLD}Anywhere${NC}"
-  echo -e "    ${GREEN}create${NC}      Scaffold here — Studio project · universe · client app"
+  echo -e "    ${GREEN}create${NC}      Start something new, here"
   echo -e "    ${GREEN}studio${NC}      Author components, nodes, agent skills"
-  echo -e "    ${GREEN}where${NC}       Your universe's addresses, probed live"
+  echo -e "    ${GREEN}where${NC}       Your universe's addresses"
   echo -e "    ${GREEN}update${NC}      Update this CLI"
   echo ""
   echo -e "  ${BOLD}This universe${NC}"
@@ -28,7 +28,7 @@ cmd_help() {
   # advertises a command it does not have (sync-starter.sh deletes that file).
   if type cmd_publish >/dev/null 2>&1; then
     echo -e "  ${BOLD}${DIM}Platform owner${NC}"
-    echo -e "    ${GREEN}publish${NC}     Full release — every lane whose content changed"
+    echo -e "    ${GREEN}publish${NC}     Full release. Every lane whose content changed"
     echo -e "    ${GREEN}ground${NC}      Prefill terraform.tfvars from your cloud CLI ${DIM}(do|aws)${NC}"
     echo -e "    ${GREEN}dev${NC}         Run the monorepo locally"
     echo ""
