@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# unoverse doctor
+# unoverse check
 
 cmd_doctor() {
 

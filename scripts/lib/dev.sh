@@ -33,7 +33,7 @@ cmd_dev() {
   # Re-check after potential cmd_start — bail if still not running
   running_count=$(docker compose -f "$ROOT/docker-compose.yml" ps --format "{{.Name}}" --filter "status=running" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$running_count" -eq 0 ] 2>/dev/null; then
-    fail "Platform failed to start. Run ${BOLD}unoverse doctor${NC} to diagnose"
+    fail "Platform failed to start. Run ${BOLD}unoverse check${NC} to diagnose"
     exit 1
   fi
 
@@ -62,7 +62,7 @@ cmd_dev() {
   ns_status=$(docker compose -f "$ROOT/docker-compose.yml" ps --format '{{.Status}}' unoverse 2>/dev/null | head -1)
   if ! echo "$ns_status" | grep -qi "up"; then
     warn "unoverse is not running (status: ${ns_status:-unknown}). Skipping restart"
-    info "Run ${BOLD}unoverse doctor${NC} to diagnose"
+    info "Run ${BOLD}unoverse check${NC} to diagnose"
   elif [ "$dev_cold_start" = "1" ]; then
     echo "  Restarting unoverse..."
     docker compose -f "$ROOT/docker-compose.yml" restart unoverse 2>/dev/null || true
@@ -84,7 +84,7 @@ cmd_dev() {
   ok "Custom code in ${BOLD}packages/${NC} is mounted into unoverse"
   echo ""
   info "After making changes:"
-  info "  ./unoverse build                              # Build all + restart"
-  info "  ./unoverse build @unoverse-platform/my-node    # Build one package + restart"
+  info "  unoverse build                              # Build all + restart"
+  info "  unoverse build @unoverse-platform/my-node    # Build one package + restart"
   echo ""
 }

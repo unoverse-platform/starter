@@ -203,7 +203,7 @@ cmd_db_verify() {
           if (m.column) {
             console.log("    ALTER TABLE " + m.table + " ADD COLUMN IF NOT EXISTS " + m.column + ". Needs migration");
           } else {
-            console.log("    CREATE TABLE " + m.table + ". Run ./unoverse db-setup");
+            console.log("    CREATE TABLE " + m.table + ". Run unoverse check");
           }
         }
         process.exit(1);
@@ -237,7 +237,7 @@ cmd_db_verify() {
   if [ $verify_exit -eq 0 ]; then
     ok "Database schema verified"
   else
-    fail "Database schema has issues: re-run ${BOLD}./unoverse db-setup${NC}"
+    fail "Database schema has issues: re-run ${BOLD}unoverse check${NC}"
   fi
   return $verify_exit
 }

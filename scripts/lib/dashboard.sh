@@ -9,7 +9,7 @@ cmd_dashboard() {
   # Check if .env exists
   if [ ! -f "$ROOT/.env" ]; then
     echo ""
-    echo -e "  ${YELLOW}${BOLD}First time?${NC} Run ${GREEN}${BOLD}./unoverse init${NC} to get started."
+    echo -e "  ${YELLOW}${BOLD}First time?${NC} Run ${GREEN}${BOLD}unoverse init${NC} to get started."
     echo ""
     return
   fi
@@ -33,7 +33,7 @@ cmd_dashboard() {
       echo -e "  ${RED}●${NC} ${BOLD}$total containers stuck in Created state${NC}"
       echo ""
       echo -e "  Containers were created but never started."
-      echo -e "  Run ${GREEN}${BOLD}unoverse doctor${NC} to diagnose"
+      echo -e "  Run ${GREEN}${BOLD}unoverse check${NC} to diagnose"
     elif [ "$running" -gt 0 ]; then
       echo -e "  ${YELLOW}●${NC} ${BOLD}$running/$total services up${NC}"
       echo ""
@@ -41,17 +41,17 @@ cmd_dashboard() {
     else
       echo -e "  ${RED}●${NC} ${BOLD}Platform not running${NC} ${DIM}($total containers stopped)${NC}"
       echo ""
-      echo -e "  Run ${GREEN}${BOLD}./unoverse start${NC} to launch"
+      echo -e "  Run ${GREEN}${BOLD}unoverse start${NC} to launch"
     fi
   else
     echo ""
     echo -e "  ${DIM}●${NC} ${BOLD}Platform stopped${NC}"
     echo ""
-    echo -e "  Run ${GREEN}${BOLD}./unoverse start${NC} to launch"
+    echo -e "  Run ${GREEN}${BOLD}unoverse start${NC} to launch"
   fi
 
   echo ""
-  echo -e "  ${DIM}Run ${NC}${BOLD}./unoverse help${NC}${DIM} for all commands${NC}"
+  echo -e "  ${DIM}Run ${NC}${BOLD}unoverse help${NC}${DIM} for all commands${NC}"
   echo ""
 }
 

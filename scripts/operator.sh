@@ -5,20 +5,16 @@
 # =============================================================================
 # Zero-dependency developer tool. Works immediately after git clone.
 #
-# Usage:
-#   ./unoverse init      Interactive setup wizard
-#   ./unoverse db-setup  Run database migrations (safe to re-run)
-#   ./unoverse start     Start the platform
-#   ./unoverse stop      Stop the platform
-#   ./unoverse status    Show service health
-#   ./unoverse logs      Stream all logs
-#   ./unoverse logs <s>  Stream logs for one service
-#   ./unoverse update    Pull latest images and restart
-#   ./unoverse update nodes  Rebuild packages + restart unoverse only
-#   ./unoverse doctor    Diagnose issues
-#   ./unoverse dev       Install deps, start dev environment
-#   ./unoverse key       Issue / list / revoke publish keys for this universe
-#   ./unoverse ground    Prefill terraform.tfvars from your cloud CLI (do|aws)
+# NOT TYPED BY A HUMAN. The developer's command is the npm package `unoverse`, which
+# finds a universe folder and calls this. There is no `./unoverse` any more: one binary,
+# everywhere (2026-07-31). This file is the operator half of it.
+#
+# The surface is deliberately small. Commands that were separate ways to ask the same
+# question got folded, not renamed:
+#   doctor, db-verify, status  →  check
+#   db-setup                   →  runs inside create and deploy
+#   open                       →  where (in the npm CLI; it already prints the addresses)
+# Kept, but not advertised: ground, dev, build, publish, update nodes.
 # =============================================================================
 
 # Resolve lib/ directory relative to this script
@@ -51,7 +47,6 @@ source "$GRAVITY_LIB/db-setup.sh"
 source "$GRAVITY_LIB/db-verify.sh"
 source "$GRAVITY_LIB/deploy.sh"
 source "$GRAVITY_LIB/ground.sh"
-source "$GRAVITY_LIB/key.sh"
 # Authoring tools (lint, new, node test/hash, studio) moved to _legacy/scripts-lib
 # 2026-07-28 — authoring lives in Studio now. The CLI is the OPERATOR tool.
 # Owner-only module — absent in the starter kit by design.
@@ -73,12 +68,15 @@ case "${1:-}" in
       cmd_update
     fi
     ;;
-  check)     cmd_check ;;
-  doctor)    cmd_doctor ;;
+  # ONE question, one command. `check` runs the health check, then the schema check,
+  # then the deeper environment diagnosis — the three things that used to be `check`,
+  # `db-verify` and `doctor`, which nobody could pick between.
+  check)     cmd_check && cmd_db_verify && cmd_doctor ;;
+  doctor|db-verify|db-setup)
+    echo "  '$1' folded into 'unoverse check' (db-setup runs inside create and deploy)"
+    exit 1 ;;
   dev)       cmd_dev ;;
-  db-setup)  cmd_db_setup ;;
-  db-verify) cmd_db_verify ;;
-  key)       shift; cmd_key "$@" ;;
+  _db-setup) cmd_db_setup ;;   # internal: called by create and deploy
   ground)    shift; cmd_ground "$@" ;;
   deploy)
     # `deploy marketplace` is PLATFORM-OWNER only: it publishes the marketplace package
@@ -107,12 +105,12 @@ case "${1:-}" in
     fi
     ;;
   build)     cmd_build "${2:-}" ;;
-  open)      cmd_open "${2:-}" ;;
+  open)      echo "  'open' folded into 'unoverse where'"; exit 1 ;;
   help|--help|-h) cmd_help ;;
   "")        cmd_dashboard ;;
   *)
     echo "Unknown command: $1"
-    echo "Run ./unoverse help for usage"
+    echo "Run unoverse help for usage"
     exit 1
     ;;
 esac

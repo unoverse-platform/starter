@@ -211,14 +211,14 @@ cmd_ground() {
     command -v aws >/dev/null 2>&1 && aws sts get-caller-identity >/dev/null 2>&1 && has_aws=true
     if $has_do && $has_aws; then
       fail "both doctl and the AWS CLI are authenticated. Say which ground:"
-      info "  ./unoverse ground do    or    ./unoverse ground aws"
+      info "  unoverse ground do    or    unoverse ground aws"
       return 1
     elif $has_do; then which="do"
     elif $has_aws; then which="aws"
     else
       fail "no authenticated cloud CLI found"
-      info "DigitalOcean:  brew install doctl && doctl auth init   → ./unoverse ground do"
-      info "AWS:           brew install awscli && aws configure    → ./unoverse ground aws"
+      info "DigitalOcean:  brew install doctl && doctl auth init   → unoverse ground do"
+      info "AWS:           brew install awscli && aws configure    → unoverse ground aws"
       return 1
     fi
   fi
@@ -231,7 +231,7 @@ cmd_ground() {
       echo ""
       info "Next: fill every FILL_ME in infra/digitalocean/terraform.tfvars, then"
       info "  cd infra/digitalocean && terraform init && terraform apply"
-      info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
+      info "  cd ../.. && unoverse deploy init   # renders .env.production from the ground itself"
       info "  npx unoverse where                   # every deployed URL, probed live"
       ;;
     aws)
@@ -241,7 +241,7 @@ cmd_ground() {
       echo ""
       info "Next: fill every FILL_ME in infra/aws/terraform.tfvars, then"
       info "  cd infra/aws && terraform init && terraform apply"
-      info "  cd ../.. && ./unoverse deploy init   # renders .env.production from the ground itself"
+      info "  cd ../.. && unoverse deploy init   # renders .env.production from the ground itself"
       info "  npx unoverse where                   # every deployed URL, probed live"
       ;;
     *)

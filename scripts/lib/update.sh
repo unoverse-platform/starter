@@ -22,7 +22,7 @@ cmd_update() {
     git -C "$ROOT" status --short --untracked-files=no | sed 's/^/    /' | head -30
     echo ""
     info "Commit them:           git add -A && git commit -m 'wip'"
-    info "Or overwrite on purpose: UNOVERSE_UPDATE_FORCE=1 ./unoverse update"
+    info "Or overwrite on purpose: UNOVERSE_UPDATE_FORCE=1 unoverse update"
     echo ""
     exit 1
   fi
@@ -198,13 +198,13 @@ cmd_update() {
     ok "All $up_count services running"
   elif [ "${created_count:-0}" -gt 0 ]; then
     warn "$up_count/$total_count services running: $created_count stuck in Created state"
-    info "Run ${BOLD}unoverse doctor${NC} to diagnose"
+    info "Run ${BOLD}unoverse check${NC} to diagnose"
   elif [ "${up_count:-0}" -gt 0 ]; then
     warn "$up_count/$total_count services running"
     info "Run ${BOLD}unoverse status${NC} to check"
   else
     fail "No services running after restart"
-    info "Run ${BOLD}unoverse doctor${NC} to diagnose"
+    info "Run ${BOLD}unoverse check${NC} to diagnose"
   fi
 
   # Summary. Re-source the SHARED box helper first: `update` pulled fresh scripts a
@@ -263,7 +263,7 @@ cmd_pull() {
   read -r -p "  Pull platform images now? (~1.2GB first time) [Y/n] " REPLY
   echo ""
   if [[ "$REPLY" =~ ^[Nn]$ ]]; then
-    info "Skipped. Run ${BOLD}./unoverse start${NC} later."
+    info "Skipped. Run ${BOLD}unoverse start${NC} later."
     return
   fi
 

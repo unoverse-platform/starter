@@ -1,42 +1,36 @@
 #!/usr/bin/env bash
-# unoverse help
+# unoverse help — the OPERATOR half.
+#
+# Printed by the npm CLI when you are standing in a universe folder. It lists what you
+# can do to a universe, and nothing else. Commands that still exist but are not for
+# day-to-day operating (ground, dev, build, publish) are deliberately absent: a list you
+# can read in one glance is worth more than a complete one.
 
 cmd_help() {
 
   echo ""
-  echo -e "  ${BOLD}${CYAN}⬡ Unoverse Platform CLI${NC} ${DIM}v${GRAVITY_VERSION}${NC}"
+  echo -e "  ${BOLD}${CYAN}⬡ unoverse${NC} ${DIM}v${GRAVITY_VERSION}${NC}"
   echo ""
-  echo -e "  ${BOLD}Setup${NC}"
-  echo -e "    ${GREEN}init${NC}        Interactive setup wizard"
-  echo -e "    ${GREEN}doctor${NC}      Diagnose environment issues"
+  echo -e "  ${BOLD}Anywhere${NC}"
+  echo -e "    ${GREEN}create${NC}      Scaffold here — Studio project · universe · client app"
+  echo -e "    ${GREEN}studio${NC}      Author components, nodes, agent skills"
+  echo -e "    ${GREEN}where${NC}       Your universe's addresses, probed live"
+  echo -e "    ${GREEN}update${NC}      Update this CLI"
   echo ""
-  echo -e "  ${BOLD}Platform${NC}"
-  echo -e "    ${GREEN}start${NC}       Start all services"
-  echo -e "    ${GREEN}stop${NC}        Stop all services"
-  echo -e "    ${GREEN}check${NC}       Run full health check"
-  echo -e "    ${GREEN}logs${NC}        Open the Dozzle log viewer ${DIM}(./unoverse logs <service> streams one in the terminal)${NC}"
-  echo -e "    ${GREEN}update${NC}      Pull latest images and restart"
-  echo -e "    ${GREEN}open${NC}        Open in browser ${DIM}(./unoverse open canvas|api|logs)${NC}"
+  echo -e "  ${BOLD}This universe${NC}"
+  echo -e "    ${GREEN}start${NC}       Start it"
+  echo -e "    ${GREEN}stop${NC}        Stop it"
+  echo -e "    ${GREEN}check${NC}       Is it healthy ${DIM}(services, schema, environment)${NC}"
+  echo -e "    ${GREEN}logs${NC}        What is it doing ${DIM}(unoverse logs <service> for one)${NC}"
+  echo -e "    ${GREEN}deploy${NC}      Ship it to your server ${DIM}(images + your work + migrations)${NC}"
   echo ""
-  echo -e "  ${BOLD}Development${NC}"
-  echo -e "    ${GREEN}dev${NC}         Install deps, gen nodes, start platform"
-  echo -e "    ${GREEN}db-setup${NC}    Run database migrations ${DIM}(safe to re-run)${NC}"
-  echo -e "    ${GREEN}db-verify${NC}   Verify database schema against Prisma"
-  echo -e "    ${GREEN}build${NC}       Build and restart ${DIM}(./unoverse build <package>)${NC}"
-  echo ""
-  echo -e "  ${BOLD}Deployment${NC}"
-  echo -e "    ${GREEN}ground${NC}                  Prefill terraform.tfvars from your cloud CLI ${DIM}(./unoverse ground do|aws)${NC}"
-  echo -e "    ${GREEN}deploy${NC}                  Deploy your platform: images + your work → your server"
-  echo -e "    ${GREEN}deploy init${NC}             First-time setup: install + db + verify (harden is your call, after)"
-  echo -e "    ${GREEN}deploy db${NC}               Re-run database setup on server"
-  echo -e "    ${GREEN}deploy harden${NC}           Re-run security hardening"
   # Owner-only lane. Printed ONLY when publish.sh is present, so a starter kit never
   # advertises a command it does not have (sync-starter.sh deletes that file).
-  if type cmd_deploy_marketplace >/dev/null 2>&1; then
-    echo -e "    ${GREEN}deploy marketplace${NC}      Publish the marketplace: design system, skills, blocks, nodes"
-    echo -e "    ${GREEN}publish base${NC}            Publish the node runtime open source: npm + github"
-    echo -e "    ${GREEN}publish tools${NC}           Publish the CLI + Studio to npm, drifted ones only"
+  if type cmd_publish >/dev/null 2>&1; then
+    echo -e "  ${BOLD}${DIM}Platform owner${NC}"
+    echo -e "    ${GREEN}publish${NC}     Full release — every lane whose content changed"
+    echo -e "    ${GREEN}ground${NC}      Prefill terraform.tfvars from your cloud CLI ${DIM}(do|aws)${NC}"
+    echo -e "    ${GREEN}dev${NC}         Run the monorepo locally"
+    echo ""
   fi
-  echo -e "    ${GREEN}deploy test${NC}             Run connectivity test"
-  echo ""
 }

@@ -27,9 +27,9 @@ cmd_deploy() {
     fail ".env.production not found, and no applied Terraform ground to render it from"
     echo ""
     info "Provision first — then deploy renders the env itself:"
-    info "  ./unoverse ground                          # prefill terraform.tfvars"
+    info "  unoverse ground                          # prefill terraform.tfvars"
     info "  cd infra/digitalocean && terraform init && terraform apply    # or infra/aws"
-    info "  cd ../.. && ./unoverse deploy init"
+    info "  cd ../.. && unoverse deploy init"
     echo ""
     exit 1
   fi

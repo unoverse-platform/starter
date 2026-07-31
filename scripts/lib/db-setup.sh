@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# unoverse db-setup — runs node-pg-migrate to apply all pending migrations
+# unoverse check — runs node-pg-migrate to apply all pending migrations
 
 cmd_db_setup() {
   banner "Database Setup"
@@ -57,8 +57,8 @@ cmd_db_setup() {
       echo -e "  ${DIM}(Migration files are bundled inside the unoverse Docker image)${NC}"
       echo ""
       echo -e "  Start services first, then re-run:"
-      echo -e "    ${GREEN}./unoverse start${NC}"
-      echo -e "    ${GREEN}./unoverse db-setup${NC}"
+      echo -e "    ${GREEN}unoverse start${NC}"
+      echo -e "    ${GREEN}unoverse check${NC}"
       echo ""
       exit 1
     fi

@@ -154,7 +154,7 @@ cmd_start() {
       echo ""
       echo -e "  ${YELLOW}Common causes:${NC}"
       echo -e "    • Docker cannot mount project directory (restricted folder)"
-      echo -e "    • Try: ${GREEN}unoverse doctor${NC} to diagnose"
+      echo -e "    • Try: ${GREEN}unoverse check${NC} to diagnose"
       echo -e "    • Try: ${GREEN}docker compose down && unoverse start${NC} to recreate"
     else
       info "Run ${BOLD}unoverse status${NC} to see which services failed"

@@ -1,41 +1,9 @@
 #!/usr/bin/env bash
 # unoverse init, login, install-to-path, first-run check
 
-# Install unoverse to PATH so it works globally
-install_to_path() {
-  local target="/usr/local/bin/unoverse"
-  local script_path="$ROOT/unoverse"
-
-  # Already installed and pointing to the right place
-  if [ -L "$target" ] && [ "$(readlink "$target")" = "$script_path" ]; then
-    return
-  fi
-
-  # Already installed (different project) — skip
-  if [ -f "$target" ] && [ ! -L "$target" ]; then
-    return
-  fi
-
-  echo ""
-  echo -e "  ${CYAN}${BOLD}Install unoverse command globally?${NC}"
-  echo -e "  ${DIM}This lets you run ${NC}${BOLD}unoverse start${NC}${DIM} instead of ${NC}${BOLD}./unoverse start${NC}"
-  echo ""
-  read -r -p "  Install to /usr/local/bin/unoverse? [Y/n] " REPLY
-  echo ""
-  if [[ ! "$REPLY" =~ ^[Nn]$ ]]; then
-    if ln -sf "$script_path" "$target" 2>/dev/null; then
-      ok "Installed! You can now use ${BOLD}unoverse${NC} from anywhere in this project"
-    else
-      # Need sudo
-      echo -e "  ${DIM}Requires admin access...${NC}"
-      if sudo ln -sf "$script_path" "$target" 2>/dev/null; then
-        ok "Installed! You can now use ${BOLD}unoverse${NC} from anywhere in this project"
-      else
-        warn "Could not install. Use ${BOLD}./unoverse${NC} instead"
-      fi
-    fi
-  fi
-}
+# install_to_path REMOVED 2026-07-31. The global command is the npm package `unoverse`
+# (`npm i -g unoverse`); symlinking a per-project bash script into /usr/local/bin was the
+# second CLI we set out to delete.
 
 # First-run detection
 check_first_run() {
@@ -125,14 +93,21 @@ cmd_init() {
   echo -e "  ${DIM}(Press Enter to use defaults)${NC}"
   echo ""
 
-  # DOCR Token
-  while true; do
-    read -p "  DOCR Token (from your Unoverse admin): " DOCR_TOKEN
-    if [[ "$DOCR_TOKEN" == dop_v1_* ]]; then
-      break
-    fi
-    fail "Token should start with dop_v1_"
-  done
+  # DOCR Token. `unoverse create` has already asked for this and VALIDATED it against
+  # the registry, so it hands it over rather than making you type the same credential
+  # twice minutes apart. Typed here only when init is run on its own.
+  if [ -n "${UNOVERSE_DOCR_TOKEN:-}" ]; then
+    DOCR_TOKEN="$UNOVERSE_DOCR_TOKEN"
+    ok "Registry token carried over from create"
+  else
+    while true; do
+      read -p "  DOCR Token (from your Unoverse admin): " DOCR_TOKEN
+      if [[ "$DOCR_TOKEN" == dop_v1_* ]]; then
+        break
+      fi
+      fail "Token should start with dop_v1_"
+    done
+  fi
 
   # Database (required — from admin)
   while true; do
@@ -231,19 +206,31 @@ ENVEOF
   cmd_pull
 
   # Install to PATH
-  install_to_path
-
+  
   # Done
   echo ""
   echo -e "  ${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo -e "  ${GREEN}${BOLD}  ✓ Setup Complete!${NC} ${DIM}($(timer_elapsed))${NC}"
   echo -e "  ${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  # MIGRATIONS RUN HERE, so `db-setup` is not a command anyone has to know about. Deploy
+  # already ran them on the server (playbooks/db-setup.yml); this is the local half.
+  # A database that is not reachable yet is not a failed setup — .env is written and
+  # correct, so say so and move on rather than unwinding everything.
+  echo ""
+  if grep -q '^DATABASE_URL=' "$ROOT/.env" 2>/dev/null; then
+    if cmd_db_setup; then
+      ok "Database schema is up to date"
+    else
+      warn "Could not reach the database yet. Run ${BOLD}unoverse check${NC} once it is up"
+    fi
+  fi
+
   echo ""
   echo -e "  ${BOLD}Next steps:${NC}"
   echo ""
-  echo -e "    ${GREEN}1.${NC} ${BOLD}unoverse dev${NC}     Set up dev environment and start the platform"
-  echo -e "    ${GREEN}2.${NC} ${BOLD}unoverse open${NC}    Open Canvas in your browser"
+  echo -e "    ${GREEN}unoverse start${NC}     Start the platform"
+  echo -e "    ${GREEN}unoverse where${NC}     Its addresses, once it is up"
   echo ""
-  info "Run ${BOLD}unoverse doctor${NC} anytime to check health"
+  info "Run ${BOLD}unoverse check${NC} anytime to see if it is healthy"
   echo ""
 }

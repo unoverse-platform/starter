@@ -16,7 +16,7 @@ cmd_logs() {
       info "Starting the Dozzle log viewer..."
       docker compose -f "$ROOT/docker-compose.yml" up -d dozzle >/dev/null 2>&1 || true
     fi
-    info "Tip: ${BOLD}./unoverse logs <service>${NC} to stream one service in the terminal"
+    info "Tip: ${BOLD}unoverse logs <service>${NC} to stream one service in the terminal"
     echo ""
     cmd_open logs
   fi

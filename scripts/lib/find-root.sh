@@ -10,7 +10,7 @@ find_root() {
     return
   fi
 
-  # Second: check relative to script location (for ./unoverse usage)
+  # Second: check relative to script location (for unoverse usage)
   local dir="$SCRIPT_DIR"
   if [ "$(basename "$dir")" = "scripts" ]; then
     dir="$(dirname "$dir")"
