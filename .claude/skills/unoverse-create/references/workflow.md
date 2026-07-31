@@ -1,7 +1,7 @@
 # Playbook: Build a workflow (via the builder MCP)
 
 Workflows are NOT files in the carve-out — they live in the platform and are built
-through the **builder MCP** (`unoverse-builder`, auto-registered by this repo's
+through the **builder MCP** (`canvas`, auto-registered by this repo's
 `.mcp.json`). You drive the platform's own authoring tools; the canvas updates live
 in the developer's browser as you build.
 
@@ -9,7 +9,7 @@ in the developer's browser as you build.
 
 1. **The platform is running** (`./unoverse start`, or `npm run dev` in the platform
    repo). The builder listens on `localhost:4106` — local machine only, by design.
-2. **The MCP is connected**: `unoverse-builder` should show connected with 14 tools.
+2. **The MCP is connected**: `canvas` should show connected with 14 tools.
    If it shows failed, the platform wasn't up when the session started — reconnect
    via `/mcp` after starting it.
 3. **The developer gives you a pairing code.** Ask them to open a **new empty

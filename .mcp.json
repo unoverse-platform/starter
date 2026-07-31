@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "unoverse-builder": {
+    "canvas": {
       "type": "http",
       "url": "http://localhost:4106/mcp-builder"
     }

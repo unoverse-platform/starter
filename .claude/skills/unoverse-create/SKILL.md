@@ -30,7 +30,7 @@ anything**:
 | A workflow (wire nodes into an agent/pipeline on the Canvas) | `references/workflow.md` |
 
 Workflows are the one artifact that is NOT files: they are built live on the running
-platform through the `unoverse-builder` MCP (registered by this repo's `.mcp.json`) —
+platform through the `canvas` MCP (registered by this repo's `.mcp.json`) —
 the playbook covers the bind/build/test contract.
 
 If it's ambiguous (e.g. "add a card that shows weather"), it's usually a **component**
