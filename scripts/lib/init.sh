@@ -56,18 +56,20 @@ cmd_init() {
   # separate app, and this CLI only sets up the platform.)
   timer_start
 
-  # Check Docker
+  # DOCKER IS NEEDED TO START, NOT TO CONFIGURE. This used to exit here, which threw
+  # away a scaffold and a validated token because Docker Desktop happened to be closed.
+  # Writing .env needs nothing running, so record the state and carry on; the steps that
+  # genuinely need a daemon skip themselves, and `start` is where it becomes an error.
+  DOCKER_OK=0
   if ! command -v docker &>/dev/null; then
-    fail "Docker is not installed"
+    warn "Docker is not installed. Configuration will finish; install it before ${BOLD}unoverse start${NC}"
     info "Install: https://docs.docker.com/get-docker/"
-    exit 1
+  elif ! docker info &>/dev/null; then
+    warn "Docker is not running. Configuration will finish; start Docker Desktop before ${BOLD}unoverse start${NC}"
+  else
+    DOCKER_OK=1
+    ok "Docker is installed and running"
   fi
-
-  if ! docker info &>/dev/null; then
-    fail "Docker is not running. Please start Docker Desktop."
-    exit 1
-  fi
-  ok "Docker is installed and running"
 
   # Apple Silicon check
   if [ "$(uname -m)" = "arm64" ]; then
@@ -192,18 +194,22 @@ ENVEOF
 
   ok ".env created"
 
-  # Docker login
-  echo ""
-  echo -e "  Logging in to DigitalOcean Container Registry..."
-  if echo "$DOCR_TOKEN" | docker login "$DOCR_REGISTRY" -u "$DOCR_TOKEN" --password-stdin &>/dev/null; then
-    ok "Logged in to DOCR"
+  # Registry login and the image pull both need a daemon. Without one the token is
+  # already written to .env, so `unoverse start` does this on its first run.
+  if [ "$DOCKER_OK" = "1" ]; then
+    echo ""
+    echo -e "  Logging in to DigitalOcean Container Registry..."
+    if echo "$DOCR_TOKEN" | docker login "$DOCR_REGISTRY" -u "$DOCR_TOKEN" --password-stdin &>/dev/null; then
+      ok "Logged in to DOCR"
+    else
+      fail "DOCR login failed. Check your token"
+      exit 1
+    fi
+    cmd_pull
   else
-    fail "DOCR login failed. Check your token"
-    exit 1
+    echo ""
+    info "Skipped the registry login and image pull. ${BOLD}unoverse start${NC} does both once Docker is up"
   fi
-
-  # Pull images
-  cmd_pull
 
   # Install to PATH
   
@@ -228,7 +234,12 @@ ENVEOF
   echo ""
   echo -e "  ${BOLD}Next steps:${NC}"
   echo ""
-  echo -e "    ${GREEN}unoverse start${NC}     Start the platform"
+  if [ "$DOCKER_OK" = "1" ]; then
+    echo -e "    ${GREEN}unoverse start${NC}     Start the platform"
+  else
+    echo -e "    ${DIM}1.${NC} Start Docker Desktop"
+    echo -e "    ${DIM}2.${NC} ${GREEN}unoverse start${NC}"
+  fi
   echo -e "    ${GREEN}unoverse where${NC}     Its addresses, once it is up"
   echo ""
   info "Run ${BOLD}unoverse check${NC} anytime to see if it is healthy"
