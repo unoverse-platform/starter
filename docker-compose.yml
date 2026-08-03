@@ -154,8 +154,8 @@ services:
       - "127.0.0.1:4101:4101" # workflow surface (engine in-process)
     environment:
       - NODE_ENV=production
-      # Studio/workbench is a Vite DEV server — it only runs via `npm run dev` (source),
-      # NOT in this production image. Keep this 0; the Docker runtime serves MCP + API only.
+      # Studio is a separate app, launched by the CLI from source. It is not in this image
+      # and has no switch here: the Docker runtime serves MCP + API only.
       - UNOVERSE_PORT=4105
       # PUBLIC origin the app's OWN /mcp + /stream live at — baked into each MCP app's
       # widget CSP (openai/widgetCSP.connect_domains). MUST be the api.<domain> host, or
@@ -171,11 +171,16 @@ services:
       - UNOVERSE_INTERNAL_BIND=0.0.0.0
       - AUTH_ISSUER=${AUTH_ISSUER:-}
       - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
+      # WHERE THE MARKETPLACE IS. The catalogue this universe can install from, served as
+      # static files (catalogue.json plus each item's own definition). No default: a baked
+      # URL ties the image to one deployment and hides a missing setting. Empty means no
+      # remote catalogue, and the universe offers only what is on its own disk, which is
+      # what the monorepo and an air-gapped install both want.
+      - UNOVERSE_MARKETPLACE_URL=${UNOVERSE_MARKETPLACE_URL:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       # Optional: page-intelligence features (promote-page extraction).
       - HYPERBROWSER_API_KEY=${HYPERBROWSER_API_KEY:-}
       # TEMP test shim: SearchPlaces/SearchAPI env fallback when no credential is stored.
-      - SEARCHAPI_KEY=${SEARCHAPI_KEY:-}
       - SERVER_WS_URL=ws://server:4100
       # In-process loopback: the engine runs IN THIS container and binds :4101.
       - WORKFLOW_SERVICE_URL=http://127.0.0.1:4101

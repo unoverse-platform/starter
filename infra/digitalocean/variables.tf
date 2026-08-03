@@ -5,16 +5,18 @@ variable "do_token" {
   sensitive   = true
 }
 
+# NO DEFAULTS ON EITHER OF THESE. They used to default to "lon1" and "universe-poc", which
+# meant a tfvars missing them built somebody's universe in London under a placeholder name
+# and reported success. Where it runs and what it is called are the developer's answers, so
+# terraform should refuse to plan without them rather than quietly supply mine.
 variable "region" {
-  description = "DigitalOcean region for everything."
+  description = "DigitalOcean region for everything (doctl compute region list)."
   type        = string
-  default     = "lon1"
 }
 
 variable "name" {
-  description = "Prefix for every resource."
+  description = "Prefix for every resource, and the name of the DigitalOcean project they are grouped under."
   type        = string
-  default     = "universe-poc"
 }
 
 variable "size" {
@@ -122,4 +124,15 @@ variable "hyperbrowser_api_key" {
   type        = string
   default     = ""
   sensitive   = true
+}
+
+# The catalogue this universe installs from (MARKETPLACE.md §5). NO DEFAULT, deliberately:
+# a URL is never hardcoded and never a fallback, and absent config means no remote
+# catalogue — the universe serves what it has on disk and in its rows, which is the correct
+# state for development and for air-gapped estates. It reaches the marketplace at install
+# time and at no other time.
+variable "marketplace_url" {
+  description = "Base URL of the marketplace catalogue. Empty = local items only."
+  type        = string
+  default     = ""
 }

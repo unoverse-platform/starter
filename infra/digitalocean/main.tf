@@ -116,17 +116,18 @@ resource "digitalocean_firewall" "app" {
     port_range                = "4105"
     source_load_balancer_uids = [digitalocean_loadbalancer.public.id]
   }
-  # Canvas (operator UI): the DO LB has NO host-based routing (Caddy did), so the
-  # public LB carries ONLY the api host → :4105. Canvas is an OPERATOR tool —
-  # admin-only direct access, same trust ring as SSH and Dozzle. It still calls
-  # the platform at https://api.<domain> like any client.
-  # POC (canvas_public = true): :3001 ALSO accepts the public LB, which serves
-  # Canvas at https://api.<domain>:3001. Direct-IP access stays admin-only either way.
+  # Canvas (operator UI). Direct access to :3001 on the droplet stays admin-only, same
+  # trust ring as SSH and Dozzle, whatever else is true.
+  # With canvas_public: whichever load balancer fronts it may reach :3001 too — the canvas
+  # LB when there is a domain, the main one when there is not. Naming both here would open
+  # 3001 to an LB that is not serving Canvas in that mode.
   inbound_rule {
-    protocol                  = "tcp"
-    port_range                = "3001"
-    source_addresses          = [var.admin_cidr]
-    source_load_balancer_uids = var.canvas_public ? [digitalocean_loadbalancer.public.id] : []
+    protocol         = "tcp"
+    port_range       = "3001"
+    source_addresses = [var.admin_cidr]
+    source_load_balancer_uids = var.canvas_public ? (
+      local.has_domain ? [digitalocean_loadbalancer.canvas[0].id] : [digitalocean_loadbalancer.public.id]
+    ) : []
   }
 
   outbound_rule {
@@ -183,18 +184,16 @@ resource "digitalocean_loadbalancer" "public" {
     }
   }
 
-  # POC (canvas_public = true, DECIDED 2026-07-29): Canvas rides the SAME LB on a
-  # second port — https://canvas.<domain>:3001 (a SAN on the api certificate, an A record to this same LB). ONE load balancer total: DO LBs can't
-  # host-route, and a clean second hostname would cost a second LB; the POC takes
-  # the port in the URL instead. Domainless: same second port, plain HTTP.
+  # DOMAINLESS ONLY. Without a hostname there is nothing to route by, so Canvas takes a
+  # second port on this LB's IP. With a domain it gets its own load balancer below and a
+  # clean https://canvas.<domain> — see the note there.
   dynamic "forwarding_rule" {
-    for_each = var.canvas_public ? [1] : []
+    for_each = var.canvas_public && !local.has_domain ? [1] : []
     content {
-      entry_port       = 3001
-      entry_protocol   = local.has_domain ? "https" : "http"
-      target_port      = 3001
-      target_protocol  = "http"
-      certificate_name = one(digitalocean_certificate.api[*].name)
+      entry_port      = 3001
+      entry_protocol  = "http"
+      target_port     = 3001
+      target_protocol = "http"
     }
   }
 
@@ -206,12 +205,49 @@ resource "digitalocean_loadbalancer" "public" {
   }
 }
 
+# CANVAS GETS ITS OWN LOAD BALANCER, so its URL carries no port.
+#
+# Supersedes the 2026-07-29 decision to run one LB and put :3001 in the URL. A port in a
+# hostname is not a URL anyone ships: it breaks the expectation that https means 443, it
+# has to be explained to every operator, and it leaks an implementation detail of the
+# ingress into the address bar. The reason for it was real — DigitalOcean load balancers
+# route on PORT only, never on the Host header, so one LB genuinely cannot serve two
+# hostnames — but the conclusion was wrong. The right answer to "the product cannot do
+# this" is a second load balancer, not a worse address.
+#
+# ~$12/month, and only when a domain is set AND Canvas is public. Domainless universes
+# keep the second port on the main LB above: with no hostname there is nothing to route by,
+# so a second LB would buy nothing.
+resource "digitalocean_loadbalancer" "canvas" {
+  count                     = local.has_domain && var.canvas_public ? 1 : 0
+  name                      = "${var.name}-canvas-lb"
+  region                    = var.region
+  droplet_ids               = [digitalocean_droplet.app.id]
+  redirect_http_to_https    = true
+  http_idle_timeout_seconds = 600
+
+  forwarding_rule {
+    entry_port       = 443
+    entry_protocol   = "https"
+    target_port      = 3001
+    target_protocol  = "http"
+    certificate_name = one(digitalocean_certificate.api[*].name)
+  }
+
+  # Canvas has no /health of its own; the root answering is the liveness signal.
+  healthcheck {
+    port     = 3001
+    protocol = "http"
+    path     = "/"
+  }
+}
+
 resource "digitalocean_record" "canvas" {
   count  = local.has_domain && var.canvas_public && var.manage_dns ? 1 : 0
   domain = var.domain
   type   = "A"
   name   = "canvas"
-  value  = digitalocean_loadbalancer.public.ip
+  value  = digitalocean_loadbalancer.canvas[0].ip
   ttl    = 300
 }
 
@@ -236,16 +272,35 @@ resource "digitalocean_database_cluster" "pg" {
   node_count = 1
 }
 
+# NAMED AFTER THE UNIVERSE, not "universe". A cluster can host several universes — that
+# is the whole point of adopting one rather than provisioning per stack — and a hardcoded
+# name means the second one either collides with the first or, worse, attaches to it and
+# silently shares its data. Everything else on this ground is already ${var.name}-prefixed.
 resource "digitalocean_database_db" "universe" {
   count      = local.pg_managed ? 1 : 0
   cluster_id = local.pg_cluster_id
-  name       = "universe"
+  name       = var.name
 }
 
 resource "digitalocean_database_user" "universe" {
   count      = local.pg_managed ? 1 : 0
   cluster_id = local.pg_cluster_id
-  name       = "universe"
+  name       = var.name
+
+  # NEVER UPDATE THIS USER IN PLACE. Provider 2.96 grew a `settings` block (Kafka and
+  # OpenSearch ACLs) and an update path that fires whenever it sees any diff on the
+  # resource — including one the provider invented itself on refresh. For a Postgres user,
+  # which has no settings, that path PUTs an empty body and DigitalOcean rejects it:
+  #
+  #   400 request is missing the following required fields: user_settings
+  #
+  # It killed a deploy mid-apply, after the firewall had already changed, on a resource
+  # declaring nothing but a name. We create this user once and never modify it — name and
+  # cluster_id both force replacement anyway — so there is no update we want, and the
+  # safest number of update paths to leave available is zero.
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 # Transaction-mode pool: ~hundreds of client connections over `pgbouncer` backend
@@ -254,15 +309,25 @@ resource "digitalocean_database_user" "universe" {
 resource "digitalocean_database_connection_pool" "universe" {
   count      = local.pg_managed ? 1 : 0
   cluster_id = local.pg_cluster_id
-  name       = "universe-pool"
+  name       = "${var.name}-pool"
   mode       = "transaction"
   size       = local.s.pgbouncer
   db_name    = digitalocean_database_db.universe[0].name
   user       = digitalocean_database_user.universe[0].name
 }
 
+# ONLY A CLUSTER THIS STACK CREATED. `digitalocean_database_firewall` is AUTHORITATIVE:
+# it replaces the whole trusted-sources list rather than adding to it. Applied to an
+# ADOPTED cluster it therefore deleted every rule the account already had — the
+# operator's own IP, their other droplets, their App Platform apps — and locked them out
+# of a database this universe merely borrows. It happened, on 2026-08-01.
+#
+# So terraform owns the firewall only when it owns the cluster (`provision_pg`). For an
+# adopted cluster the CLI appends this droplet to the existing rules instead
+# (scripts/lib/deploy.sh), which is additive and leaves everything else alone. A universe
+# never takes ownership of a database it did not create.
 resource "digitalocean_database_firewall" "pg" {
-  count      = local.pg_managed ? 1 : 0
+  count      = local.provision_pg ? 1 : 0
   cluster_id = local.pg_cluster_id
   rule {
     type  = "droplet"
@@ -270,12 +335,18 @@ resource "digitalocean_database_firewall" "pg" {
   }
 }
 
-# ── Redis: ALWAYS ours (Managed Redis, TLS, droplet-only). Never BYO — it is
-# the shared-state backbone and the active/active future; the stack owns it. ──
+# ── Valkey: ALWAYS ours (managed, TLS, droplet-only). Never BYO — it is the
+# shared-state backbone and the active/active future; the stack owns it.
+#
+# VALKEY, NOT REDIS. DigitalOcean retired the `redis` engine: /v2/databases/options now
+# lists valkey and no redis at all. Asking for a dead engine failed with "region 'lon1'
+# is not valid", because an unknown engine matches no region — an error that sent us
+# looking at the region for as long as it took to ask the API what engines exist.
+# Valkey speaks the Redis protocol, so every client here is unchanged. ──
 resource "digitalocean_database_cluster" "redis" {
   name       = "${var.name}-redis"
-  engine     = "redis"
-  version    = "7"
+  engine     = "valkey"
+  version    = "8"
   size       = local.s.redis
   region     = var.region
   node_count = 1
@@ -294,4 +365,32 @@ resource "digitalocean_database_firewall" "redis" {
 resource "random_password" "credential_key" {
   length  = 44
   special = false
+}
+
+# ── One project, so a universe looks like one thing ───────────────────────────
+#
+# Without this, a universe's parts scatter through the DigitalOcean default project among
+# everything else the account runs, and "what does this universe own" has no answer you
+# can see. The project is named after the universe, so the console shows the server, the
+# cache and the load balancer as one group.
+#
+# ONLY WHAT THIS STACK OWNS. An adopted Postgres belongs to whoever created it; moving it
+# into this project would quietly reorganise someone else's resource.
+resource "digitalocean_project" "universe" {
+  name        = var.name
+  description = "unoverse universe: ${var.name}"
+  purpose     = "Web Application"
+  environment = var.size == "small" ? "Development" : "Production"
+  # EVERY resource this stack creates, or the dashboard lies. The Canvas load balancer was
+  # added without being listed here, so it stayed in the account's default project while
+  # the rest of the universe sat in this one: two views each reporting "LOAD BALANCERS (1)"
+  # and no single place showing what this universe actually is. Anything added below must
+  # be added here in the same commit.
+  resources = compact([
+    digitalocean_droplet.app.urn,
+    digitalocean_loadbalancer.public.urn,
+    local.has_domain && var.canvas_public ? digitalocean_loadbalancer.canvas[0].urn : "",
+    digitalocean_database_cluster.redis.urn,
+    local.provision_pg ? digitalocean_database_cluster.pg[0].urn : "",
+  ])
 }

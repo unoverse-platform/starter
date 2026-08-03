@@ -11,11 +11,51 @@ terraform {
     aws     = { source = "hashicorp/aws", version = ">= 5.83, < 6.0" }
     random  = { source = "hashicorp/random", version = "~> 3.6" }
     archive = { source = "hashicorp/archive", version = "~> 2.4" }
+    # For the IAM propagation wait below. IAM is eventually consistent and Lambda is the
+    # one resource here that reliably outruns it.
+    time = { source = "hashicorp/time", version = "~> 0.11" }
   }
 }
 
+# ── One universe, one group ───────────────────────────────────────────────────
+#
+# AWS has no projects. Its equivalent is TAGS, and `default_tags` is the only honest way
+# to apply them: it stamps every resource this configuration creates, so nothing is
+# forgotten the day someone adds a resource and does not think about tagging. The console
+# view comes from the Resource Group below, and the same tag drives cost allocation, which
+# a DigitalOcean project cannot do.
+#
+# It touches ONLY what this stack creates. An adopted database keeps its own tags, in
+# keeping with the rule that a universe never takes ownership of what it borrowed
+# (INFRASTRUCTURE.md, "Borrowed resources are never owned").
 provider "aws" {
   region = var.region
+
+  default_tags {
+    tags = {
+      Universe  = var.name
+      ManagedBy = "unoverse"
+      Size      = var.size
+    }
+  }
+}
+
+# The console's answer to "what does this universe own". A tag query rather than a
+# membership list, so it stays correct as the ground grows without anyone maintaining it.
+resource "aws_resourcegroups_group" "universe" {
+  name        = var.name
+  # AWS Resource Groups allow ONLY [\sa-zA-Z0-9_.-] in a description — no colon, no
+  # parentheses. "unoverse universe: name" failed CreateGroup after four minutes of ALB
+  # provisioning, and terraform validate cannot see it: the rule lives in the AWS API, not
+  # in the schema.
+  description = "unoverse universe ${var.name}"
+
+  resource_query {
+    query = jsonencode({
+      ResourceTypeFilters = ["AWS::AllSupported"]
+      TagFilters          = [{ Key = "Universe", Values = [var.name] }]
+    })
+  }
 }
 
 # ── Network: default VPC + two security groups ─────────────────────────────────
@@ -69,6 +109,9 @@ locals {
   # no cert, the ALB speaks plain HTTP on its DNS name. Setting domain later and
   # re-applying upgrades the SAME ALB in place — ACM cert, HTTPS listener, redirect.
   has_domain = var.domain != ""
+  # Where a person actually goes. Shared by the invitation email and the canvas_url output
+  # so the address in the email can never drift from the address in the deploy summary.
+  canvas_entry = var.domain != "" ? "https://canvas.${var.domain}" : "http://${aws_lb.public.dns_name}:3001"
   api_host   = "api.${var.domain}"
   dns_auto   = local.has_domain && var.route53_zone_id != ""
 }
@@ -116,7 +159,9 @@ resource "aws_security_group" "app" {
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    description     = "Platform (api.<domain>) from the ALB only"
+    # Security group descriptions forbid angle brackets. "api.<domain>" reads naturally in
+    # prose and is rejected by the API.
+    description     = "Platform api host, from the ALB only"
     from_port       = 4105
     to_port         = 4105
     protocol        = "tcp"
@@ -203,10 +248,22 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+# The key pair, from the operator's own public key. AWS accepts an imported key, so nothing
+# has to pre-exist in the account and no private key is ever downloaded or stored.
+resource "aws_key_pair" "operator" {
+  count      = var.operator_public_key != "" ? 1 : 0
+  key_name   = "${var.name}-operator"
+  public_key = var.operator_public_key
+}
+
+locals {
+  key_name = var.operator_public_key != "" ? aws_key_pair.operator[0].key_name : var.ssh_key_name
+}
+
 resource "aws_instance" "app" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = local.s.instance
-  key_name               = var.ssh_key_name
+  key_name               = local.key_name
   vpc_security_group_ids = [aws_security_group.app.id]
 
   root_block_device {
@@ -318,7 +375,19 @@ resource "aws_iam_role_policy_attachment" "pretoken_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# IAM IS EVENTUALLY CONSISTENT, AND LAMBDA OUTRUNS IT. The role is created, Lambda is
+# created two seconds later, and AWS answers "The role defined for the function cannot be
+# assumed by Lambda" — the role is correct and simply not visible yet. Terraform's
+# dependency graph is satisfied because the role exists; AWS's own propagation is not.
+#
+# Ten seconds is the usual advice and it costs ten seconds on a first apply only.
+resource "time_sleep" "iam_propagation" {
+  depends_on      = [aws_iam_role.pretoken, aws_iam_role_policy_attachment.pretoken_logs]
+  create_duration = "10s"
+}
+
 resource "aws_lambda_function" "pretoken" {
+  depends_on       = [time_sleep.iam_propagation]
   function_name    = "${var.name}-pretoken"
   role             = aws_iam_role.pretoken.arn
   runtime          = "nodejs20.x"
@@ -351,6 +420,35 @@ resource "aws_cognito_user_pool" "pool" {
       lambda_arn     = aws_lambda_function.pretoken.arn
       # V2_0 = "basic features + access token customization" — the whole point.
       lambda_version = "V2_0"
+    }
+  }
+
+  # THE INVITATION HAS TO SAY WHERE TO GO. Cognito's default message is a username and a
+  # temporary password and no address: the first administrator of a brand new universe
+  # receives credentials for a login page they have never been told the name of, and the
+  # hosted UI URL is buried in a terraform output they have no reason to read.
+  #
+  # The domain is built from the same random_id the domain resource uses, so this can name
+  # the URL without depending on that resource and creating a cycle back to this pool.
+  admin_create_user_config {
+    allow_admin_create_user_only = true
+    invite_message_template {
+      # LINK TO THE APP, NOT TO COGNITO. The hosted sign-in page needs a client_id, and the
+      # client is created FROM this pool — referencing it here is a dependency cycle. Canvas
+      # is also simply the better destination: it redirects to Cognito itself, and the
+      # administrator ends up where they were trying to go rather than on a login screen with
+      # nowhere to land afterwards.
+      # SMS IS REQUIRED EVEN WHEN ONLY EMAIL IS USED. Cognito validates the whole template:
+      # omit sms_message and UpdateUserPool rejects it for an empty value that must be at
+      # least six characters. It must contain {username} and {####} or the API refuses it.
+      sms_message   = "Your ${var.name} universe: {username}, temporary password {####}"
+      email_subject = "Your ${var.name} universe is ready"
+      email_message = <<-MSG
+        <p>Your universe is deployed, and this account administers it.</p>
+        <p><b>Open it:</b> <a href="${local.canvas_entry}">${local.canvas_entry}</a></p>
+        <p>Username: <b>{username}</b><br/>Temporary password: <b>{####}</b></p>
+        <p>You will be asked to choose a new password the first time you sign in.</p>
+      MSG
     }
   }
 }
@@ -460,7 +558,7 @@ resource "aws_iam_access_key" "bedrock" {
 resource "aws_acm_certificate" "public" {
   count                     = local.has_domain ? 1 : 0
   domain_name               = local.api_host
-  subject_alternative_names = var.canvas_public ? ["unoverse.${var.domain}"] : []
+  subject_alternative_names = var.canvas_public ? ["canvas.${var.domain}"] : []
   validation_method         = "DNS"
 
   lifecycle {
@@ -592,7 +690,7 @@ resource "aws_lb_listener_rule" "canvas" {
   }
   condition {
     host_header {
-      values = ["unoverse.${var.domain}"]
+      values = ["canvas.${var.domain}"]
     }
   }
 }
@@ -628,7 +726,7 @@ resource "aws_route53_record" "api" {
 resource "aws_route53_record" "unoverse" {
   count   = local.dns_auto && var.canvas_public ? 1 : 0
   zone_id = var.route53_zone_id
-  name    = "unoverse.${var.domain}"
+  name    = "canvas.${var.domain}"
   type    = "A"
 
   alias {

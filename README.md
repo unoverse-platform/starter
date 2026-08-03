@@ -30,7 +30,7 @@ only pull with it, so there is nothing to run without one.
 <details><summary>Prefer GitHub?</summary>
 
 This repo is also a template: **Use this template → Create a new repository**,
-then clone your copy. You'll enter the same registry token at `./unoverse init`.
+then clone your copy. You'll enter the same registry token at `unoverse create`.
 </details>
 
 ## Prerequisites
@@ -45,7 +45,7 @@ then clone your copy. You'll enter the same registry token at `./unoverse init`.
 ## Quick start
 
 ```bash
-./unoverse init        # setup wizard: env config + registry login + image pull
+unoverse start         # registry login, image pull, migrations
 ./unoverse start       # start the platform
 ./unoverse db-setup    # apply database migrations
 ./unoverse check       # verify: services, health, node catalog, bundles
@@ -110,7 +110,6 @@ and approve the `unoverse-builder` server the first time Claude Code asks.
 
 | Command | Purpose |
 |---------|---------|
-| `unoverse init` | Interactive setup wizard |
 | `unoverse start` / `unoverse stop` | Start / stop the platform |
 | `unoverse check` | Health check: services, endpoints, node catalog, bundles |
 | `unoverse logs [service]` | Stream logs |
@@ -119,7 +118,7 @@ and approve the `unoverse-builder` server the first time Claude Code asks.
 | `unoverse db-setup` | Apply database migrations |
 | `unoverse key` | Publish keys for Studio |
 | `unoverse ground` | Prefill terraform.tfvars from your cloud CLI (deployment) |
-| `unoverse deploy init` / `deploy` | First server setup / every deploy after |
+| `unoverse deploy` | Builds the infrastructure and ships the platform. First run sets the server up on its own |
 
 ## Something wrong?
 
@@ -137,7 +136,7 @@ load balancer + TLS, firewall, Postgres, Redis), then two commands:
 ```bash
 ./unoverse ground        # prefill terraform.tfvars from your cloud CLI
 # fill the FILL_ME lines, terraform apply, then:
-./unoverse deploy init   # install + database + verify
+unoverse deploy          # first run: install + database + verify, then ship
 ```
 
 Update a running server with `./unoverse update`. See

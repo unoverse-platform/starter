@@ -1,13 +1,14 @@
+# NO DEFAULTS ON EITHER OF THESE — see the same note in infra/digitalocean/variables.tf.
+# Where it runs and what it is called are the developer's answers, and a default quietly
+# supplies mine instead.
 variable "region" {
   description = "AWS region. Must have Bedrock model access enabled for the models you use."
   type        = string
-  default     = "us-east-1"
 }
 
 variable "name" {
-  description = "Prefix for every resource (also the Cognito domain prefix, so keep it dns-safe)."
+  description = "Prefix for every resource (also the Cognito domain prefix, so keep it dns-safe), and the resource group they are tagged into."
   type        = string
-  default     = "universe-poc"
 }
 
 variable "admin_cidr" {
@@ -89,4 +90,25 @@ variable "hyperbrowser_api_key" {
   type        = string
   default     = ""
   sensitive   = true
+}
+
+# The catalogue this universe installs from (MARKETPLACE.md §5). NO DEFAULT, deliberately:
+# a URL is never hardcoded and never a fallback, and absent config means no remote
+# catalogue — the universe serves what it has on disk and in its rows, which is the correct
+# state for development and for air-gapped estates. It reaches the marketplace at install
+# time and at no other time.
+variable "marketplace_url" {
+  description = "Base URL of the marketplace catalogue. Empty = local items only."
+  type        = string
+  default     = ""
+}
+
+# YOUR public key, uploaded as this universe's EC2 key pair. Deploying means ssh-ing from
+# the machine that runs `unoverse deploy`, so the key that must work is the one that machine
+# holds — not whichever pair happens to exist in the account. Empty falls back to
+# ssh_key_name, for an operator with no local key.
+variable "operator_public_key" {
+  description = "An ssh public key (the contents of ~/.ssh/id_ed25519.pub). Empty = use ssh_key_name instead."
+  type        = string
+  default     = ""
 }

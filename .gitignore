@@ -11,3 +11,15 @@ dist/
 
 # Customer-specific files (never commit these)
 package-lock.json
+
+# TERRAFORM CARRIES SECRETS. terraform.tfvars holds the database URL, the registry token
+# and every service key; the state file holds those plus everything Terraform generated,
+# all in plain text. The platform repo has ignored these since the grounds landed — a
+# universe created by the CLI did not, so the first `git init && git add .` in a customer's
+# universe would have committed the lot.
+infra/**/.terraform/
+infra/**/*.tfstate*
+infra/**/terraform.tfvars
+
+# CLI bookkeeping (which addresses it added to a database firewall, and the like)
+.unoverse/

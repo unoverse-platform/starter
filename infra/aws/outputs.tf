@@ -9,7 +9,7 @@ output "deploy_host" {
 }
 
 output "alb_dns_name" {
-  description = "Point api.<domain> (and unoverse.<domain> when canvas_public) at this — CNAME/ALIAS. Created automatically when route53_zone_id is set."
+  description = "Point api.<domain> (and canvas.<domain> when canvas_public) at this — CNAME/ALIAS. Created automatically when route53_zone_id is set."
   value       = aws_lb.public.dns_name
 }
 
@@ -24,7 +24,7 @@ output "acm_validation_records" {
 
 output "canvas_url" {
   description = "Public Canvas URL (canvas_public = true only) — add it to the client origins."
-  value       = var.canvas_public ? (local.has_domain ? "https://unoverse.${var.domain}" : "http://${aws_lb.public.dns_name}:3001") : "canvas is admin-only (direct http://<instance-ip>:3001 from admin_cidr)"
+  value       = var.canvas_public ? local.canvas_entry : "canvas is admin-only (direct http://<instance-ip>:3001 from admin_cidr)"
 }
 
 output "api_url" {
@@ -125,6 +125,9 @@ output "env_production" {
     # Service keys
     OPENAI_API_KEY=${var.openai_api_key}
     HYPERBROWSER_API_KEY=${var.hyperbrowser_api_key}
+
+    # Marketplace catalogue (MARKETPLACE.md §5). Empty = local items only.
+    UNOVERSE_MARKETPLACE_URL=${var.marketplace_url}
 
     # Ingress. With a domain: DOMAIN drives every URL (compose derives
     # https://api.<domain>). Without one (POC): DOMAIN stays empty and the
