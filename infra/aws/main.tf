@@ -503,8 +503,16 @@ resource "aws_cognito_user_pool_client" "spa" {
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
   allowed_oauth_scopes                 = ["openid", "email", "profile"]
-  callback_urls                        = var.oauth_callback_urls
-  logout_urls                          = var.oauth_callback_urls
+  # THE APP'S OWN ADDRESS IS ALWAYS ALLOWED. This took the list verbatim, so setting a
+  # domain moved Canvas to https://canvas.<domain> and Cognito kept refusing that redirect
+  # as unknown — a login that fails with "redirect_mismatch" on a deployment where every
+  # other part is correct, fixed by editing a list nobody thinks to look at.
+  #
+  # canvas_entry is the same expression the invitation email and the canvas_url output use,
+  # so the address a person is sent to is by construction an address they may return to.
+  # Anything else in the variable (localhost for dev, a second front end) is kept.
+  callback_urls                        = distinct(concat([local.canvas_entry], var.oauth_callback_urls))
+  logout_urls                          = distinct(concat([local.canvas_entry], var.oauth_callback_urls))
   supported_identity_providers         = ["COGNITO"]
 }
 
