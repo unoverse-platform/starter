@@ -92,15 +92,20 @@ variable "hyperbrowser_api_key" {
   sensitive   = true
 }
 
-# The catalogue this universe installs from (MARKETPLACE.md §5). NO DEFAULT, deliberately:
-# a URL is never hardcoded and never a fallback, and absent config means no remote
-# catalogue — the universe serves what it has on disk and in its rows, which is the correct
-# state for development and for air-gapped estates. It reaches the marketplace at install
-# time and at no other time.
+# The catalogue this universe installs from (MARKETPLACE.md §5).
+#
+# DEFAULTS TO THE OFFICIAL MARKETPLACE (decided 2026-08-03). It used to have none, on the
+# rule that a URL is never hardcoded — right for a URL only the operator can know, wrong for
+# this one: the official catalogue is the platform's own address, the same for every
+# universe, and requiring each developer to paste it made "install from the marketplace" a
+# setup step instead of a thing that works.
+#
+# Set it to your own to point elsewhere, or to "" for local items only — which is still the
+# correct state for an air-gapped estate, and still not an error.
 variable "marketplace_url" {
   description = "Base URL of the marketplace catalogue. Empty = local items only."
   type        = string
-  default     = ""
+  default     = "https://unoverse-marketplace-4hlb9.ondigitalocean.app"
 }
 
 # YOUR public key, uploaded as this universe's EC2 key pair. Deploying means ssh-ing from

@@ -13,13 +13,31 @@
  * `permissions`: the platform's builder/publish gates read permissions, node
  * requires.role matches either.
  */
+// The role → permission map, from the ground (ROLE_PERMISSIONS, set by terraform). Its
+// absence is not an error: without it a group grants itself, which is the old behaviour.
+const ROLE_PERMISSIONS = (() => {
+  try { return JSON.parse(process.env.ROLE_PERMISSIONS ?? "{}"); } catch { return {}; }
+})();
+
 export const handler = async (event) => {
   const groups = event.request.groupConfiguration?.groupsToOverride ?? [];
   const email = event.request.userAttributes?.email;
 
+  // ROLES ARE WHO YOU ARE; PERMISSIONS ARE WHAT YOU MAY DO. Cognito has one level — groups
+  // — and the platform reads two claims: Canvas gates on `roles` containing "admin", while
+  // the publish and builder gates read `permissions` for marketplace:publish and
+  // workflow:author. Emitting groups as BOTH made every group a role and a permission at
+  // once, so a pool built from permission-shaped groups had no "admin" and Canvas refused
+  // an administrator who held every permission it grants.
+  //
+  // Groups are the roles. Permissions are what those roles map to, unioned.
+  const permissions = [...new Set(
+    groups.flatMap((g) => ROLE_PERMISSIONS[g] ?? [g]),
+  )];
+
   const claims = {
     roles: groups,
-    permissions: groups,
+    permissions,
     ...(email ? { email } : {}),
   };
 

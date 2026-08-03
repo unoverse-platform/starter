@@ -54,6 +54,6 @@ roles = [
 # can bring them back. Never commit it; keep a safe copy with your database backups.
 # To change any value: edit this file and re-render. Never hand-edit the output.
 
-# Marketplace catalogue to install from (docs/architecture/MARKETPLACE.md).
-# Leave unset for local items only.
-# marketplace_url = "https://marketplace.example.com"
+# Marketplace catalogue. Defaults to the official one — set this only to point somewhere
+# else, or to "" for local items only.
+# marketplace_url = "https://your-own-marketplace.example.com"

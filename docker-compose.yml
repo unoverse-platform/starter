@@ -153,7 +153,15 @@ services:
       # health checks) still reaches it via 127.0.0.1. Never widen to "4101:4101".
       - "127.0.0.1:4101:4101" # workflow surface (engine in-process)
     environment:
-      - NODE_ENV=production
+      # PRODUCTION UNLESS THE DEVELOPER SAYS OTHERWISE. This was fixed at "production", and
+      # auth-off refuses to boot in production — correctly — so a LOCAL universe running these
+      # images could never turn auth off at all: AUTH_ENABLED=false and NODE_ENV=production
+      # are a permanent contradiction, and the platform was right to refuse both ways round.
+      #
+      # The guard is not weakened: unset still means production, and terraform's rendered env
+      # never sets this, so a deployed universe cannot drift. Turning it off is a deliberate
+      # line in a developer's own .env.
+      - NODE_ENV=${NODE_ENV:-production}
       # Studio is a separate app, launched by the CLI from source. It is not in this image
       # and has no switch here: the Docker runtime serves MCP + API only.
       - UNOVERSE_PORT=4105
@@ -169,6 +177,12 @@ services:
       # containers connect to the container IP); the loopback-only port mappings above and
       # the Docker network are the boundary here.
       - UNOVERSE_INTERNAL_BIND=0.0.0.0
+      # THE FLAG TRAVELS WITH THE ISSUER. .env could say AUTH_ENABLED=false and no
+      # container ever saw it: compose forwarded the issuer and audience and not the flag,
+      # so the server defaulted to enabled — correctly — and refused to boot on a local
+      # universe with no OIDC. The developer's own setting was invisible to the thing it
+      # configures.
+      - AUTH_ENABLED=${AUTH_ENABLED:-}
       - AUTH_ISSUER=${AUTH_ISSUER:-}
       - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
       # WHERE THE MARKETPLACE IS. The catalogue this universe can install from, served as
@@ -267,7 +281,15 @@ services:
     ports:
       - "4104:4104"
     environment:
-      - NODE_ENV=production
+      # PRODUCTION UNLESS THE DEVELOPER SAYS OTHERWISE. This was fixed at "production", and
+      # auth-off refuses to boot in production — correctly — so a LOCAL universe running these
+      # images could never turn auth off at all: AUTH_ENABLED=false and NODE_ENV=production
+      # are a permanent contradiction, and the platform was right to refuse both ways round.
+      #
+      # The guard is not weakened: unset still means production, and terraform's rendered env
+      # never sets this, so a deployed universe cannot drift. Turning it off is a deliberate
+      # line in a developer's own .env.
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=4104
       - DATABASE_URL=${DATABASE_URL:-}
       # Connection budget (INFRASTRUCTURE.md) — Terraform-rendered per size.
@@ -277,6 +299,12 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_TLS=${REDIS_TLS:-}
       - REDIS_NAMESPACE=${REDIS_NAMESPACE:-}
+      # THE FLAG TRAVELS WITH THE ISSUER. .env could say AUTH_ENABLED=false and no
+      # container ever saw it: compose forwarded the issuer and audience and not the flag,
+      # so the server defaulted to enabled — correctly — and refused to boot on a local
+      # universe with no OIDC. The developer's own setting was invisible to the thing it
+      # configures.
+      - AUTH_ENABLED=${AUTH_ENABLED:-}
       - AUTH_ISSUER=${AUTH_ISSUER:-}
       - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}

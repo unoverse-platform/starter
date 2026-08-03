@@ -388,6 +388,10 @@ resource "time_sleep" "iam_propagation" {
 
 resource "aws_lambda_function" "pretoken" {
   depends_on       = [time_sleep.iam_propagation]
+  # The role → permission map, so the Lambda can emit both claims from one group list.
+  environment {
+    variables = { ROLE_PERMISSIONS = jsonencode(local.all_roles) }
+  }
   function_name    = "${var.name}-pretoken"
   role             = aws_iam_role.pretoken.arn
   runtime          = "nodejs20.x"
@@ -459,18 +463,39 @@ resource "aws_cognito_user_pool" "pool" {
 # comes from var.roles — the deployment's own `noun:verb` role list, matched by
 # node manifests' `requires.role` (DECLARATIVE_NODES.md §9.13).
 locals {
-  platform_roles = {
-    "workflow:author"     = "May use the hosted workflow builder"
-    "marketplace:publish" = "May publish items to this universe"
+  # TWO LEVELS, BECAUSE THE PLATFORM READS TWO CLAIMS.
+  #
+  # Auth0 (the DigitalOcean ground) models this properly and is the standing contract:
+  #
+  #     ROLE admin      → permission  admin:access
+  #     ROLE developer  → permissions marketplace:publish, workflow:author, workflow:promote
+  #
+  # Canvas gates on `roles` containing "admin" (apps/canvas/src/App.jsx). The publish and
+  # builder gates read `permissions` for marketplace:publish and workflow:author
+  # (auth/publishGate.ts, auth/auth.ts). Roles are who somebody is; permissions are what
+  # they may do, and the platform never confuses them.
+  #
+  # Cognito has ONE level — groups — so the mapping lives here and the Lambda applies it.
+  # This ground previously made GROUPS the permissions and emitted them as both claims, so
+  # a pool had workflow:author and no admin: every gate passed except the one that decides
+  # whether you may open Canvas at all.
+  role_permissions = {
+    admin     = ["admin:access", "workflow:author", "marketplace:publish", "workflow:promote"]
+    developer = ["workflow:author", "marketplace:publish", "workflow:promote"]
   }
-  all_roles = merge(local.platform_roles, { for r in var.roles : r => "requires.role gate: ${r}" })
+  # Extra roles a deployment invents carry themselves as their own permission, which is what
+  # a node's `requires.role` matches.
+  all_roles = merge(
+    local.role_permissions,
+    { for r in var.roles : r => [r] },
+  )
 }
 
 resource "aws_cognito_user_group" "roles" {
   for_each     = local.all_roles
   name         = each.key
   user_pool_id = aws_cognito_user_pool.pool.id
-  description  = each.value
+  description  = "Grants: ${join(", ", each.value)}"
 }
 
 # The initial ADMIN — the first human in the universe. Without this, a fresh pool
