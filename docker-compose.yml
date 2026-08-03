@@ -184,7 +184,15 @@ services:
       # configures.
       - AUTH_ENABLED=${AUTH_ENABLED:-}
       - AUTH_ISSUER=${AUTH_ISSUER:-}
+      # AND SO DOES THE CLIENT ID. It is documented everywhere as a browser value
+      # (VITE_AUTH_CLIENT_ID) because for a long time only the browser needed it. The
+      # server needs it now: `/.well-known/unoverse-universe` is how Studio learns where
+      # to send someone to sign in, and it answers from AUTH_CLIENT_ID. Unforwarded, that
+      # endpoint returned `clientId: null` and Studio correctly refused to connect,
+      # against a universe whose .env had the value all along. Public by definition — an
+      # OAuth client id is not a secret.
       - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
+      - AUTH_CLIENT_ID=${AUTH_CLIENT_ID:-}
       # WHERE THE MARKETPLACE IS. The catalogue this universe can install from, served as
       # static files (catalogue.json plus each item's own definition). No default: a baked
       # URL ties the image to one deployment and hides a missing setting. Empty means no
@@ -306,7 +314,15 @@ services:
       # configures.
       - AUTH_ENABLED=${AUTH_ENABLED:-}
       - AUTH_ISSUER=${AUTH_ISSUER:-}
+      # AND SO DOES THE CLIENT ID. It is documented everywhere as a browser value
+      # (VITE_AUTH_CLIENT_ID) because for a long time only the browser needed it. The
+      # server needs it now: `/.well-known/unoverse-universe` is how Studio learns where
+      # to send someone to sign in, and it answers from AUTH_CLIENT_ID. Unforwarded, that
+      # endpoint returned `clientId: null` and Studio correctly refused to connect,
+      # against a universe whose .env had the value all along. Public by definition — an
+      # OAuth client id is not a secret.
       - AUTH_AUDIENCE=${AUTH_AUDIENCE:-}
+      - AUTH_CLIENT_ID=${AUTH_CLIENT_ID:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - WORKFLOW_SERVICE_URL=http://unoverse:4101
     labels:
