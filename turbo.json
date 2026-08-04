@@ -3,6 +3,11 @@
   "globalDependencies": [
     ".env"
   ],
+  "globalPassThroughEnv": [
+    "UNOVERSE_DATABASE_ONLY",
+    "UNOVERSE_HOME",
+    "UNOVERSE_INSTALLED_HOME"
+  ],
   "tasks": {
     "build": {
       "dependsOn": [
