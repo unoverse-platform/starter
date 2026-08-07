@@ -71,12 +71,12 @@ output "cognito_hosted_ui" {
 
 output "bedrock_access_key_id" {
   description = "Store as a platform awsCredential (accessKeyId) for the Bedrock/Nova nodes"
-  value       = aws_iam_access_key.bedrock.id
+  value       = one(aws_iam_access_key.bedrock[*].id)
 }
 
 output "bedrock_secret_access_key" {
   description = "Store as a platform awsCredential (secretAccessKey)"
-  value       = aws_iam_access_key.bedrock.secret
+  value       = one(aws_iam_access_key.bedrock[*].secret)
   sensitive   = true
 }
 

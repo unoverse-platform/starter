@@ -271,6 +271,28 @@ resource "aws_instance" "app" {
     volume_type = "gp3"
   }
 
+  # IMDSv2 REQUIRED, and this is not optional in a governed account.
+  #
+  # AWS's own recommended guardrail denies ec2:RunInstances unless the launch enforces
+  # IMDSv2, and organisations apply it as a Service Control Policy. Without this block the
+  # AWS default is `optional`, the condition is not met, and the deny fires:
+  #
+  #   UnauthorizedOperation ... ec2:RunInstances ... with an explicit deny in a service
+  #   control policy
+  #
+  # That error names no condition, so it reads as "EC2 is banned here" and sends you to your
+  # cloud team for a policy change you do not need. The condition is visible only by
+  # decoding the failure message (`aws sts decode-authorization-message`), which showed
+  # `ec2:MetadataHttpTokens = required`. Proved by dry run 2026-08-06: identical launch
+  # refused without this block, accepted with it.
+  #
+  # It is the right default everywhere regardless. IMDSv1 lets any process that can forge a
+  # simple GET read the instance's credentials; IMDSv2 requires a signed token first.
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+
   tags = { Name = "${var.name}-app" }
 }
 
@@ -318,8 +340,28 @@ resource "aws_db_instance" "postgres" {
 
   backup_retention_period   = 7
   backup_window             = "03:00-04:00"
-  skip_final_snapshot       = false
-  final_snapshot_identifier = "${var.name}-pg-final"
+  # NO FINAL SNAPSHOT, which is what `unoverse destroy` already promises: "this deletes data
+  # that no backup here can restore" (destroy.sh). The code said otherwise, and the two
+  # disagreed silently.
+  #
+  # A FIXED snapshot name cannot survive a SECOND teardown. `<name>-pg-final` derives only
+  # from the universe name, so teardown one creates it, it persists for ever, and teardown
+  # two is rejected by AWS before the delete even starts:
+  #
+  #   Cannot create the snapshot because a snapshot with the identifier
+  #   unoversedevtest-pg-final already exists
+  #
+  # The instance then sits at `available`, never `deleting`, and everything behind it
+  # strands: the data SG holds its network interface, the app SG is referenced by data's
+  # rules, the alb SG by app's. One rejected call, five resources left billing, and a
+  # teardown that reports it did not finish without saying why. Found 2026-08-05, blocked by
+  # a snapshot a teardown three days earlier had left behind.
+  #
+  # Making the name unique would need a new resource (a random suffix), and `terraform
+  # destroy` cannot create one on its way past. A one-command teardown means no snapshot.
+  # Automated backups (7 days, above) live and die with the instance: take a MANUAL snapshot
+  # before destroying if you want to keep anything.
+  skip_final_snapshot = true
   # POC: no deletion_protection so teardown stays one command. Turn it on at graduation.
 }
 
@@ -558,21 +600,50 @@ resource "aws_cognito_user_pool_domain" "domain" {
 # NOTE: the secret lands in Terraform state — acceptable at POC, noted in the doc.
 # Model ACCESS is enabled in the console per model/region, outside Terraform.
 
+# OPTIONAL, because it is the only thing here that needs IAM write and nothing reads it.
+#
+# The platform never uses these keys. They exist as OUTPUTS, for a developer to paste into
+# the Credentials UI, exactly as they would an OpenAI key. So a universe that does not use
+# the Bedrock nodes was minting a permanent access key for nobody, and paying for it in the
+# one place that matters: `iam:CreateUser` is excluded from AWS's PowerUserAccess policy, so
+# in any managed account this single resource turns a working deploy into a request to
+# somebody's cloud team.
+#
+# DEFAULT TRUE, deliberately. Flipping it to false would DESTROY the user and key in every
+# universe that already has one, and silently break Bedrock for anyone who had pasted those
+# keys into a credential. Set it false where IAM write is not delegated.
 resource "aws_iam_user" "bedrock" {
-  name = "${var.name}-bedrock-invoke"
+  count = var.bedrock_credentials ? 1 : 0
+  name  = "${var.name}-bedrock-invoke"
 }
 
 resource "aws_iam_user_policy" "bedrock" {
-  name = "bedrock-invoke-only"
-  user = aws_iam_user.bedrock.name
+  count = var.bedrock_credentials ? 1 : 0
+  name  = "bedrock-invoke-only"
+  user  = aws_iam_user.bedrock[0].name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Effect = "Allow"
+      # WIDE ON RUNTIME, silent on spending.
+      #
+      # Three named Invoke actions dated fast. `Converse` is the current unified API and the
+      # Bedrock nodes already call it; `ApplyGuardrail` is a separate action the guardrail
+      # node needs; knowledge bases add `Retrieve`. Each arrival meant editing this list,
+      # re-applying, and in a managed account asking an administrator again.
+      #
+      # NOT `bedrock:*`. That includes CreateProvisionedModelThroughput, which commits money.
+      # Everything below is invoke-and-read: it cannot buy capacity, and it cannot create or
+      # delete a model or a guardrail.
+      #
+      # Model access is still granted per model in the Bedrock console. No policy grants it.
       Action = [
-        "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream",
-        "bedrock:InvokeModelWithBidirectionalStream",
+        "bedrock:InvokeModel*",
+        "bedrock:Converse*",
+        "bedrock:ApplyGuardrail",
+        "bedrock:Retrieve*",
+        "bedrock:List*",
+        "bedrock:Get*",
       ]
       Resource = "*"
     }]
@@ -580,7 +651,8 @@ resource "aws_iam_user_policy" "bedrock" {
 }
 
 resource "aws_iam_access_key" "bedrock" {
-  user = aws_iam_user.bedrock.name
+  count = var.bedrock_credentials ? 1 : 0
+  user  = aws_iam_user.bedrock[0].name
 }
 
 # ── Native ingress (2026-07-29): ONE ALB, host-routed — the thing DO's LB can't

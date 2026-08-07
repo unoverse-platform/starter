@@ -117,3 +117,16 @@ variable "operator_public_key" {
   type        = string
   default     = ""
 }
+
+# Whether to create the Bedrock IAM user and access key (main.tf, "Bedrock").
+#
+# TRUE preserves what every existing universe already has. FALSE skips the only resource
+# here that needs IAM write, which is what makes a deploy possible in an account where
+# `iam:CreateUser` is not delegated. Nothing in the platform reads the keys: they are
+# outputs, for pasting into a credential, so switching this off costs a manual step and
+# nothing else.
+variable "bedrock_credentials" {
+  type        = bool
+  default     = true
+  description = "Create an IAM user and access key for the Bedrock nodes. Set false where IAM write is not delegated."
+}
