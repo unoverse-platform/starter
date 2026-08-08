@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { getAccessToken } from "../lib/auth";
+import { createAnalyticsDelivery } from "../lib/analytics";
 
 // The app UI resource served by the MCP server (§6d).
 const APP_URI = "ui://unoverse/app.html";
@@ -32,12 +33,24 @@ async function readAppHtml(serverUrl) {
   }
 }
 
-export function AppHost({ serverUrl, apiUrl, templateId, token, userId, conversationId, onSize }) {
+export function AppHost({ serverUrl, apiUrl, templateId, token, userId, conversationId, onSize, analytics }) {
   const ref = useRef(null);
   const [html, setHtml] = useState(null);
   const [error, setError] = useState(null);
 
-  const appConfig = { serverUrl, apiUrl, templateId, token, userId, conversationId };
+  // `surface` is host-supplied because the app cannot know which frame it was placed in,
+  // and the same bundle runs on all three. `analyticsDebug` rides the tenant's config
+  // rather than being a client-side switch anyone could flip on a live site.
+  const appConfig = {
+    serverUrl,
+    apiUrl,
+    templateId,
+    token,
+    userId,
+    conversationId,
+    surface: "unoverse_assistant",
+    analyticsDebug: !!analytics?.debug,
+  };
 
   useEffect(() => {
     let alive = true;
@@ -59,14 +72,24 @@ export function AppHost({ serverUrl, apiUrl, templateId, token, userId, conversa
 
   // The APP owns its width (manifest `width`) — it posts `unoverse:size` up; we hand it to the
   // panel so the slide-out sizes to the app. Only accept it from THIS iframe's window.
+  //
+  // `unoverse:event` rides the same channel (UNOVERSE_ANALYTICS.md): the app produces the
+  // event, this realm delivers it to whatever tag the tenant named. Nothing vendor-specific
+  // is decided here — createAnalyticsDelivery owns that, and returns null when analytics is
+  // switched off, which is the default.
   useEffect(() => {
+    const deliver = createAnalyticsDelivery(analytics);
     const onMessage = (e) => {
+      // The e.source check is the trust boundary: only THIS iframe may drive either path.
+      // Behavioural data crosses here, so an unchecked listener would let any frame on the
+      // page post events into the customer's analytics property under our name.
       if (e.source !== ref.current?.contentWindow) return;
       if (e.data?.type === "unoverse:size" && e.data.width) onSize?.(e.data.width);
+      else if (e.data?.type === "unoverse:event") deliver?.(e.data);
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [onSize]);
+  }, [onSize, analytics]);
 
   if (error) return <div className="flex h-full items-center justify-center p-4 text-center text-sm text-red-400">app failed to load: {error}</div>;
   if (!html) return <div className="flex h-full items-center justify-center text-sm text-gray-400">Loading app…</div>;

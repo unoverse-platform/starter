@@ -107,6 +107,7 @@ export function ClientDemo({ clientKey }) {
         userId={userId}
         conversationId={conversationId}
         onSize={setPanelWidth}
+        analytics={client.analytics}
       />
     );
   }

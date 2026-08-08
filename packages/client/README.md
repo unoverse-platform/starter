@@ -28,7 +28,7 @@ The end state that matters commercially: this app compiles to a single script
 tag that someone ELSE hosts on THEIR web page:
 
 ```html
-<script async src="https://chat.example.com/embed.js" data-app="yasisland/yasislandchatlayout"></script>
+<script async src="https://chat.example.com/embed.js" data-app="yasisland/yas-island-chat-layout"></script>
 ```
 
 `npm run build:widget` is that build target. Two consequences are
