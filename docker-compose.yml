@@ -111,7 +111,17 @@ services:
       # SAME :4105 backend as api.<domain>, so default to the api host (one public entry,
       # one cert, no extra DNS). UNOVERSE_URL can still override for a dedicated MCP host.
       - VITE_UNOVERSE_SERVICE_URL=${UNOVERSE_URL:-${DOMAIN:+https://api.${DOMAIN:-}}}
-      - MEMORY_SERVICE_URL=http://memory:4114
+      # THE BROWSER'S MEMORY UPSTREAM, AND IT IS THE PUBLIC JWT LANE (:4104). Its own
+      # variable, because `MEMORY_SERVICE_URL` means the opposite thing to a server-to-
+      # server caller: the engine uses that name for the TOKENLESS platform lane (:4114),
+      # and the canvas entrypoint was reading the same name for its nginx upstream. The
+      # dashboard therefore proxied the browser at :4114, whose /api/* routes do not
+      # exist — every memory page call 404'd on every deployed universe.
+      #
+      # The 404 was the lucky part. The platform lane asserts identity instead of proving
+      # it, so a browser reaching it would read and write ANY user's memory with no token.
+      # A browser must only ever reach :4104, which authenticates every request.
+      - MEMORY_PUBLIC_URL=http://memory:4104
     depends_on:
       - unoverse
     logging: *default-logging
