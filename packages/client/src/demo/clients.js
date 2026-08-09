@@ -1,23 +1,11 @@
-// App configuration — all values come from Vite env vars (VITE_*).
+// THE DEMO SITE'S CHANNEL REGISTRY — which fake page sits behind which template.
 //
-// This client knows only a TEMPLATE name + where the server is. It loads
-// `unoverse://templates/<name>` and renders it. If that template carries a
-// workflow `binding` (the §4b app manifest), the client opens the data-plane and
-// the workflow streams live components in; a plain template just renders its own
-// welcome/default state. The workflow binding is never hardcoded here.
+// Demo-only. The embeddable client (../embed) never reads this: it is handed a templateId,
+// because a real customer has one app and no registry. Where the platform lives is a
+// different question and belongs to the embed — see ../embed/config.js.
 
-export const config = {
-  // The Unoverse server base — one host serves it all: definitions/theme (`/mcp`),
-  // the per-session data-plane (`/stream`), and the REST workflow trigger
-  // (`/execute`). (§5/§5b: MCP carries everything structured, one process.)
-  serverUrl: import.meta.env.VITE_UNOVERSE_URL || "http://localhost:4105",
-  // The REST origin the app fires the workflow at — `{apiUrl}/api/workflows/:id/execute`
-  // (§5a/§5b). Defaults to the server (collapsed runtime); override for a split gateway.
-  get apiUrl() {
-    return import.meta.env.VITE_API_URL || this.serverUrl;
-  },
-  templateId: import.meta.env.VITE_TEMPLATE_ID || "sab/sab-chat-layout",
-};
+export { config } from "../embed/config";
+import { config } from "../embed/config";
 
 // ANALYTICS (docs/unoverse/UNOVERSE_ANALYTICS.md) is configured HERE, per channel, and
 // deliberately NOT in the template. Two reasons, one architectural and one conceptual:
@@ -70,18 +58,7 @@ export const clients = {
   emirates: {
     label: "Emirates",
     tagline: "Airline travel channel",
-    templateId: "emirates/emirateschatlayout",
+    templateId: "emirates/emirates-chat-layout",
   },
 };
 
-/**
- * The client selected by the URL PATH (`/sab`, `/bpp`) → its key; anything else
- * (root `/`, unknown) → null, which the app renders as the Unoverse landing page.
- * Falls back to the legacy `?client=` query param so old demo links keep working.
- */
-export function getRoute() {
-  const seg = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
-  if (clients[seg]) return seg;
-  const q = new URLSearchParams(window.location.search).get("client")?.toLowerCase();
-  return q && clients[q] ? q : null;
-}

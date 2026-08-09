@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { getAccessToken } from "../lib/auth";
-import { createAnalyticsDelivery } from "../lib/analytics";
+import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/sdk/validation/cfworker";
+import { getAccessToken } from "./auth";
+import { createAnalyticsDelivery } from "./analytics";
 
 // The app UI resource served by the MCP server (§6d).
 const APP_URI = "ui://unoverse/app.html";
@@ -14,7 +15,15 @@ const APP_URI = "ui://unoverse/app.html";
  * its own /mcp + /stream in the iframe. The host only hands it config (where + which app + who).
  */
 async function readAppHtml(serverUrl) {
-  const client = new Client({ name: "unoverse-demo-host", version: "0.1.0" });
+  // The SDK's DEFAULT validator is Ajv, which compiles schemas with `new Function`. That is
+  // eval, so it is blocked by any strict CSP — and this script runs on the CUSTOMER's page,
+  // whose policy is theirs to set. CfWorker validates without eval, and naming it here means
+  // the Ajv provider is never constructed, so the build can alias Ajv away entirely
+  // (ajv-stub.js). Same fix the webSDK made for ChatGPT's widget CSP.
+  const client = new Client(
+    { name: "unoverse-demo-host", version: "0.1.0" },
+    { jsonSchemaValidator: new CfWorkerJsonSchemaValidator() },
+  );
   // Inject the bearer on every underlying request (fresh per call → refresh-safe).
   const authFetch = async (url, init) => {
     const token = await getAccessToken();

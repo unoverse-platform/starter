@@ -1,27 +1,21 @@
 import { useEffect } from "preact/hooks";
 import { useAuth } from "react-oidc-context";
-import { getRoute } from "../lib/config";
-import { hasAuth } from "../lib/auth";
+import { hasAuth } from "../embed/auth";
 import { LandingPage } from "./LandingPage";
-import { ClientDemo } from "./ClientDemo";
 
 /**
- * Top-level path router. The URL alone decides what mounts:
- *   `/`             → the Unoverse hub (login-gated; one card per demo channel)
- *   `/logout`       → full Auth0 SSO sign-out, then back to the login gate
- *   `/sab`, `/bpp`,
- *   `/yas`, `/emirates` → that channel's live demo
+ * The demo HUB, and only the hub:
+ *   `/`        → one card per channel (login-gated)
+ *   `/logout`  → full Auth0 SSO sign-out, then back to the login gate
  *
- * Navigation between them is a full page load, so this only ever mounts one branch per
- * session — no conditional hooks, and each channel boots a clean iframe. (The legacy
- * `?logout` query param still works on a channel route — see ClientDemo.)
+ * The channels themselves are NOT routes here any more. Each is a static page
+ * (`/bpp.html`, `/sab.html`…) that carries a screenshot and one <script> tag, because that
+ * is what a customer's site is: someone else's HTML plus our one line. Rendering them as
+ * Preact routes meant the demo tested a component the customer never loads.
  */
 export function App() {
   const path = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
-  if (path === "logout") return <LogoutRoute />;
-
-  const route = getRoute();
-  return route ? <ClientDemo clientKey={route} /> : <LandingPage />;
+  return path === "logout" ? <LogoutRoute /> : <LandingPage />;
 }
 
 /**

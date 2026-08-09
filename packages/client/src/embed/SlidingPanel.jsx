@@ -1,5 +1,5 @@
 import { useState, useEffect } from "preact/hooks";
-import { useWidget } from "../hooks/useWidget";
+import { useWidget } from "./useWidget";
 import { ToggleChatButton } from "./ToggleChatButton";
 
 // Left-side chat drawer + floating launcher. Ported from legacy GravitySAB.

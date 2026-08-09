@@ -20,42 +20,16 @@
         width: 100%;
         min-height: 100%;
       }
-      /* The "fake" host page — a full-width screenshot of the client's site that
-         the chat launcher floats over (swapped by the client switcher). */
-      .bg-container {
-        width: 100%;
-      }
-      .bg-container img {
-        width: 100%;
-        height: auto;
-        display: block;
-      }
-      /* The widget self-mounts into #unoverse-demo. Make it a fixed, click-through
-         overlay so only the floating button + sliding chat panel are interactive;
-         the fake page shows through behind. In production this whole file is
-         replaced by a single <script src="unoverse-demo.js"> on the real host page. */
-      #unoverse-demo {
-        position: fixed;
-        inset: 0;
-        z-index: 9998;
-        pointer-events: none;
-      }
-      #unoverse-demo > * {
-        pointer-events: auto;
-      }
     </style>
   </head>
   <body>
-    <!-- The fake host page behind the drawer. Left empty on purpose: the landing page (`/`)
-         shows nothing here, and each channel route (`/sab`, `/bpp`) sets this src to its own
-         screenshot. In production this whole file is replaced by the real host page. -->
-    <div class="bg-container">
-      <img alt="Client background" />
-    </div>
+    <!--
+      The HUB, and nothing else: a card per channel. It carries no widget and no fake page.
 
-    <!-- Pre-created host so the self-mounting widget renders into this overlay
-         (main.jsx reuses an existing #unoverse-demo if present). -->
-    <div id="unoverse-demo"></div>
-    <script type="module" src="/src/main.jsx"></script>
+      Each card links to a static page (`/bpp.html`, `/sab.html`…) that holds a screenshot
+      and one <script> tag. Those pages are the customer simulation; this one is ours.
+    -->
+    <div id="app"></div>
+    <script type="module" src="/src/demo/main.jsx"></script>
   </body>
 </html>

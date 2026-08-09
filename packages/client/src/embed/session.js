@@ -11,18 +11,25 @@
  * identical on the stream session AND the tool call. Minting a fresh id per click/reload
  * (the earlier bug) means the reply never lands.
  */
-// Legacy id shape: `${prefix}_${Date.now()}_${rand}` (HistoryManager.generateId).
-const makeId = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+// ONE id scheme: a prefix so an id is readable in a log, then a UUID. The prefix is the
+// only part anything reads (the platform's public-entry gate checks `guest-`); the rest is
+// opaque, so there is nothing to parse and no clock or PRNG in the identity.
+const makeId = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 
 /**
  * The conversation id — minted ONCE PER PAGE LOAD and held in memory. A browser
  * refresh starts a fresh conversation (fresh agent thread, fresh durable surfaces);
  * within the load, every MCP app, stream session and tool call shares this ONE id
  * (the "reply never lands" bug was minting per click/turn — per-LOAD is safe).
+ *
+ * Minted on FIRST USE rather than at import: `crypto.randomUUID` exists only in a secure
+ * context, so minting at module load would take the whole bundle down on a plain-http LAN
+ * URL instead of failing the one call that needs an id.
  */
-let conversationId = makeId("conv");
+let conversationId = null;
 
 export function getConversationId() {
+  if (!conversationId) conversationId = makeId("conv");
   return conversationId;
 }
 
@@ -50,7 +57,7 @@ export function getGuestId() {
     /* storage blocked (private mode) → per-load guest below */
   }
   if (!id || !id.startsWith("guest-")) {
-    id = `guest-${crypto.randomUUID()}`;
+    id = makeId("guest");
     try {
       localStorage.setItem(GUEST_KEY, id);
     } catch {

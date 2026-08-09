@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useAuth } from "react-oidc-context";
-import { config, clients } from "../lib/config";
-import { hasAuth } from "../lib/auth";
-import { UnoverseMark } from "./Logo";
+import { config, clients } from "./clients";
+import { hasAuth } from "../embed/auth";
+import { UnoverseMark } from "../embed/Logo";
 
 // Per-channel card art: a rich hero image + an accent (glow tint). Keyed by registry key;
 // anything unlisted falls back to the brand violet with no image.
@@ -37,7 +37,7 @@ const FALLBACK_ART = { accent: "167,139,250", image: null };
  * `/yas`, `/emirates`). Every state (gate included) sits on the cinematic video backdrop.
  */
 export function LandingPage() {
-  // Login gate — same contract as ClientDemo: ask the server whether it enforces auth
+  // Login gate — same contract as the widget: ask the server whether it enforces auth
   // (/health → authRequired); fail safe to "secured" if the server is unreachable.
   const auth = useAuth();
   const [authRequired, setAuthRequired] = useState(null);
@@ -204,7 +204,7 @@ function Hub() {
         {/* Demo cards — one per registered client; each is a full page load into that channel. */}
         <div className="mt-12 grid w-full max-w-5xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(clients).map(([key, client]) => (
-            <DemoCard key={key} href={`/${key}`} client={client} art={CARD_ART[key] || FALLBACK_ART} />
+            <DemoCard key={key} href={`/${key}.html`} client={client} art={CARD_ART[key] || FALLBACK_ART} />
           ))}
         </div>
 

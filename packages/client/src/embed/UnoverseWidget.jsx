@@ -1,24 +1,30 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { useAuth } from "react-oidc-context";
-import { config, clients } from "../lib/config";
-import { hasAuth, setAccessTokenFn } from "../lib/auth";
+import { config } from "./config";
+import { hasAuth, setAccessTokenFn } from "./auth";
 import { LoginScreen } from "./LoginScreen";
 import { SlidingPanel } from "./SlidingPanel";
-import { getConversationId, getGuestId } from "../lib/session";
+import { getConversationId, getGuestId } from "./session";
 import { AppHost } from "./AppHost";
 
 /**
- * One CHANNEL demo, selected by the URL path (`/sab`, `/bpp`). This is the SAB shell:
- * it owns the CHANNEL concerns — auth/OIDC, the login gate, the session facts (userId,
- * conversationId), and the sliding-panel chrome — then hands config to the surface-agnostic
- * AppHost, which streams the app's `ui://` resource into a sandboxed iframe (§6d).
+ * THE EMBEDDABLE CLIENT — everything that runs on a HOST PAGE, and nothing that knows
+ * whose page it is.
  *
- * The URL path picks the channel; the drawer itself starts CLOSED with a floating launcher
- * (SlidingPanel), so the user opens the chat over the fake host page just like a real embed.
+ * It owns the CHANNEL concerns, which are exactly the concerns that cannot live inside the
+ * iframe: auth/OIDC and the login gate, the session facts (userId, conversationId), the
+ * sliding-panel chrome, and analytics delivery. It then hands config to AppHost, which
+ * streams the app's `ui://` resource into a sandboxed iframe (§6d).
+ *
+ * It takes a templateId rather than looking one up. The demo site passes the channel it
+ * routed to; a real embed passes what its <script> tag declared. Neither is special-cased
+ * here, which is the point: the demo exercises the SAME component a customer loads, so the
+ * two cannot drift.
+ *
+ * The drawer starts CLOSED behind a floating launcher (SlidingPanel), which is how a real
+ * embed behaves on someone's site.
  */
-export function ClientDemo({ clientKey }) {
-  const client = clients[clientKey];
-
+export function UnoverseWidget({ templateId, analytics }) {
   // Auth lives in this CHANNEL. Register the current token getter so the MCP client +
   // stream send the bearer on every call (refresh-safe). null → anonymous.
   const auth = useAuth();
@@ -37,15 +43,6 @@ export function ClientDemo({ clientKey }) {
     auth.signoutRedirect();
   }, [auth]);
 
-  // Paint the fake host page behind the drawer — the screenshot <img> lives on the HOST page
-  // (index.html), outside this widget's tree, so we set its src directly; absent on a real
-  // embed → guard. Fixed per route, so this runs once.
-  useEffect(() => {
-    if (!client.background) return; // newer channels may not have a fake page yet
-    const img = document.querySelector(".bg-container img");
-    if (img) img.src = client.background;
-  }, [client.background]);
-
   // The APP owns its panel width (manifest `width`) and posts it up via AppHost; the panel just
   // reacts. Undefined → SlidingPanel's own default until the app reports.
   const [panelWidth, setPanelWidth] = useState(undefined);
@@ -56,17 +53,17 @@ export function ClientDemo({ clientKey }) {
   // flipping the trigger toggle on the canvas IS the whole configuration.
   const [authRequired, setAuthRequired] = useState(null);
   useEffect(() => {
-    fetch(`${config.serverUrl}/.well-known/unoverse-app/${client.templateId}`)
+    fetch(`${config.serverUrl}/.well-known/unoverse-app/${templateId}`)
       .then((r) => r.json())
       .then((d) => setAuthRequired(!!d.authRequired))
       .catch(() => setAuthRequired(true)); // fail safe: assume secured
-  }, [client.templateId]);
+  }, [templateId]);
   const signedIn = !!auth?.isAuthenticated;
   const isPublic = authRequired === false;
   const needsLogin = authRequired === true && !signedIn;
 
   // Session facts (§5a), supplied once by the channel — never minted per-turn.
-  //   conversationId → PERSISTED (survives reloads, shared across MCP apps) — see session.js
+  //   conversationId → one per page load, shared across MCP apps — see session.js
   //   userId         → the authenticated JWT `sub`; on a public channel with no login,
   //                    the persisted guest id (`guest-<uuid>`) the gate requires
   const conversationId = useMemo(() => getConversationId(), []);
@@ -95,24 +92,22 @@ export function ClientDemo({ clientKey }) {
     );
   } else {
     isApp = true;
-    // SAB as HOST (§6d): stream the app (the server's ui:// resource) into a sandboxed iframe
-    // and hand it config — the SAME contract Claude/ChatGPT use. The app opens its own
+    // The client as HOST (§6d): stream the app (the server's ui:// resource) into a sandboxed
+    // iframe and hand it config — the SAME contract Claude/ChatGPT use. The app opens its own
     // /mcp + /stream inside the iframe; this host embeds no Unoverse SDK at all.
     content = (
       <AppHost
         serverUrl={config.serverUrl}
         apiUrl={config.apiUrl}
-        templateId={client.templateId}
+        templateId={templateId}
         token={auth?.user?.access_token}
         userId={userId}
         conversationId={conversationId}
         onSize={setPanelWidth}
-        analytics={client.analytics}
+        analytics={analytics}
       />
     );
   }
 
-  return (
-    <SlidingPanel width={isApp ? panelWidth ?? "0px" : "420px"}>{content}</SlidingPanel>
-  );
+  return <SlidingPanel width={isApp ? panelWidth ?? "0px" : "420px"}>{content}</SlidingPanel>;
 }
