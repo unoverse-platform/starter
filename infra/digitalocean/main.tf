@@ -146,9 +146,9 @@ resource "digitalocean_firewall" "app" {
 # NOTE (INFRASTRUCTURE.md § Ingress): DO caps http idle timeout at 600s — set to
 # the cap; long-quiet SSE/WS sessions must survive a reconnect (smoke-test item).
 resource "digitalocean_certificate" "api" {
-  count   = local.has_domain ? 1 : 0
-  name    = "${var.name}-api"
-  type    = "lets_encrypt"
+  count = local.has_domain ? 1 : 0
+  name  = "${var.name}-api"
+  type  = "lets_encrypt"
   # canvas.<domain> rides the SAME certificate as a SAN (and the same LB): the
   # clean hostname costs nothing — only the PORT cannot be dropped, because DO
   # LBs cannot host-route (DECIDED 2026-07-29: one LB, port in the URL).
@@ -156,11 +156,11 @@ resource "digitalocean_certificate" "api" {
 }
 
 resource "digitalocean_loadbalancer" "public" {
-  name                     = "${var.name}-lb"
-  region                   = var.region
-  droplet_ids              = [digitalocean_droplet.app.id]
-  redirect_http_to_https   = local.has_domain # domainless serves HTTP itself, nothing to redirect to
-  http_idle_timeout_seconds = 600 # DO's maximum
+  name                      = "${var.name}-lb"
+  region                    = var.region
+  droplet_ids               = [digitalocean_droplet.app.id]
+  redirect_http_to_https    = local.has_domain # domainless serves HTTP itself, nothing to redirect to
+  http_idle_timeout_seconds = 600              # DO's maximum
 
   # With a domain: HTTPS 443 with the managed cert. Without: plain HTTP 80 on
   # the LB IP. Same port meanings for the developer either way (API on the root).
@@ -365,6 +365,13 @@ resource "digitalocean_database_firewall" "redis" {
 resource "random_password" "credential_key" {
   length  = 44
   special = false
+}
+
+# The key that actually ships: the operator's when they brought one (a database that
+# already holds credentials keeps the key that encrypted them), otherwise the generated
+# one above. See variables.tf § credential master key.
+locals {
+  credential_encryption_key = var.credential_encryption_key != "" ? var.credential_encryption_key : random_password.credential_key.result
 }
 
 # ── One project, so a universe looks like one thing ───────────────────────────

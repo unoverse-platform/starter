@@ -130,3 +130,21 @@ variable "bedrock_credentials" {
   default     = true
   description = "Create an IAM user and access key for the Bedrock nodes. Set false where IAM write is not delegated."
 }
+
+# The pre-token Lambda's execution role (main.tf, "pretoken"), when the account will not let
+# us create it.
+#
+# EMPTY IS EVERY DEPLOYMENT WE HAVE. The module creates the role, attaches
+# AWSLambdaBasicExecutionRole, and nothing changes. Set this only where `iam:CreateRole` is
+# not delegated, which is the normal shape of a customer-owned account governed by a
+# permission set: their pipeline creates the role, we reference the ARN it produces.
+#
+# Creating the Lambda still needs `iam:PassRole` on that role, conditioned on
+# lambda.amazonaws.com, because AWS asks that of whoever attaches the role, not whoever made
+# it. Handing us an ARN does not remove it. The role needs only lambda.amazonaws.com in its
+# trust policy and AWSLambdaBasicExecutionRole attached, which is log writes and nothing else.
+variable "pretoken_role_arn" {
+  type        = string
+  default     = ""
+  description = "ARN of an existing Lambda execution role for the pre-token trigger. Empty = the module creates it."
+}

@@ -400,8 +400,18 @@ data "archive_file" "pretoken" {
   output_path = "${path.module}/pretoken/pretoken.zip"
 }
 
+# THE ROLE IS OURS TO CREATE ONLY WHERE IAM WRITE IS DELEGATED. Where it is not, the
+# account's own pipeline creates it and hands us the ARN, and we must reference it rather
+# than manage it: two states owning one role fight, and our destroy would take theirs with
+# it. See variables.tf, `pretoken_role_arn`.
+locals {
+  pretoken_role_arn  = var.pretoken_role_arn != "" ? var.pretoken_role_arn : one(aws_iam_role.pretoken[*].arn)
+  pretoken_role_ours = var.pretoken_role_arn == ""
+}
+
 resource "aws_iam_role" "pretoken" {
-  name = "${var.name}-pretoken"
+  count = local.pretoken_role_ours ? 1 : 0
+  name  = "${var.name}-pretoken"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -413,7 +423,8 @@ resource "aws_iam_role" "pretoken" {
 }
 
 resource "aws_iam_role_policy_attachment" "pretoken_logs" {
-  role       = aws_iam_role.pretoken.name
+  count      = local.pretoken_role_ours ? 1 : 0
+  role       = aws_iam_role.pretoken[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
@@ -422,8 +433,11 @@ resource "aws_iam_role_policy_attachment" "pretoken_logs" {
 # assumed by Lambda" — the role is correct and simply not visible yet. Terraform's
 # dependency graph is satisfied because the role exists; AWS's own propagation is not.
 #
-# Ten seconds is the usual advice and it costs ten seconds on a first apply only.
+# Ten seconds is the usual advice and it costs ten seconds on a first apply only. A role we
+# were handed was created by another pipeline long before this apply, so there is nothing to
+# outrun and the wait is skipped with the role.
 resource "time_sleep" "iam_propagation" {
+  count           = local.pretoken_role_ours ? 1 : 0
   depends_on      = [aws_iam_role.pretoken, aws_iam_role_policy_attachment.pretoken_logs]
   create_duration = "10s"
 }
@@ -435,7 +449,7 @@ resource "aws_lambda_function" "pretoken" {
     variables = { ROLE_PERMISSIONS = jsonencode(local.all_roles) }
   }
   function_name    = "${var.name}-pretoken"
-  role             = aws_iam_role.pretoken.arn
+  role             = local.pretoken_role_arn
   runtime          = "nodejs20.x"
   handler          = "index.handler"
   filename         = data.archive_file.pretoken.output_path

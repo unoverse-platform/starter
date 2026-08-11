@@ -57,3 +57,11 @@ roles = [
 # Marketplace catalogue. Defaults to the official one — set this only to point somewhere
 # else, or to "" for local items only.
 # marketplace_url = "https://your-own-marketplace.example.com"
+
+# An account that will not let you create IAM roles. Leave both of these alone unless your
+# deploy fails with AccessDenied on iam:CreateRole or iam:CreateUser, which is what a
+# customer-owned account governed by a permission set (AWS's PowerUserAccess excludes IAM
+# by design) looks like. Then: their team creates the Lambda execution role, you paste the
+# ARN here, and you skip the Bedrock user and paste its keys into a credential by hand.
+# pretoken_role_arn   = "arn:aws:iam::000000000000:role/unoverse-pretoken-role"
+# bedrock_credentials = false

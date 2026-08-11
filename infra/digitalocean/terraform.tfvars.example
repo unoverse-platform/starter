@@ -43,6 +43,14 @@ openai_api_key       = "sk-..."       # memory server + OpenAI nodes
 #   Or a fully external database, used verbatim:
 # byo_postgres_url = "postgresql://user:pass@host:5432/db?sslmode=require"
 
+# BRINGING A DATABASE MEANS BRINGING ITS KEY. Credentials are encrypted at rest, and the
+# key belongs to the data: reuse a database that already holds credentials without it and
+# every one of them fails to decrypt. Leave this empty for a FRESH database (Terraform
+# generates one, the common case); set it to the existing key when the database is not
+# new. The same applies to a local .env pointed at this universe's database — one key,
+# everywhere that reads those rows.
+# credential_encryption_key = "the key that already encrypted those rows"
+
 # Redis: always provisioned by Terraform (Managed Redis, TLS). Not configurable.
 
 # The rendered output (terraform output -raw env_production > ../../.env.production)

@@ -141,3 +141,31 @@ variable "marketplace_url" {
   type        = string
   default     = "https://unoverse-marketplace-4hlb9.ondigitalocean.app"
 }
+
+# ── The credential master key: BRING YOUR OWN when you bring your own database ──
+#
+# THE KEY BELONGS TO THE DATA, NOT TO THE DEPLOYMENT. It decrypts the credential rows in
+# the database it is paired with, so any two environments sharing a database must share
+# this key. Terraform generating a fresh one per deployment is right for a fresh database
+# and WRONG for byo_postgres_url / existing_pg_cluster_name pointing at a database that
+# already holds credentials: the deploy renders a new key and every stored credential
+# fails with OpenSSL "bad decrypt". The same trap catches a local .env pointed at this
+# universe's database (SECURITY.md § Credential encryption at rest).
+#
+# DIGITALOCEAN ONLY, deliberately. AWS always provisions its own RDS instance, so its
+# database is always new and a generated key is always right; a variable there would be
+# a way to get it wrong with no case that needs it.
+#
+# Leave it empty for a fresh database and Terraform generates one, which is the common
+# case. Set it to the key that already encrypted those rows when the database is not new,
+# and keep the two in step from then on.
+variable "credential_encryption_key" {
+  description = "Master key for credentials at rest. Empty = generate one (fresh database). Set it to the EXISTING key when reusing a database that already holds credentials."
+  type        = string
+  sensitive   = true
+  default     = ""
+  validation {
+    condition     = var.credential_encryption_key == "" || length(var.credential_encryption_key) >= 32
+    error_message = "credential_encryption_key must be at least 32 characters (openssl rand -base64 32)."
+  }
+}
