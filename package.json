@@ -2,7 +2,7 @@
   "name": "unoverse-starter",
   "version": "1.0.0",
   "private": true,
-  "description": "Unoverse Starter Template",
+  "description": "unoverse starter",
   "scripts": {},
   "packageManager": "npm@10.2.0"
 }

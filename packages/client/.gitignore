@@ -1,8 +1,0 @@
-node_modules
-dist
-.env
-*.local
-
-# Built widget: emitted into public/ by `npm run build:widget` so dev and the site build
-# share one copy. A build output, never committed.
-public/unoverse-demo.js
