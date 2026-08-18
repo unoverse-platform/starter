@@ -30,9 +30,12 @@ docr_token           = "dop_v1_..."   # registry token (pulls platform images)
 openai_api_key       = "sk-..."       # memory server + OpenAI nodes
 # hyperbrowser_api_key = ""           # optional — page intelligence
 
+# EXTRA sign-in callbacks only. Your Canvas (canvas.<domain>, or the ALB address when
+# there is no domain) and Studio (http://localhost:4108) are allowed automatically — the
+# ground provisions the app client, so it knows those two addresses and adds them itself.
+# List anything else here: a second front end, another dev port.
 oauth_callback_urls = [
-  "https://yourdomain.com",
-  "http://localhost:5173", # local Studio/Canvas dev against this universe
+  "http://localhost:5173", # Canvas dev server
 ]
 
 # RBAC roles (noun:verb — the grammar node manifests' requires.role matches).

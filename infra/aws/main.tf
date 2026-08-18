@@ -112,6 +112,19 @@ locals {
   # Where a person actually goes. Shared by the invitation email and the canvas_url output
   # so the address in the email can never drift from the address in the deploy summary.
   canvas_entry = var.domain != "" ? "https://canvas.${var.domain}" : "http://${aws_lb.public.dns_name}:3001"
+  # STUDIO IS A CALLBACK THIS GROUND OWNS, exactly like canvas_entry above.
+  #
+  # Studio signs in with `redirect_uri: window.location.origin` (packages/studio
+  # src/UniverseSession.tsx) and serves on a pinned 4108 (vite.config.ts, strictPort). On a
+  # BYO-OIDC ground the operator adds that to their own tenant; here the app client IS a
+  # resource of this module, so leaving it out means every developer who connects Studio to
+  # an AWS universe meets `redirect_mismatch` and has to discover a port number to put in a
+  # variable. The ground knows the address, so the ground allows it.
+  #
+  # Loopback only. It grants nothing on its own: the client is public, the flow is code with
+  # PKCE, and a code returned to 127.0.0.1 is redeemable only by the process that asked for
+  # it. The same reasoning already ships localhost:5173 in terraform.tfvars.example.
+  studio_entry = "http://localhost:4108"
   api_host   = "api.${var.domain}"
   dns_auto   = local.has_domain && var.route53_zone_id != ""
 }
@@ -592,8 +605,8 @@ resource "aws_cognito_user_pool_client" "spa" {
   # canvas_entry is the same expression the invitation email and the canvas_url output use,
   # so the address a person is sent to is by construction an address they may return to.
   # Anything else in the variable (localhost for dev, a second front end) is kept.
-  callback_urls                        = distinct(concat([local.canvas_entry], var.oauth_callback_urls))
-  logout_urls                          = distinct(concat([local.canvas_entry], var.oauth_callback_urls))
+  callback_urls                        = distinct(concat([local.canvas_entry, local.studio_entry], var.oauth_callback_urls))
+  logout_urls                          = distinct(concat([local.canvas_entry, local.studio_entry], var.oauth_callback_urls))
   supported_identity_providers         = ["COGNITO"]
 }
 
