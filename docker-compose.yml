@@ -8,7 +8,7 @@
 #
 # LAYER 2: PLATFORM-DEV MOUNTS (monorepo only — sync-starter strips them)
 #   - apps/unoverse/nodes    — node manifests
-#   - apps/unoverse/rx       — design (components, templates, styles)
+#   - apps/unoverse/design    — design (components, templates, styles)
 #   - apps/unoverse/prompts  — behavior (skills + blocks)
 #   In a STARTER/customer universe these folders do not exist: authoring is
 #   Studio's (publish over the API) and content is DB-driven (marketplace).
@@ -255,7 +255,7 @@ services:
       - unoverse_plugins:/app/plugins
       # ── Platform-dev mounts (monorepo only; sync-starter strips these three
       # lines from the starter's copy — a customer universe serves what the DB
-      # says). Local edits are picked up on restart; rx/prompts are data, no build.
+      # says). Local edits are picked up on restart; design/prompts are data, no build.
       - ./node_modules:/app/host_node_modules # Hoisted deps for locally-built nodes
     healthcheck:
       # Ready = internal runtime port up (nodes are loaded into memory BEFORE it binds).
