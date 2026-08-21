@@ -605,7 +605,13 @@ resource "aws_cognito_user_pool_client" "spa" {
   # canvas_entry is the same expression the invitation email and the canvas_url output use,
   # so the address a person is sent to is by construction an address they may return to.
   # Anything else in the variable (localhost for dev, a second front end) is kept.
-  callback_urls                        = distinct(concat([local.canvas_entry, local.studio_entry], var.oauth_callback_urls))
+  #
+  # THE CLI'S LOOPBACK IS ALWAYS ALLOWED, same rule as the app's own address: every
+  # universe is published to by `unoverse login` + `unoverse publish`, and its fixed
+  # callback is a platform constant, not an operator decision. Baked here so no tfvars
+  # ever needs it and an updated ground picks it up on the next deploy.
+  # (Callback only, not logout: the CLI never runs a logout redirect.)
+  callback_urls                        = distinct(concat([local.canvas_entry, local.studio_entry, "http://127.0.0.1:4109/callback"], var.oauth_callback_urls))
   logout_urls                          = distinct(concat([local.canvas_entry, local.studio_entry], var.oauth_callback_urls))
   supported_identity_providers         = ["COGNITO"]
 }

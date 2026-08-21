@@ -29,6 +29,9 @@ canvas_public = true
 auth_issuer    = "https://your-tenant.auth0.com"
 auth_client_id = "your-spa-client-id"
 auth_audience  = "gravity-api"
+# In that client's Allowed Callback URLs, include http://127.0.0.1:4109/callback —
+# it is how `unoverse login` signs developers in from the terminal. (On AWS this is
+# automatic: the ground owns Cognito and always allows it.)
 
 # Service secrets — with these set, the rendered .env.production is COMPLETE.
 docr_token           = "dop_v1_..."   # registry token (pulls platform images)
