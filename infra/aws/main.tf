@@ -307,6 +307,33 @@ resource "aws_instance" "app" {
   }
 
   tags = { Name = "${var.name}-app" }
+
+  # THE IMAGE IS CHOSEN ONCE, AT BUILD, AND NEVER AGAIN BY ACCIDENT.
+  #
+  # `ami` is a force-replacement attribute: an instance's image cannot be swapped in place,
+  # so any change to it means DESTROY AND REBUILD, losing the 100 GB root volume and
+  # everything on it. The lookup above asks for `most_recent`, so the value feeding it
+  # changes whenever Canonical publishes, roughly monthly. Together those two facts arm a
+  # trap that fires on the first `unoverse deploy aws` after a publish, on a universe
+  # nobody has touched, with nothing in the repo to explain it.
+  #
+  # Observed 2026-08-26. BPP's box was built from ...-20260731; every deploy for four weeks
+  # got that same id back and planned nothing. Canonical published ...-20260826 at 07:52
+  # UTC, and the next deploy that morning planned to replace the server. Terraform was
+  # right and the config was wrong, and the only warning was one line in a plan that also
+  # said "Changing".
+  #
+  # An EXISTING universe now keeps the image it was built on; a NEW one still takes
+  # whatever is current when it is created, because the lookup is untouched and only drift
+  # is ignored. The trade is deliberate: nothing upgrades the OS for you. Patch in place
+  # with apt, and move to a newer image by rebuilding on purpose — a decision, rather than
+  # a side effect of deploying on the wrong day.
+  #
+  # DigitalOcean needs none of this: its droplet names a fixed slug (`ubuntu-22-04-x64`),
+  # a literal in the file that cannot drift.
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "aws_eip" "app" {
