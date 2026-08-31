@@ -130,11 +130,35 @@ services:
   # Studio is NOT a platform image (removed 2026-07-28): it ships from npm and
   # connects to a universe over the API with a publish key.
 
-  # UMAP Service - Python ML service
+  # UMAP Service - Python ML service.
+  #
+  # THE ENGINE REACHES IT AS http://umap:5001 OVER THE DOCKER NETWORK, which needs no
+  # published port at all. It used to read "5001:5001", which binds 0.0.0.0 and put an ML
+  # service on the internet, and until 2026-08-30 that service also failed OPEN:
+  # its `require_auth` returned the handler unguarded whenever OIDC was unconfigured, and no
+  # AUTH_ISSUER was ever passed here. So `/train` answered anyone who could reach the port.
+  #
+  # It was the only service in this file that was both externally bound and ungated: 4101 and
+  # 4106 are loopback-pinned with comments saying never to widen them, and 4105 is published
+  # but JWT-gated. This one had neither half.
+  #
+  # NOT PUBLISHED AT ALL. Owner ruling 2026-08-30: this is internal to Docker, full stop.
+  # There is no `ports:` block below and that is the whole point — a service reachable only
+  # over the compose network cannot be bound to the wrong interface by a later edit, because
+  # there is no line to get wrong. 4101 and 4106 publish to loopback because a developer's
+  # tooling on the host genuinely needs them; nothing on the host needs this.
+  #
+  # Auth stays configured anyway. The network boundary and the gate are not alternatives,
+  # and this service is the proof: it had a `ports:` line and a fail-open decorator, so
+  # losing either one lost everything.
   umap:
     image: registry.digitalocean.com/gravity-repo/umap:latest
-    ports:
-      - "5001:5001"
+    environment:
+      # app.py refuses to boot if auth is on and these are missing (assert_auth_startup),
+      # which is the point: an unconfigured deployment fails loudly instead of open.
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - AUTH_ISSUER=${AUTH_ISSUER}
+      - AUTH_AUDIENCE=${AUTH_AUDIENCE}
     volumes:
       - umap_models:/app/models
     logging: *default-logging
@@ -251,8 +275,20 @@ services:
       # copy carrying a built dist. Without this the runtime hits MODULE_NOT_FOUND and
       # the nodes show "Package not installed".
       - NODE_PATH=/app/host_node_modules:/app/plugins/node_modules
+      # PASSTHROUGH, not a setting. `unoverse deploy` runs `UNOVERSE_BASE_REFRESH=1 docker
+      # compose up -d` to mean "take the newest node runtime in range"; without this line
+      # that variable would reach the compose CLI and stop there, never the container.
+      # Defaults to 0, so an ordinary restart stays offline and instant.
+      - UNOVERSE_BASE_REFRESH=${UNOVERSE_BASE_REFRESH:-0}
     volumes:
       - unoverse_plugins:/app/plugins
+      # THE NODE RUNTIME, which this image does not carry (MARKETPLACE.md §5a). The
+      # entrypoint installs @unoverse-platform/base here at startup, within the range
+      # apps/unoverse/package.json declares, and symlinks it into
+      # /app/node_modules/@unoverse-platform/base. A volume rather than a layer so a plain
+      # restart is offline and instant: the fetch happens on a cold volume, or when the
+      # declared range changes, or when a deploy sets UNOVERSE_BASE_REFRESH=1.
+      - unoverse_base:/app/base
       # ── Platform-dev mounts (monorepo only; sync-starter strips these three
       # lines from the starter's copy — a customer universe serves what the DB
       # says). Local edits are picked up on restart; design/prompts are data, no build.
@@ -370,3 +406,4 @@ services:
 volumes:
   umap_models:
   unoverse_plugins: # Marketplace-installed node packages (persisted across restarts)
+  unoverse_base: # @unoverse-platform/base, installed at startup (MARKETPLACE.md §5a)
