@@ -275,20 +275,12 @@ services:
       # copy carrying a built dist. Without this the runtime hits MODULE_NOT_FOUND and
       # the nodes show "Package not installed".
       - NODE_PATH=/app/host_node_modules:/app/plugins/node_modules
-      # PASSTHROUGH, not a setting. `unoverse deploy` runs `UNOVERSE_BASE_REFRESH=1 docker
-      # compose up -d` to mean "take the newest node runtime in range"; without this line
-      # that variable would reach the compose CLI and stop there, never the container.
-      # Defaults to 0, so an ordinary restart stays offline and instant.
-      - UNOVERSE_BASE_REFRESH=${UNOVERSE_BASE_REFRESH:-0}
     volumes:
       - unoverse_plugins:/app/plugins
-      # THE NODE RUNTIME, which this image does not carry (MARKETPLACE.md §5a). The
-      # entrypoint installs @unoverse-platform/base here at startup, within the range
-      # apps/unoverse/package.json declares, and symlinks it into
-      # /app/node_modules/@unoverse-platform/base. A volume rather than a layer so a plain
-      # restart is offline and instant: the fetch happens on a cold volume, or when the
-      # declared range changes, or when a deploy sets UNOVERSE_BASE_REFRESH=1.
-      - unoverse_base:/app/base
+      # THE NODE RUNTIME IS IN THE IMAGE (MARKETPLACE.md §5a, reversed 2026-09-03). There was
+      # a `unoverse_base:/app/base` volume here between 2026-08-30 and 2026-09-03, holding a
+      # base the entrypoint installed from npm at startup. Both are gone: base is compiled in
+      # from the workspace, so the image and its runtime cannot disagree.
       # ── Platform-dev mounts (monorepo only; sync-starter strips these three
       # lines from the starter's copy — a customer universe serves what the DB
       # says). Local edits are picked up on restart; design/prompts are data, no build.
@@ -406,4 +398,3 @@ services:
 volumes:
   umap_models:
   unoverse_plugins: # Marketplace-installed node packages (persisted across restarts)
-  unoverse_base: # @unoverse-platform/base, installed at startup (MARKETPLACE.md §5a)
