@@ -55,7 +55,14 @@ locals {
   s = local.sizes[var.size]
 
   # Postgres modes (variables.tf): external URL > existing DO cluster > provision.
-  pg_external  = var.byo_postgres_url != ""
+  #
+  # `nonsensitive` on the TEST, never on the URL. `byo_postgres_url` is sensitive, and a
+  # mark rides every value derived from it, so `pg_external` and the `provision_pg` below
+  # were sensitive booleans. That reached `monthly_estimate` in prices.tf, and Terraform
+  # refuses a root output carrying a mark: the DO ground could not plan at all, whether or
+  # not a URL was set. WHETHER a database was brought is not the secret; the URL is, and it
+  # stays marked everywhere it is actually used.
+  pg_external  = nonsensitive(var.byo_postgres_url != "")
   pg_adopt     = !local.pg_external && var.existing_pg_cluster_name != ""
   provision_pg = !local.pg_external && !local.pg_adopt
   pg_managed   = local.pg_adopt || local.provision_pg # any DO-managed mode
