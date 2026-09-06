@@ -1,4 +1,4 @@
-# The Universe — AWS POC (docs/architecture/AWS_DEPLOYMENT.md)
+# The Universe — AWS POC (docs/architecture/deployment/AWS_DEPLOYMENT.md)
 #
 # One VM + managed Postgres/Redis + Cognito + a scoped Bedrock IAM user.
 # Deliberately flat and minimal: this is the POC tier. Terraform provisions,

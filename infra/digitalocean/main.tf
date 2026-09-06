@@ -1,4 +1,4 @@
-# The Universe — DigitalOcean ground (docs/architecture/INFRASTRUCTURE.md)
+# The Universe — DigitalOcean ground (docs/architecture/deployment/INFRASTRUCTURE.md)
 #
 # Same five-input contract as infra/aws, DO implementation: Droplet + Managed
 # Postgres (fronted by its built-in PgBouncer, per the Postgres law) + Managed

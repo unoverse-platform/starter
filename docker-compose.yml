@@ -371,7 +371,7 @@ services:
     restart: unless-stopped
 
   # unoverse-runtime REMOVED 2026-07-28: WIP, excluded from the platform
-  # (docs/architecture/INFRASTRUCTURE.md). Returns when the user declares it ready.
+  # (docs/architecture/deployment/INFRASTRUCTURE.md). Returns when the user declares it ready.
 
   # ===========================================================================
   # OBSERVABILITY — log viewer (runs by default)
