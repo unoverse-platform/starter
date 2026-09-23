@@ -7,7 +7,6 @@
 #     canvas, umap, memory. Code protected, pulled as images.
 #
 # LAYER 2: PLATFORM-DEV MOUNTS (monorepo only — sync-starter strips them)
-#   - apps/unoverse/nodes    — node manifests
 #   - apps/unoverse/design    — design (components, templates, styles)
 #   - apps/unoverse/prompts  — behavior (skills + blocks)
 #   In a STARTER/customer universe these folders do not exist: authoring is
@@ -164,6 +163,30 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
+  # Document service - Python, reads a file into its structure (text, tables as rows,
+  # figures, lists, dates, provenance). docs/unoverse/data/documents/README.md.
+  #
+  # REACHED AS http://documents:5002 OVER THE DOCKER NETWORK BY THE MARKETPLACE NODES that
+  # name it (ParseDocument, RenderDocument, InventoryFolder), through the host on their
+  # credential; the engine never learns a URL for it. NOT PUBLISHED, no `ports:` block, for
+  # the same reason umap has none (above). Same auth rules: refuses to boot enabled without
+  # OIDC, or disabled in production.
+  #
+  # Parsing is CPU-bound and a worker holds the layout models: DOCUMENTS_WORKERS is the one
+  # knob, two by default. The models are baked into the image (no egress, instant boot); the
+  # parse cache is a volume so an unchanged file in a re-read pack is a lookup.
+  documents:
+    image: registry.digitalocean.com/gravity-repo/documents:latest
+    environment:
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - AUTH_ISSUER=${AUTH_ISSUER}
+      - AUTH_AUDIENCE=${AUTH_AUDIENCE}
+      - DOCUMENTS_WORKERS=${DOCUMENTS_WORKERS:-2}
+    volumes:
+      - documents_cache:/app/cache
+    logging: *default-logging
+    restart: unless-stopped
+
   # Unoverse - node plane (author·distribute·execute): the relocated node runtime +
   # workbench + MCP. TWO listeners:
   #   :4105 = PUBLIC (MCP + workbench), JWT-gated — published below.
@@ -259,6 +282,10 @@ services:
       - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:-}
       - REDIS_NAMESPACE=${REDIS_NAMESPACE:-}
       - UMAP_SERVICE_URL=http://umap:5001
+      # The document service, reached the same way: the engine proxies the marketplace's
+      # document nodes to it (routes/documents.ts), because a node call must be https or
+      # loopback and this service is neither.
+      - DOCUMENTS_SERVICE_URL=http://documents:5002
       # Agent nodes POST conversation turns to the memory server (ingestConversationTurn).
       # Without this the code falls back to http://localhost:4104 — nothing inside THIS
       # container — so every ingest silently fails (fire-and-forget) and memory never
@@ -270,7 +297,7 @@ services:
       - PLUGINS_DIR=/app/plugins
       # Dev-editable folders are mounted over the image below; NODE_PATH resolves
       # their hoisted deps from the local workspace node_modules. The plugins dir is
-      # also on NODE_PATH so locally-built component nodes (apps/unoverse/nodes/*, which
+      # also on NODE_PATH so locally-built component nodes (design/marketplace/nodes/*, which
       # live OUTSIDE /app/plugins) can resolve @unoverse-platform/plugin-base — the only
       # copy carrying a built dist. Without this the runtime hits MODULE_NOT_FOUND and
       # the nodes show "Package not installed".
@@ -281,7 +308,7 @@ services:
       # a `unoverse_base:/app/base` volume here between 2026-08-30 and 2026-09-03, holding a
       # base the entrypoint installed from npm at startup. Both are gone: base is compiled in
       # from the workspace, so the image and its runtime cannot disagree.
-      # ── Platform-dev mounts (monorepo only; sync-starter strips these three
+      # ── Platform-dev mounts (monorepo only; sync-starter strips these two
       # lines from the starter's copy — a customer universe serves what the DB
       # says). Local edits are picked up on restart; design/prompts are data, no build.
       - ./node_modules:/app/host_node_modules # Hoisted deps for locally-built nodes
@@ -397,4 +424,5 @@ services:
 
 volumes:
   umap_models:
+  documents_cache: # parsed replies by content hash plus parser version
   unoverse_plugins: # Marketplace-installed node packages (persisted across restarts)
