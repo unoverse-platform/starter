@@ -2,7 +2,7 @@
  * Cognito Pre Token Generation (V2_0) — the platform's token contract.
  *
  * LOAD-BEARING. The platform reads sub/email/roles (and permissions) off the
- * ACCESS token and never calls back to the IdP (docs/AUTH_TOKEN_FLOW.md). Without
+ * ACCESS token and never calls back to the IdP (docs/auth-security/IDENTITY.md). Without
  * this Lambda, email-keyed features silently no-op and no role-gated surface
  * (workflow:author builder, marketplace:publish publish, requires.role nodes)
  * can ever pass. The Cognito equivalent of the Auth0 Post-Login Action.

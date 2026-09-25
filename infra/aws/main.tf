@@ -430,7 +430,7 @@ resource "aws_elasticache_replication_group" "redis" {
 
 # ── Cognito: user pool (Essentials) + pre-token Lambda ────────────────────────
 # The Lambda is LOAD-BEARING: it puts email/roles/permissions on the ACCESS token
-# (the platform's token contract, AUTH_TOKEN_FLOW.md). Roles come from Cognito
+# (the platform's token contract, docs/auth-security/IDENTITY.md). Roles come from Cognito
 # groups. It lives in Terraform precisely so a pool rebuild cannot drop it — the
 # documented Auth0 footgun, not repeated here.
 
