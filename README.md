@@ -28,7 +28,7 @@ New here? Start at [How it fits together](https://docs.unoverse.ai/onboarding/ho
 - **Docker** and Docker Compose
 - **Node.js 20+** and npm
 - A **read-only registry token** from your platform admin, for pulling images
-- A **Postgres** database, **Redis**, and an **OIDC** app (Auth0 or similar), all
+- A **Postgres** database, **Redis**, and an **OIDC** app (WorkOS or similar), all
   named in `.env` (`.env.example` documents every variable)
 
 ## Quick start

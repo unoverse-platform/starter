@@ -109,7 +109,7 @@ output "env_production" {
     REDIS_TLS=${local.redis_tls}
     REDIS_NAMESPACE=universe
 
-    # OIDC — byo (Auth0 today): the tenant is authoritative for roles/permissions.
+    # OIDC — byo (WorkOS today): the tenant is authoritative for roles/permissions.
     AUTH_ISSUER=${var.auth_issuer}
     AUTH_CLIENT_ID=${var.auth_client_id}
     AUTH_AUDIENCE=${var.auth_audience}

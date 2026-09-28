@@ -5,7 +5,7 @@
  * ACCESS token and never calls back to the IdP (docs/auth-security/IDENTITY.md). Without
  * this Lambda, email-keyed features silently no-op and no role-gated surface
  * (workflow:author builder, marketplace:publish publish, requires.role nodes)
- * can ever pass. The Cognito equivalent of the Auth0 Post-Login Action.
+ * can ever pass. The Cognito equivalent of another IdP's claims configuration.
  *
  * Roles = the user's Cognito groups, verbatim. Groups are named in the platform's
  * noun:verb grammar (workflow:author, marketplace:publish, finance:approve, ...),

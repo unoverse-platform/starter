@@ -51,11 +51,11 @@ variable "manage_dns" {
   default     = false
 }
 
-# ── Auth: DigitalOcean universes run byo-oidc (Auth0 today) — the tenant is
+# ── Auth: DigitalOcean universes run byo-oidc (WorkOS today) — the tenant is
 # authoritative for roles/permissions; Terraform only passes the pointers through
 # (INFRASTRUCTURE.md: roles are PROVISIONED only under Cognito on AWS).
 variable "auth_issuer" {
-  description = "OIDC issuer, e.g. https://your-tenant.auth0.com"
+  description = "OIDC issuer, e.g. https://your-environment.authkit.app"
   type        = string
 }
 
@@ -65,7 +65,7 @@ variable "auth_client_id" {
 }
 
 variable "auth_audience" {
-  description = "OIDC audience (the Auth0 API identifier, e.g. gravity-api)."
+  description = "OIDC audience (the API identifier, e.g. gravity-api)."
   type        = string
   default     = "gravity-api"
 }

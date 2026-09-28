@@ -40,7 +40,7 @@ oauth_callback_urls = [
 
 # RBAC roles (noun:verb — the grammar node manifests' requires.role matches).
 # Each becomes a Cognito group; put a user in the group and the role rides their
-# token. THE FULL SET, mirroring the Auth0 tenant's Gravity API permissions
+# token. THE FULL SET, mirroring the platform's standing permission set
 # (2026-07-28). The first two are enforced by code gates and are always created
 # even if removed from this list; the last two are declared intent (no code gate
 # yet — enforcement arrives with the surfaces they name).

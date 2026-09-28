@@ -561,7 +561,7 @@ resource "aws_cognito_user_pool" "pool" {
 locals {
   # TWO LEVELS, BECAUSE THE PLATFORM READS TWO CLAIMS.
   #
-  # Auth0 (the DigitalOcean ground) models this properly and is the standing contract:
+  # The standing contract, whichever IdP issues the token:
   #
   #     ROLE admin      → permission  admin:access
   #     ROLE developer  → permissions marketplace:publish, workflow:author, workflow:promote

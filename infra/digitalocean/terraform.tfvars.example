@@ -24,9 +24,9 @@ manage_dns   = false                    # true only if the domain's DNS is on DO
 # Add that URL to the IdP's allowed origins. Default false = admin-only.
 canvas_public = true
 
-# Auth — byo-oidc (the standing choice: DO universes use the existing Auth0
-# tenant; roles/permissions live THERE, Terraform doesn't touch them).
-auth_issuer    = "https://your-tenant.auth0.com"
+# Auth — byo-oidc (the standing choice: DO universes use the existing WorkOS
+# environment; roles/permissions live THERE, Terraform doesn't touch them).
+auth_issuer    = "https://your-environment.authkit.app"
 auth_client_id = "your-spa-client-id"
 auth_audience  = "gravity-api"
 # In that client's Allowed Callback URLs, include http://127.0.0.1:4109/callback —
