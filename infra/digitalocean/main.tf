@@ -27,9 +27,9 @@ locals {
       droplet = "s-4vcpu-16gb-amd" # 4 vCPU / 16 GB — the POC box
       pg      = "db-s-1vcpu-1gb"   # ~22 backend connections (~19 usable) — hence the pool
       redis   = "db-s-1vcpu-1gb"
-      # Connection budget: engine 8 / legacy 4 / memory 4 (+2 ops, +1 reserve = 19)
-      pool_engine = 8
-      pool_legacy = 4
+      # Connection budget: engine 12 / memory 4 (+2 ops, +1 reserve = 19). The engine took the
+      # removed legacy pool's 4 on 2026-09-29 (docs/migrations/DATABASE_ROOT_CAUSE.md).
+      pool_engine = 12
       pool_memory = 4
       pgbouncer   = 17 # backend connections the managed pool holds (leaves 5 direct: migrations + ops)
     }
@@ -37,8 +37,7 @@ locals {
       droplet     = "g-8vcpu-32gb"
       pg          = "db-s-2vcpu-4gb"
       redis       = "db-s-1vcpu-2gb"
-      pool_engine = 20
-      pool_legacy = 8
+      pool_engine = 28
       pool_memory = 10
       pgbouncer   = 40
     }
@@ -46,8 +45,7 @@ locals {
       droplet     = "m-8vcpu-64gb" # memory-optimized: the engine is ONE event loop — RAM, not cores
       pg          = "db-s-4vcpu-8gb"
       redis       = "db-s-2vcpu-4gb"
-      pool_engine = 40
-      pool_legacy = 12
+      pool_engine = 52
       pool_memory = 20
       pgbouncer   = 80
     }

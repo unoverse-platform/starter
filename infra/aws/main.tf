@@ -83,24 +83,21 @@ locals {
       instance    = "t3.xlarge"
       pg          = "db.t4g.small"
       redis       = "cache.t4g.micro"
-      pool_engine = 8
-      pool_legacy = 4
+      pool_engine = 12
       pool_memory = 4
     }
     medium = { # 8 vCPU / 32 GB
       instance    = "m6i.2xlarge"
       pg          = "db.t4g.medium"
       redis       = "cache.t4g.small"
-      pool_engine = 20
-      pool_legacy = 8
+      pool_engine = 28
       pool_memory = 10
     }
     large = { # 8 vCPU / 64 GB — memory-optimized: the engine is ONE event loop
       instance    = "r6i.2xlarge"
       pg          = "db.m6g.large"
       redis       = "cache.t4g.medium"
-      pool_engine = 40
-      pool_legacy = 12
+      pool_engine = 52
       pool_memory = 20
     }
   }

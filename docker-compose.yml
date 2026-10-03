@@ -275,7 +275,6 @@ services:
       # Connection budget (INFRASTRUCTURE.md, Postgres law) — per-size values
       # rendered by the infra Terraform; unset in local dev = code defaults (10).
       - DB_POOL_ENGINE=${DB_POOL_ENGINE:-}
-      - DB_POOL_ENGINE_LEGACY=${DB_POOL_ENGINE_LEGACY:-}
       # Encrypts stored credentials at rest. WITHOUT this the engine falls back to a
       # key committed in source (SECURITY.md § Credential encryption at rest) — set it
       # in every deployment: openssl rand -base64 32
