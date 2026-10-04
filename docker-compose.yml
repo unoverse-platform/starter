@@ -6,10 +6,10 @@
 #   - unoverse (the platform runtime — engine in-process + node plane + native MCP),
 #     canvas, umap, memory. Code protected, pulled as images.
 #
-# LAYER 2: PLATFORM-DEV MOUNTS (monorepo only — sync-starter strips them)
-#   - apps/unoverse/design    — design (components, templates, styles)
-#   - apps/unoverse/prompts  — behavior (skills + blocks)
-#   In a STARTER/customer universe these folders do not exist: authoring is
+# LAYER 2: PLATFORM-DEV MOUNT (monorepo only; sync-starter strips it)
+#   - packages/marketplace/definitions  the marketplace tier (components, templates,
+#                                        styles, skills, blocks, nodes, objects, pipelines)
+#   In a STARTER/customer universe this folder does not exist: authoring is
 #   Studio's (publish over the API) and content is DB-driven (marketplace).
 #   Everything else under apps/unoverse (engine, server, web, tools) is image-only.
 #
@@ -296,7 +296,7 @@ services:
       - PLUGINS_DIR=/app/plugins
       # Dev-editable folders are mounted over the image below; NODE_PATH resolves
       # their hoisted deps from the local workspace node_modules. The plugins dir is
-      # also on NODE_PATH so locally-built component nodes (design/marketplace/nodes/*, which
+      # also on NODE_PATH so locally-built component nodes (packages/marketplace/definitions/nodes/*, which
       # live OUTSIDE /app/plugins) can resolve @unoverse-platform/plugin-base — the only
       # copy carrying a built dist. Without this the runtime hits MODULE_NOT_FOUND and
       # the nodes show "Package not installed".
@@ -307,9 +307,10 @@ services:
       # a `unoverse_base:/app/base` volume here between 2026-08-30 and 2026-09-03, holding a
       # base the entrypoint installed from npm at startup. Both are gone: base is compiled in
       # from the workspace, so the image and its runtime cannot disagree.
-      # ── Platform-dev mounts (monorepo only; sync-starter strips these two
-      # lines from the starter's copy — a customer universe serves what the DB
-      # says). Local edits are picked up on restart; design/prompts are data, no build.
+      # ── Platform-dev mount (monorepo only; sync-starter strips this line from
+      # the starter's copy, so a customer universe serves what the DB says). Local
+      # edits are picked up on restart; definitions are data, no build. The design
+      # tree mount went with the design tree (2026-10-04).
       - ./node_modules:/app/host_node_modules # Hoisted deps for locally-built nodes
     healthcheck:
       # Ready = internal runtime port up (nodes are loaded into memory BEFORE it binds).
